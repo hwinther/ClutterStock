@@ -5,13 +5,16 @@
     <File Path="global.json" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/Entities/Entities.csproj" Id="6525a55e-95aa-4f6c-b5ac-22f44fed1ebc" />
     <Project Path="src/Api/Api.csproj" />
     <Project Path="src/Domain/Domain.csproj" Id="cbd31b08-e3ea-415e-87e4-3beaf4c98634" />
+    <Project Path="src/Entities.SeedData/Entities.SeedData.csproj" />
+    <Project Path="src/Entities/Entities.csproj" Id="6525a55e-95aa-4f6c-b5ac-22f44fed1ebc" />
+    <Project Path="src/EntityRecordGenerator/EntityRecordGenerator.csproj" />
     <Project Path="src/Infrastructure/Infrastructure.csproj" Id="7cc1cc70-a0b3-4f19-aa14-e8bcadcc1b3c" />
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests/Directory.Build.props" />
     <Project Path="tests/Api.Tests/Api.Tests.csproj" />
+    <Project Path="tests/EntityRecordGenerator.Tests/EntityRecordGenerator.Tests.csproj" Id="dd3007e6-f351-4ed6-87e4-1134d517ff98" />
   </Folder>
 </Solution>
