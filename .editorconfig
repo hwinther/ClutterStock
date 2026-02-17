@@ -1,0 +1,152 @@
+
+[*.{blockshader,c,c++,c++m,cc,ccm,cginc,compute,cp,cpp,cppm,cshtml,cu,cuh,cxx,cxxm,fx,fxh,h,h++,hh,hlsl,hlsli,hlslinc,hp,hpp,htm,html,hxx,icc,inc,inl,ino,ipp,ixx,mpp,mq4,mq5,mqh,mxx,razor,shaderFoundry,tcc,tpp,urtshader,usf,ush}]
+indent_style = tab
+indent_size = tab
+tab_width = 4
+
+[*.{asax,ascx,aspx,axaml,cs,master,paml,skin,vb,xaml,xamlx,xoml}]
+indent_style = space
+indent_size = 4
+tab_width = 4
+
+[*.{appxmanifest,axml,build,config,csproj,dbml,discomap,dtd,jsproj,lsproj,njsproj,nuspec,proj,props,resw,resx,StyleCop,targets,tasks,vbproj,xml,xsd}]
+indent_style = space
+indent_size = 2
+tab_width = 2
+
+[*]
+
+# Microsoft .NET properties
+csharp_preferred_modifier_order = public, private, protected, internal, file, new, static, abstract, virtual, sealed, readonly, override, extern, unsafe, volatile, async, required:suggestion
+csharp_space_after_cast = true
+csharp_style_prefer_utf8_string_literals = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary:suggestion
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:suggestion
+dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:suggestion
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_predefined_type_for_member_access = true:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
+
+# ReSharper properties
+resharper_align_linq_query = true
+resharper_align_multiline_argument = true
+resharper_align_multiline_calls_chain = true
+resharper_align_multiline_extends_list = true
+resharper_align_multiline_for_stmt = true
+resharper_align_multiline_parameter = true
+resharper_align_multiple_declaration = true
+resharper_align_multline_type_parameter_constrains = true
+resharper_align_tuple_components = true
+resharper_apply_on_completion = true
+resharper_blank_lines_after_multiline_statements = 1
+resharper_blank_lines_around_auto_property = 0
+resharper_blank_lines_around_property = 0
+resharper_braces_for_for = required_for_multiline
+resharper_braces_for_foreach = required_for_multiline
+resharper_braces_for_while = required
+resharper_constructor_or_destructor_body = expression_body
+resharper_csharp_blank_lines_around_field = 0
+resharper_csharp_blank_lines_around_invocable = 0
+resharper_csharp_keep_blank_lines_in_code = 1
+resharper_csharp_keep_blank_lines_in_declarations = 1
+resharper_csharp_max_line_length = 250
+resharper_csharp_outdent_commas = true
+resharper_csharp_wrap_arguments_style = chop_if_long
+resharper_csharp_wrap_multiple_type_parameter_constraints_style = wrap_if_long
+resharper_indent_nested_fixed_stmt = true
+resharper_indent_nested_foreach_stmt = true
+resharper_indent_nested_for_stmt = true
+resharper_indent_nested_lock_stmt = true
+resharper_indent_nested_usings_stmt = true
+resharper_indent_nested_while_stmt = true
+resharper_keep_existing_declaration_parens_arrangement = false
+resharper_keep_existing_expr_member_arrangement = false
+resharper_keep_existing_initializer_arrangement = false
+resharper_local_function_body = expression_body
+resharper_max_attribute_length_for_same_line = 50
+resharper_max_initializer_elements_on_line = 1
+resharper_method_or_operator_body = expression_body
+resharper_new_line_before_while = true
+resharper_place_accessorholder_attribute_on_same_line = false
+resharper_place_accessor_attribute_on_same_line = false
+resharper_place_field_attribute_on_same_line = false
+resharper_place_simple_accessorholder_on_single_line = true
+resharper_place_simple_accessor_on_single_line = false
+resharper_place_simple_embedded_statement_on_same_line = false
+resharper_place_simple_initializer_on_single_line = false
+resharper_place_simple_property_pattern_on_single_line = false
+resharper_qualified_using_at_nested_scope = true
+resharper_space_within_single_line_array_initializer_braces = false
+resharper_wrap_array_initializer_style = chop_if_long
+resharper_wrap_chained_method_calls = chop_always
+resharper_wrap_enum_declaration = chop_if_long
+resharper_wrap_linq_expressions = chop_always
+
+# ReSharper inspection severities
+resharper_annotate_can_be_null_parameter_highlighting = warning
+resharper_annotate_can_be_null_type_member_highlighting = warning
+resharper_annotate_not_null_parameter_highlighting = warning
+resharper_annotate_not_null_type_member_highlighting = warning
+resharper_arrange_constructor_or_destructor_body_highlighting = hint
+resharper_arrange_local_function_body_highlighting = hint
+resharper_arrange_method_or_operator_body_highlighting = hint
+resharper_arrange_missing_parentheses_highlighting = hint
+resharper_arrange_redundant_parentheses_highlighting = hint
+resharper_arrange_this_qualifier_highlighting = hint
+resharper_arrange_type_member_modifiers_highlighting = hint
+resharper_arrange_type_modifiers_highlighting = hint
+resharper_async_void_method_highlighting = warning
+resharper_bad_control_braces_indent_highlighting = warning
+resharper_bad_declaration_braces_indent_highlighting = warning
+resharper_bad_expression_braces_indent_highlighting = warning
+resharper_bad_indent_highlighting = warning
+resharper_bad_namespace_braces_indent_highlighting = warning
+resharper_bad_preprocessor_indent_highlighting = warning
+resharper_bad_switch_braces_indent_highlighting = warning
+resharper_built_in_type_reference_style_for_member_access_highlighting = hint
+resharper_built_in_type_reference_style_highlighting = hint
+resharper_cpp_bad_child_statement_indent_highlighting = warning
+resharper_cpp_bad_control_braces_indent_highlighting = warning
+resharper_cpp_bad_declaration_braces_indent_highlighting = warning
+resharper_cpp_bad_expression_braces_indent_highlighting = warning
+resharper_cpp_bad_indent_highlighting = warning
+resharper_cpp_bad_namespace_braces_indent_highlighting = warning
+resharper_cpp_bad_switch_braces_indent_highlighting = warning
+resharper_cpp_incorrect_blank_lines_near_braces_highlighting = warning
+resharper_cpp_missing_blank_lines_highlighting = warning
+resharper_cpp_missing_indent_highlighting = warning
+resharper_cpp_outdent_is_off_prev_level_highlighting = warning
+resharper_cpp_redundant_blank_lines_highlighting = warning
+resharper_cpp_tabs_and_spaces_mismatch_highlighting = warning
+resharper_cpp_wrong_indent_size_highlighting = warning
+resharper_empty_general_catch_clause_highlighting = error
+resharper_function_complexity_overflow_highlighting = error
+resharper_incorrect_blank_lines_near_braces_highlighting = warning
+resharper_lambda_expression_can_be_made_static_highlighting = error
+resharper_lambda_expression_must_be_static_highlighting = warning
+resharper_loop_can_be_partly_converted_to_query_highlighting = hint
+resharper_markup_attribute_typo_highlighting = none
+resharper_markup_text_typo_highlighting = none
+resharper_missing_blank_lines_highlighting = warning
+resharper_missing_indent_highlighting = warning
+resharper_nullable_warning_suppression_is_used_highlighting = warning
+resharper_outdent_is_off_prev_level_highlighting = warning
+resharper_possible_null_reference_exception_highlighting = error
+resharper_redundant_base_qualifier_highlighting = warning
+resharper_redundant_blank_lines_highlighting = warning
+resharper_suggest_var_or_type_built_in_types_highlighting = hint
+resharper_suggest_var_or_type_elsewhere_highlighting = hint
+resharper_suggest_var_or_type_simple_types_highlighting = hint
+resharper_tabs_and_spaces_mismatch_highlighting = warning
+resharper_use_configure_await_false_for_async_disposable_highlighting = warning
+resharper_use_nameof_expression_for_part_of_the_string_highlighting = warning
+resharper_use_positional_deconstruction_pattern_highlighting = hint
+resharper_use_throw_if_null_method_highlighting = warning
+resharper_wrong_indent_size_highlighting = warning
