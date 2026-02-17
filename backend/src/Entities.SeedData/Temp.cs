@@ -16,6 +16,11 @@ public class Temp
             UpdatedAtUtc = DateTime.UtcNow
         };
 
-        Entities.Item itemEntity = a;
+        var b = a with
+        {
+            Id = 2
+        };
+
+        Entities.Item itemEntity = b;
     }
 }
