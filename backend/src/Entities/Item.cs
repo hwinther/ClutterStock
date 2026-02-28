@@ -1,32 +1,32 @@
 namespace ClutterStock.Entities;
 
+/// <summary>
+///     Represents an individual item stored within a room.
+/// </summary>
 public class Item : ConcurrencyEntity
 {
-    /// <summary>
-    /// Gets or sets the unique identifier for the room.
-    /// </summary>
-    /// <remarks>The RoomId is used to identify a specific room within the system. It is essential for
-    /// operations that require room identification, such as booking or querying room details.</remarks>
     /// <example>100</example>
-    public int RoomId { get; set; }
+    public required int RoomId { get; set; }
 
-    /// <summary>
-    /// Gets or sets the name associated with the current instance.
-    /// </summary>
-    /// <remarks>The name is initialized to an empty string. It can be used to represent a descriptive
-    /// identifier for the object.</remarks>
     /// <example>Office</example>
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
+    /// <summary>Detailed description of the item</summary>
     public string? Description { get; set; }
 
+    /// <example>Electronics</example>
     public string? Category { get; set; }
 
+    /// <summary>Additional notes or remarks about the item</summary>
     public string? Notes { get; set; }
 
-    public DateTime CreatedAtUtc { get; set; }
+    /// <summary>UTC timestamp when the item was created</summary>
+    /// <example>generate(DateTimeOffset)</example>
+    public required DateTimeOffset CreatedAtUtc { get; set; }
 
-    public DateTime? UpdatedAtUtc { get; set; }
+    /// <summary>UTC timestamp when the item was last updated</summary>
+    public DateTimeOffset? UpdatedAtUtc { get; set; }
 
+    /// <summary>Navigation property to the room containing this item</summary>
     public Room Room { get; set; } = null!;
 }

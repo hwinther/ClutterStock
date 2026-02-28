@@ -193,6 +193,15 @@
           "xunit.v3.runner.common": "[3.2.2]"
         }
       },
+      "entities": {
+        "type": "Project"
+      },
+      "entities.seeddata": {
+        "type": "Project",
+        "dependencies": {
+          "Entities": "[1.0.0, )"
+        }
+      },
       "entityrecordgenerator": {
         "type": "Project"
       }

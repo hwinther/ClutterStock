@@ -18,6 +18,7 @@ public class AddItemHandler(IItemRepository repository)
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
+
         return await repository.AddAsync(item, cancellationToken);
     }
 }

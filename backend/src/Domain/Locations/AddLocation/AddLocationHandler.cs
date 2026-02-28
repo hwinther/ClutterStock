@@ -15,6 +15,7 @@ public class AddLocationHandler(ILocationRepository repository)
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
+
         return await repository.AddAsync(location, cancellationToken);
     }
 }

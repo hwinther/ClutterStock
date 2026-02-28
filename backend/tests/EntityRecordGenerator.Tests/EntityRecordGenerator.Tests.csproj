@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Entities.SeedData\Entities.SeedData.csproj" />
     <ProjectReference Include="..\..\src\EntityRecordGenerator\EntityRecordGenerator.csproj" />
   </ItemGroup>
 

@@ -16,6 +16,7 @@ public class AddRoomHandler(IRoomRepository repository)
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
+
         return await repository.AddAsync(room, cancellationToken);
     }
 }
