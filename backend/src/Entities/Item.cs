@@ -1,8 +1,7 @@
 namespace ClutterStock.Entities;
 
-public class Item
+public class Item : ConcurrencyEntity
 {
-    public int Id { get; set; }
     public int RoomId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <EnableSdkContainerDebugging>True</EnableSdkContainerDebugging>
     <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
-    <UserSecretsId>ClusterStock</UserSecretsId>
+    <UserSecretsId>ClutterStock</UserSecretsId>
     <RootNamespace>ClutterStock.Api</RootNamespace>
   </PropertyGroup>
 

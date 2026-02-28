@@ -56,6 +56,9 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
                 if (type.TypeKind != TypeKind.Class || type.DeclaredAccessibility != Accessibility.Public)
                     continue;
 
+                if (type.IsAbstract)
+                    continue;
+
                 if (type.ContainingNamespace?.ToDisplayString() != EntitiesNamespace)
                     continue;
 
@@ -133,6 +136,32 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
             .Replace("  ", " ");
     }
 
+    /// <summary>Gets all data properties from the type and its base types, excluding navigation properties.</summary>
+    private static IEnumerable<IPropertySymbol> GetDataProperties(
+        INamedTypeSymbol type,
+        ImmutableArray<INamedTypeSymbol> entityTypes,
+        SymbolEqualityComparer comparer)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var current = type;
+        while (current != null)
+        {
+            foreach (var member in current.GetMembers())
+            {
+                if (member is not IPropertySymbol prop ||
+                    prop.DeclaredAccessibility != Accessibility.Public ||
+                    prop.IsStatic ||
+                    prop.GetMethod == null ||
+                    IsNavigationProperty(prop, entityTypes, comparer) ||
+                    !seen.Add(prop.Name))
+                    continue;
+
+                yield return prop;
+            }
+            current = current.BaseType;
+        }
+    }
+
     /// <summary>Returns a C# default value expression for the type (for parameterless constructor).</summary>
     private static string GetDefaultValueExpression(ITypeSymbol type)
     {
@@ -158,6 +187,8 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
             case SpecialType.System_Double:
                 return "0";
         }
+        if (type is IArrayTypeSymbol arr && arr.ElementType.SpecialType == SpecialType.System_Byte)
+            return "System.Array.Empty<byte>()";
         if (type.IsReferenceType || type.NullableAnnotation == NullableAnnotation.Annotated)
             return "null";
         return "default";
@@ -176,12 +207,9 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
 
         foreach (var type in entityTypes)
         {
-            var dataProps = type.GetMembers()
-                                .OfType<IPropertySymbol>()
-                                .Where(static p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic && p.GetMethod != null)
-                                .Where(p => !IsNavigationProperty(p, entityTypes, comparer))
-                                .OrderBy(static p => p.Name == "Id" ? 0 : 1)
-                                .ToList();
+            var dataProps = GetDataProperties(type, entityTypes, comparer)
+                .OrderBy(static p => p.Name switch { "Id" => 0, "RowVersion" => 1, _ => 2 })
+                .ToList();
 
             if (dataProps.Count == 0)
                 continue;
