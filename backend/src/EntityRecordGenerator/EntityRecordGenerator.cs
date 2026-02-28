@@ -70,7 +70,7 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
             }
         }
 
-        return [..results.OrderBy(static t => t.Name)];
+        return [.. results.OrderBy(static t => t.Name)];
     }
 
     private static IEnumerable<INamedTypeSymbol> GetAllTypes(INamespaceOrTypeSymbol symbol)
@@ -252,11 +252,12 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
             }
             sb.AppendLine(") { }");
             sb.AppendLine();
-            sb.AppendLine("    /// <summary>Converts this seed record to an entity instance for saving to the database.</summary>");
             var entityFullName = SanitizeForSource("global::" + type.ToDisplayString());
-            sb.Append("    public static implicit operator ").Append(entityFullName).Append("(").Append(recordName).AppendLine("? self)");
+            sb.AppendLine("    /// <summary>Converts this seed record to an entity instance for saving to the database.</summary>");
+            sb.AppendLine("    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(self))]");
+            sb.Append("    public static implicit operator ").Append(entityFullName).Append("?(").Append(recordName).AppendLine("? self)");
             sb.AppendLine("    {");
-            sb.AppendLine("        if (self is null) return null!;");
+            sb.AppendLine("        if (self is null) return null;");
             sb.Append("        return new ").Append(entityFullName).AppendLine();
             sb.AppendLine("        {");
             foreach (var p in dataProps)
@@ -264,6 +265,22 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
                 sb.Append("            ").Append(p.Name).Append(" = self.").Append(p.Name).AppendLine(",");
             }
             sb.AppendLine("        };");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+            sb.AppendLine("    /// <summary>Converts an entity from the database to its seed record twin.</summary>");
+            sb.AppendLine("    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(entity))]");
+            sb.Append("    public static implicit operator ").Append(recordName).Append("?(").Append(entityFullName).AppendLine("? entity)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        if (entity is null) return null;");
+            sb.Append("        return new ").Append(recordName).Append("(");
+            for (var i = 0; i < dataProps.Count; i++)
+            {
+                var p = dataProps[i];
+                if (i > 0)
+                    sb.Append(", ");
+                sb.Append("entity.").Append(p.Name);
+            }
+            sb.AppendLine(");");
             sb.AppendLine("    }");
             sb.AppendLine("}");
             sb.AppendLine();

@@ -1,4 +1,4 @@
-﻿namespace ClutterStock.Entities.SeedData;
+namespace ClutterStock.Entities.SeedData;
 
 public class Temp
 {
@@ -22,5 +22,9 @@ public class Temp
         };
 
         Entities.Item itemEntity = b;
+
+        // Convert entity → record (implicit operator), then use record's 'with'
+        Item itemRecord = itemEntity;
+        var test2 = itemRecord with { Id = 100 };
     }
 }
