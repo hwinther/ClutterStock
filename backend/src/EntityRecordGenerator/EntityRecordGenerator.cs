@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
+using System.Xml;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -204,6 +206,142 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
         return "default";
     }
 
+    /// <summary>Returns example value as text for XML doc &lt;example&gt; (human-readable, XML-safe).</summary>
+    private static string GetExampleForXmlDoc(ITypeSymbol type)
+    {
+        if (type is INamedTypeSymbol named && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            return "null";
+        switch (type.SpecialType)
+        {
+            case SpecialType.System_String:
+                return "";
+            case SpecialType.System_Int32:
+            case SpecialType.System_Int64:
+            case SpecialType.System_Int16:
+            case SpecialType.System_UInt32:
+            case SpecialType.System_UInt64:
+            case SpecialType.System_UInt16:
+            case SpecialType.System_Byte:
+            case SpecialType.System_SByte:
+                return "0";
+            case SpecialType.System_Boolean:
+                return "false";
+            case SpecialType.System_Decimal:
+            case SpecialType.System_Single:
+            case SpecialType.System_Double:
+                return "0";
+            case SpecialType.System_DateTime:
+                return "default";
+        }
+        if (type.IsReferenceType || type.NullableAnnotation == NullableAnnotation.Annotated)
+            return "null";
+        return "default";
+    }
+
+    /// <summary>Tries to get the &lt;example&gt; value from the entity property's XML doc when available (e.g. from source).</summary>
+    private static string? TryGetExampleFromEntityProperty(IPropertySymbol property, Compilation compilation)
+    {
+        var xml = property.GetDocumentationCommentXml(expandIncludes: true, cancellationToken: default);
+        if (string.IsNullOrWhiteSpace(xml))
+            return null;
+        try
+        {
+            var doc = new XmlDocument();
+            doc.LoadXml("<root>" + xml + "</root>");
+            var example = doc.SelectSingleNode("//example");
+            return example?.InnerText?.Trim();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string EscapeForXmlDoc(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+        return value
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;");
+    }
+
+    /// <summary>Returns a C# expression for the given example text and property type; falls back to default when example is null/empty or unparseable.</summary>
+    private static string GetExampleValueExpression(string? exampleText, ITypeSymbol type)
+    {
+        if (string.IsNullOrWhiteSpace(exampleText))
+            return GetDefaultValueExpression(type);
+        var trimmed = exampleText!.Trim();
+        if (trimmed.Equals("null", StringComparison.OrdinalIgnoreCase))
+            return "null";
+        if (type is INamedTypeSymbol named && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            return "null";
+        switch (type.SpecialType)
+        {
+            case SpecialType.System_String:
+                return "\"" + EscapeCSharpString(trimmed) + "\"";
+            case SpecialType.System_Boolean:
+                if (trimmed.Equals("true", StringComparison.OrdinalIgnoreCase)) return "true";
+                if (trimmed.Equals("false", StringComparison.OrdinalIgnoreCase)) return "false";
+                return GetDefaultValueExpression(type);
+            case SpecialType.System_Int32:
+                return int.TryParse(trimmed, out var i32) ? i32.ToString() : GetDefaultValueExpression(type);
+            case SpecialType.System_Int64:
+                return long.TryParse(trimmed, out var i64) ? i64.ToString() + "L" : GetDefaultValueExpression(type);
+            case SpecialType.System_Int16:
+                return short.TryParse(trimmed, out var i16) ? i16.ToString() : GetDefaultValueExpression(type);
+            case SpecialType.System_UInt32:
+                return uint.TryParse(trimmed, out var u32) ? u32.ToString() + "u" : GetDefaultValueExpression(type);
+            case SpecialType.System_UInt64:
+                return ulong.TryParse(trimmed, out var u64) ? u64.ToString() + "UL" : GetDefaultValueExpression(type);
+            case SpecialType.System_Byte:
+                return byte.TryParse(trimmed, out var b) ? b.ToString() : GetDefaultValueExpression(type);
+            case SpecialType.System_SByte:
+                return sbyte.TryParse(trimmed, out var sb) ? sb.ToString() : GetDefaultValueExpression(type);
+            case SpecialType.System_Decimal:
+                return decimal.TryParse(trimmed, out var dec) ? dec.ToString() + "m" : GetDefaultValueExpression(type);
+            case SpecialType.System_Single:
+                return float.TryParse(trimmed, out var f) ? f.ToString() + "f" : GetDefaultValueExpression(type);
+            case SpecialType.System_Double:
+                return double.TryParse(trimmed, out var d) ? d.ToString() + "d" : GetDefaultValueExpression(type);
+            case SpecialType.System_DateTime:
+                if (DateTime.TryParse(trimmed, out _))
+                    return "System.DateTime.Parse(\"" + EscapeCSharpString(trimmed) + "\")";
+                return GetDefaultValueExpression(type);
+        }
+        if (type is IArrayTypeSymbol arr && arr.ElementType.SpecialType == SpecialType.System_Byte)
+        {
+            var parts = trimmed.Split(',');
+            var bytes = new List<byte>();
+            foreach (var part in parts)
+            {
+                if (byte.TryParse(part.Trim(), out var b))
+                    bytes.Add(b);
+            }
+            if (bytes.Count > 0)
+                return "new byte[] { " + string.Join(", ", bytes) + " }";
+            return GetDefaultValueExpression(type);
+        }
+        if (type.IsReferenceType || type.NullableAnnotation == NullableAnnotation.Annotated)
+            return "\"" + EscapeCSharpString(trimmed) + "\"";
+        return GetDefaultValueExpression(type);
+    }
+
+    private static string EscapeCSharpString(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+        return value
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\0", "\\0")
+            .Replace("\n", "\\n")
+            .Replace("\r", "\\r")
+            .Replace("\t", "\\t");
+    }
+
     private static string GenerateSeedDataRecords(Compilation compilation, ImmutableArray<INamedTypeSymbol> entityTypes)
     {
         var sb = new StringBuilder();
@@ -234,6 +372,9 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
             sb.AppendLine("{");
             foreach (var p in dataProps)
             {
+                var exampleText = TryGetExampleFromEntityProperty(p, compilation);
+                if (exampleText != null && !string.IsNullOrEmpty(exampleText))
+                    sb.Append("    /// <example>").Append(EscapeForXmlDoc(exampleText)).AppendLine("</example>");
                 var typeStr = ToRecordTypeDisplay(p.Type);
                 if (IsRequired(p.Type))
                     sb.Append("    public required ");
@@ -241,6 +382,16 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
                     sb.Append("    public ");
                 sb.Append(typeStr).Append(" ").Append(p.Name).AppendLine(" { get; init; }");
             }
+            sb.AppendLine();
+            sb.AppendLine("    /// <summary>Creates an instance with initial values matching the &lt;example&gt; values in the property XML docs.</summary>");
+            sb.Append("    public static ").Append(recordName).Append(" CreateWithExampleValues() => new ").Append(recordName).AppendLine();
+            sb.AppendLine("    {");
+            foreach (var p in dataProps)
+            {
+                var exampleForInit = TryGetExampleFromEntityProperty(p, compilation);
+                sb.Append("        ").Append(p.Name).Append(" = ").Append(GetExampleValueExpression(exampleForInit, p.Type)).AppendLine(",");
+            }
+            sb.AppendLine("    };");
             sb.AppendLine();
             var entityFullName = SanitizeForSource("global::" + type.ToDisplayString());
             sb.AppendLine("    /// <summary>Converts this seed record to an entity instance for saving to the database.</summary>");
