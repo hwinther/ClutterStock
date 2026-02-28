@@ -162,6 +162,16 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
         }
     }
 
+    /// <summary>Returns true if the type is non-nullable and should get the required modifier.</summary>
+    private static bool IsRequired(ITypeSymbol type)
+    {
+        if (type is INamedTypeSymbol named && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            return false;
+        if (type.NullableAnnotation == NullableAnnotation.Annotated)
+            return false;
+        return true;
+    }
+
     /// <summary>Returns a C# default value expression for the type (for parameterless constructor).</summary>
     private static string GetDefaultValueExpression(ITypeSymbol type)
     {
@@ -220,37 +230,17 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
               .Append(crefType)
               .AppendLine("\"/>.</summary>");
 
-            sb.Append("public record ")
-              .Append(recordName)
-              .Append("(");
-
-            sb.AppendLine();
-            for (var i = 0; i < dataProps.Count; i++)
-            {
-                var p = dataProps[i];
-                var typeStr = ToRecordTypeDisplay(p.Type);
-                sb.Append("    ")
-                  .Append(typeStr)
-                  .Append(" ")
-                  .Append(p.Name);
-
-                if (i < dataProps.Count - 1)
-                    sb.Append(",");
-
-                sb.AppendLine();
-            }
-
-            sb.AppendLine(")");
+            sb.Append("public record ").Append(recordName).AppendLine("()");
             sb.AppendLine("{");
-            // Parameterless constructor for object-initializer style: new Item { Id = 1, Name = "Box" }
-            sb.Append("    public ").Append(recordName).Append("() : this(");
-            for (var i = 0; i < dataProps.Count; i++)
+            foreach (var p in dataProps)
             {
-                if (i > 0)
-                    sb.Append(", ");
-                sb.Append(GetDefaultValueExpression(dataProps[i].Type));
+                var typeStr = ToRecordTypeDisplay(p.Type);
+                if (IsRequired(p.Type))
+                    sb.Append("    public required ");
+                else
+                    sb.Append("    public ");
+                sb.Append(typeStr).Append(" ").Append(p.Name).AppendLine(" { get; init; }");
             }
-            sb.AppendLine(") { }");
             sb.AppendLine();
             var entityFullName = SanitizeForSource("global::" + type.ToDisplayString());
             sb.AppendLine("    /// <summary>Converts this seed record to an entity instance for saving to the database.</summary>");
@@ -272,15 +262,13 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
             sb.Append("    public static implicit operator ").Append(recordName).Append("?(").Append(entityFullName).AppendLine("? entity)");
             sb.AppendLine("    {");
             sb.AppendLine("        if (entity is null) return null;");
-            sb.Append("        return new ").Append(recordName).Append("(");
-            for (var i = 0; i < dataProps.Count; i++)
+            sb.Append("        return new ").Append(recordName).AppendLine();
+            sb.AppendLine("        {");
+            foreach (var p in dataProps)
             {
-                var p = dataProps[i];
-                if (i > 0)
-                    sb.Append(", ");
-                sb.Append("entity.").Append(p.Name);
+                sb.Append("            ").Append(p.Name).Append(" = entity.").Append(p.Name).AppendLine(",");
             }
-            sb.AppendLine(");");
+            sb.AppendLine("        };");
             sb.AppendLine("    }");
             sb.AppendLine("}");
             sb.AppendLine();

@@ -13,7 +13,10 @@ public class Temp
             Name = "name",
             Notes = null,
             RoomId = 100,
-            UpdatedAtUtc = DateTime.UtcNow
+            UpdatedAtUtc = DateTime.UtcNow,
+            RowVersion = new byte[]
+            {
+            }
         };
 
         var b = a with
@@ -26,5 +29,9 @@ public class Temp
         // Convert entity → record (implicit operator), then use record's 'with'
         Item itemRecord = itemEntity;
         var test2 = itemRecord with { Id = 100 };
+
+        //var test3 = new Item
+        //{
+        //};
     }
 }
