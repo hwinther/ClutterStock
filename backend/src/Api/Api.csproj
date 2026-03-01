@@ -3,6 +3,7 @@
   <PropertyGroup>
     <EnableSdkContainerDebugging>True</EnableSdkContainerDebugging>
     <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
+    <ContainerRepository>clutterstock/api</ContainerRepository>
     <UserSecretsId>ClutterStock</UserSecretsId>
     <RootNamespace>ClutterStock.Api</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
