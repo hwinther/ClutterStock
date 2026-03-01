@@ -1,19 +1,20 @@
 using ClutterStock.Domain.Abstractions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ClutterStock.Domain.Features.Items.AddItem;
 
+[HttpMethod(HttpVerb.Post)]
 public class AddItemEndpoint : IEndpoint
 {
     public static string Route => "/items";
-    public static string HttpMethod => "POST";
 
     public static Delegate Handler =>
-        (Func<AddItemCommand, AddItemHandler, CancellationToken, Task<IResult>>)Handle;
+        (Func<IAddItemCommandHandler.Command, IAddItemCommandHandler, CancellationToken, Task<IResult>>)Handle;
 
     private static async Task<IResult> Handle(
-        AddItemCommand command,
-        AddItemHandler handler,
+        [FromBody] IAddItemCommandHandler.Command command,
+        IAddItemCommandHandler handler,
         CancellationToken cancellationToken)
     {
         var item = await handler.HandleAsync(command, cancellationToken);

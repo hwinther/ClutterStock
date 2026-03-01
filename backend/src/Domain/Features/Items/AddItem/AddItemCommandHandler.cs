@@ -3,9 +3,16 @@ using ClutterStock.Entities;
 
 namespace ClutterStock.Domain.Features.Items.AddItem;
 
-public class AddItemHandler(IAppDbContext context)
+public interface IAddItemCommandHandler : ICommandHandler
 {
-    public async Task<Item> HandleAsync(AddItemCommand command, CancellationToken cancellationToken = default)
+    record Command(int RoomId, string Name, string? Description, string? Category, string? Notes);
+
+    Task<Item> HandleAsync(Command command, CancellationToken cancellationToken = default);
+}
+
+public class AddItemCommandHandler(IAppDbContext context) : IAddItemCommandHandler
+{
+    public async Task<Item> HandleAsync(IAddItemCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var item = new Item

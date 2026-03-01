@@ -10,9 +10,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, string connectionString)
     {
         services.AddDbContext<ApplicationContext>(options =>
-            options.UseSqlite(connectionString));
+                                                      options.UseSqlite(connectionString));
 
-        services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<ApplicationContext>());
+        services.AddScoped<IAppDbContext>(static sp => sp.GetRequiredService<ApplicationContext>());
 
         return services;
     }

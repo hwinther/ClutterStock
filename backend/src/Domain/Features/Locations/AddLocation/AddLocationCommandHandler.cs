@@ -3,9 +3,16 @@ using ClutterStock.Entities;
 
 namespace ClutterStock.Domain.Features.Locations.AddLocation;
 
-public class AddLocationHandler(IAppDbContext context)
+public interface IAddLocationCommandHandler : ICommandHandler
 {
-    public async Task<Location> HandleAsync(AddLocationCommand command, CancellationToken cancellationToken = default)
+    record Command(string Name, string? Description);
+
+    Task<Location> HandleAsync(Command command, CancellationToken cancellationToken = default);
+}
+
+public class AddLocationCommandHandler(IAppDbContext context) : IAddLocationCommandHandler
+{
+    public async Task<Location> HandleAsync(IAddLocationCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var location = new Location

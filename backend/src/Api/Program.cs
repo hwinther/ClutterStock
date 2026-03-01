@@ -1,8 +1,7 @@
-using ClutterStock.Api.Extensions;
+using ClutterStock.Api.Generated;
 using ClutterStock.Infrastructure.Database;
 using ClutterStock.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Endpoint = ClutterStock.Domain.Features.Test.Endpoint;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +11,6 @@ builder.Services.AddInfrastructure(
 
 builder.Services.AddDomainHandlers();
 builder.Services.AddControllers();
-// builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
@@ -30,8 +28,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var domainAssembly = typeof(Endpoint).Assembly ?? throw new InvalidOperationException("Domain does not have an assembly loaded");
-app.MapEndpointsInAssemblies(domainAssembly!);
+app.MapDiscoveredEndpoints();
 app.MapControllers();
 
 app.Run();

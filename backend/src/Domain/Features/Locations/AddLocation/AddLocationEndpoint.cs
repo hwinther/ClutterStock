@@ -1,19 +1,20 @@
 using ClutterStock.Domain.Abstractions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ClutterStock.Domain.Features.Locations.AddLocation;
 
+[HttpMethod(HttpVerb.Post)]
 public class AddLocationEndpoint : IEndpoint
 {
     public static string Route => "/locations";
-    public static string HttpMethod => "POST";
 
     public static Delegate Handler =>
-        (Func<AddLocationCommand, AddLocationHandler, CancellationToken, Task<IResult>>)Handle;
+        (Func<IAddLocationCommandHandler.Command, IAddLocationCommandHandler, CancellationToken, Task<IResult>>)Handle;
 
     private static async Task<IResult> Handle(
-        AddLocationCommand command,
-        AddLocationHandler handler,
+        [FromBody] IAddLocationCommandHandler.Command command,
+        IAddLocationCommandHandler handler,
         CancellationToken cancellationToken)
     {
         var location = await handler.HandleAsync(command, cancellationToken);
