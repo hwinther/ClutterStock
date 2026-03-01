@@ -1,0 +1,152 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+- package-ecosystem: "github-actions"
+  directories:
+  - "/"
+  - "/.github/actions/*/"
+  open-pull-requests-limit: 20
+  target-branch: "main"
+  schedule:
+    interval: "daily"
+  assignees:
+  - "hwinther"
+
+- package-ecosystem: "docker"
+  directories:
+  - "/frontend"
+  open-pull-requests-limit: 20
+  target-branch: "main"
+  schedule:
+    interval: "daily"
+  assignees:
+  - "hwinther"
+
+- package-ecosystem: "nuget"
+  directory: "/backend"
+  open-pull-requests-limit: 20
+  target-branch: "main"
+  schedule:
+    interval: "daily"
+  assignees:
+  - "hwinther"
+  groups:
+    microsoft:
+      patterns:
+      - "Microsoft.*"
+    swashbuckle:
+      patterns:
+      - "Swashbuckle.*"
+    xunit:
+      patterns:
+      - "xunit"
+      - "xunit.*"
+    nunit:
+      patterns:
+      - "nunit"
+      - "nunit.*"
+    coverlet:
+      patterns:
+      - "coverlet.*"
+    opentelemetry:
+      patterns:
+      - "OpenTelemetry.*"
+
+- package-ecosystem: "npm"
+  directory: "/frontend"
+  open-pull-requests-limit: 20
+  target-branch: "main"
+  schedule:
+    interval: "weekly"
+    day: "sunday"
+  assignees:
+  - "hwinther"
+  ignore:
+  - dependency-name: "*"
+    update-types: [ "version-update:semver-patch" ]
+  groups:
+    types:
+      patterns:
+      - "@types/*"
+    eslint:
+      patterns:
+      - "eslint"
+      - "eslint-*"
+      - "@eslint/*"
+      - "@typescript-eslint/*"
+      - "*/eslint-plugin"
+      - "*/eslint-plugin-*"
+    react:
+      patterns:
+      - "react"
+      - "react-*"
+      - "@types/react*"
+    testing:
+      patterns:
+      - "@testing-library/*"
+      - "vitest"
+      - "@vitest/*"
+      - "jsdom"
+      - "msw"
+    vite:
+      patterns:
+      - "vite"
+      - "vite-*"
+      - "@vitejs/*"
+    tanstack:
+      patterns:
+      - "@tanstack/*"
+    code-quality:
+      patterns:
+      - "prettier"
+      - "@cspell/*"
+    build-tools:
+      patterns:
+      - "typescript"
+      - "typescript-*"
+      - "orval"
+
+- package-ecosystem: "npm"
+  directory: "/e2e"
+  open-pull-requests-limit: 20
+  target-branch: "main"
+  schedule:
+    interval: "weekly"
+    day: "sunday"
+  assignees:
+  - "hwinther"
+  ignore:
+  - dependency-name: "*"
+    update-types: [ "version-update:semver-patch" ]
+  groups:
+    types:
+      patterns:
+      - "@types/*"
+    eslint:
+      patterns:
+      - "eslint"
+      - "@eslint/*"
+      - "eslint-*"
+      - "typescript-eslint"
+      - "@typescript-eslint/*"
+      - "*/eslint-plugin"
+      - "*/eslint-plugin-*"
+    playwright:
+      patterns:
+      - "@playwright/*"
+    code-quality:
+      patterns:
+      - "prettier"
+      - "@cspell/*"
+    build-tools:
+      patterns:
+      - "typescript"
+      - "typescript-*"
+    utilities:
+      patterns:
+      - "dotenv"
+      - "globals"

@@ -1,0 +1,250 @@
+name: "Frontend build"
+description: "Frontend (node) build and linting"
+branding:
+  icon: table
+  color: black
+
+inputs:
+  working_directory:
+    required: true
+    description: root folder of the node project, e.g. ./src/frontend/
+  package_manager:
+    required: false
+    description: npm|yarn
+    default: "npm"
+  run_tests:
+    required: false
+    description: true|false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v6
+      name: Setup node (npm)
+      if: inputs.package_manager == 'npm'
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: "npm"
+        cache-dependency-path: "${{ inputs.working_directory }}/package-lock.json"
+
+    - uses: actions/setup-node@v6
+      name: Setup node (yarn)
+      if: inputs.package_manager == 'yarn'
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: "yarn"
+        cache-dependency-path: "${{ inputs.working_directory }}/yarn.lock"
+
+    - name: Install dependencies
+      id: dependency-install
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "::group::Install dependencies"
+        set +e
+        if [[ "${{ inputs.package_manager }}" == "npm" ]]; then
+          npm ci 1>dependency.out 2>&1
+          exit_code=$?
+        elif [[ "${{ inputs.package_manager }}" == "yarn" ]]; then
+          yarn install --immutable --immutable-cache --check-cache 1>dependency.out 2>&1
+          exit_code=$?
+        else
+          echo "::error::Invalid package manager: ${{ inputs.package_manager }}"
+          exit_code=1
+        fi
+        echo "Dependency installation exit code: $exit_code"
+        set -e
+
+        echo -e "\nDependency installation:\n"
+        cat dependency.out
+
+        if [[ $exit_code -ne 0 ]]
+        then
+          echo "::error::Dependency installation failed with errors."
+          echo "## ❌ Dependency installation failed with errors:" > dependency.md
+          cat dependency.out >> dependency.md
+          exit 1
+        else
+          echo "## ✅ Dependency installation successful" > dependency.md
+          cat dependency.out | grep "packages in" >> dependency.md
+        fi
+        echo "::endgroup::"
+
+    - name: Build
+      id: node-build
+      if: steps.dependency-install.outcome == 'success'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "::group::Build"
+        [[ "${{ inputs.package_manager }}" == "npm" ]] && npm run build 1>build.out 2>&1 || (exit 0)
+        [[ "${{ inputs.package_manager }}" == "yarn" ]] && yarn build 1>build.out 2>&1 || (exit 0)
+        echo -e "\nBuild output:\n"
+        cat build.out
+
+        grep "): error " build.out > build.err || (exit 0)
+        if [ ! -s build.err ]
+        then
+          echo "## ✅ Build successful" > build.md
+        else
+          # Reformat error output as github error annotations
+          error_regex="(.+)\(([0-9]+),[0-9]+\): error (.+)"
+          cat build.err | while read line
+          do
+            if [[ $line =~ $error_regex ]]; then
+              echo "::error file=${BASH_REMATCH[1]},line=${BASH_REMATCH[2]}::${BASH_REMATCH[3]}"
+            fi
+          done
+
+          cp build.err build.md
+          sed -i '/^$/d' build.md             # removes empty lines
+          sed -i -e 's/^/- ❌ /' build.md     # prefix with markdown list item and cross mark emoji
+          echo "## ❌ The following build issues should be fixed:" | cat - build.md > build.md.temp && mv build.md.temp build.md
+        fi
+
+        echo "result<<EOF"$'\n'"$(cat build.md)"$'\n'EOF >> $GITHUB_OUTPUT
+        cat build.md >> $GITHUB_STEP_SUMMARY
+
+        if [ -s build.err ]
+        then
+          exit 1
+        fi
+        echo "::endgroup::"
+
+    - name: Lint
+      if: steps.dependency-install.outcome == 'success'
+      id: node-lint
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "::group::Lint"
+        set +e
+        if [[ "${{ inputs.package_manager }}" == "npm" ]]; then
+          npm run lint -- -f compact 1>lint.out 2>&1
+          LINT_EXIT_CODE=$?
+        elif [[ "${{ inputs.package_manager }}" == "yarn" ]]; then
+          yarn lint -f compact 1>lint.out 2>&1
+          LINT_EXIT_CODE=$?
+        else
+          echo "::error::Invalid package manager: ${{ inputs.package_manager }}"
+          exit 1
+        fi
+        echo "Lint exit code: $LINT_EXIT_CODE"
+        set -e
+
+        echo -e "\nLint output:\n"
+        cat lint.out
+
+        cat lint.out | grep ": line " | sed -e 's|${{ env.TRAILING_AGENT_WORK_PATH }}||' >lint.err || (exit 0)
+        if [[ $LINT_EXIT_CODE -ne 0 ]]
+        then
+          echo "::error::Linting failed with errors."
+          echo "## ❌ Linting failed with errors:" > lint.md
+          cat lint.out >> lint.md
+        elif [ ! -s lint.err ]
+        then
+          echo "## ✅ No linting issues 🎊" > lint.md
+        else
+          # Reformat lint output as github error annotations
+          error_regex="(.+): line ([0-9]+), col [0-9]+, [A-Za-z]+ - (.+)"
+          cat lint.err | while read line
+          do
+            if [[ $line =~ $error_regex ]]; then
+              echo "::error file=${BASH_REMATCH[1]},line=${BASH_REMATCH[2]}::${BASH_REMATCH[3]}"
+            fi
+          done
+
+          cp lint.err lint.md
+          sed -i '/^$/d' lint.md             # removes empty lines
+          sed -i -e 's/^/- ❌ /' lint.md     # prefix with markdown list item and cross mark emoji
+          echo "## ❌ The following linting issues should be fixed:" | cat - lint.md > lint.md.temp && mv lint.md.temp lint.md
+        fi
+
+        echo "result<<EOF"$'\n'"$(cat lint.md)"$'\n'EOF >> $GITHUB_OUTPUT
+        cat lint.md >> $GITHUB_STEP_SUMMARY
+
+        if [ -s lint.err ] || [ $LINT_EXIT_CODE -ne 0 ]
+        then
+          echo "::error::Linting issues found"
+          exit 1
+        fi
+        echo "::endgroup::"
+
+    - name: Combine outputs to single PR comment
+      if: always()
+      id: pr-comment-combiner
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "# ${{ env.WORKFLOW_SHORT_NAME }}" > combined.md
+        cat dependency.md >> combined.md
+        [ -f build.md ] && cat build.md >> combined.md
+        [ -f lint.md ] && cat lint.md >> combined.md
+        echo "result<<EOF"$'\n'"$(cat combined.md)"$'\n'EOF >> $GITHUB_OUTPUT
+
+    - name: "Create or Update PR Comment"
+      uses: im-open/update-pr-comment@v1.2.2
+      if: always() && github.event_name == 'pull_request'
+      with:
+        github-token: ${{ env.GH_TOKEN }}
+        comment-identifier: "${{ env.WORKFLOW_SHORT_NAME }}-results"
+        comment-content: ${{ steps.pr-comment-combiner.outputs.result }}
+
+    - name: Create Todo Comments
+      uses: gkampitakis/github-action-todo-commenter@v1
+      if: ${{ github.event_name == 'pull_request' }}
+      with:
+        github-token: ${{ env.GH_TOKEN }}
+        review-message: "Please take a look :eyes:"
+        tags: "TODO:,FIXME:,BUG:"
+
+    - name: vitest
+      if: ${{ env.run_tests == 'true' }}
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: yarn coverage
+
+    - name: Test reporter
+      uses: dorny/test-reporter@v2
+      id: test-reporter
+      if: ${{ env.run_tests == 'true' }}
+      with:
+        name: "Frontend Tests"
+        working-directory: ${{ inputs.working_directory }}
+        path: "coverage/junit-report.xml"
+        reporter: jest-junit
+        fail-on-error: false
+
+    - name: Code Coverage Report
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      if: ${{ env.run_tests == 'true' }}
+      with:
+        filename: "src/frontend/coverage/cobertura-coverage.xml"
+        badge: true
+        fail_below_min: false
+        format: markdown
+        hide_branch_rate: false
+        hide_complexity: true
+        indicators: true
+        output: both
+        thresholds: "60 80"
+
+    - name: Create output variable
+      id: code-coverage-summary
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      if: ${{ env.run_tests == 'true' }}
+      run: |
+        cat ../../code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+        echo "markdown<<EOF" >> $GITHUB_OUTPUT
+        cat ../../code-coverage-results.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: "Create or Update PR Comment"
+      uses: im-open/update-pr-comment@v1.2.2
+      if: ${{ env.run_tests == 'true' && always() && github.event_name == 'pull_request' }}
+      with:
+        github-token: ${{ env.GH_TOKEN }}
+        comment-identifier: "${{ env.WORKFLOW_SHORT_NAME }}-CodeCoverageSummary"
+        comment-content: ${{ steps.code-coverage-summary.outputs.markdown }}
