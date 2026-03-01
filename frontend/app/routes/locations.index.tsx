@@ -1,7 +1,8 @@
 import { redirect } from "react-router";
 import type { Route } from "./+types/locations.index";
+import { routes } from "~/constants/routes";
 import { deleteLocation, getLocations } from "~/api/client";
-import { LocationsList } from "~/components/locations";
+import { LocationsList } from "~/features/locations";
 
 export function loader(_args: Route.LoaderArgs) {
   return getLocations();
@@ -13,7 +14,7 @@ export async function action({ request }: Route.ActionArgs) {
   const id = Number(formData.get("id"));
   if (Number.isNaN(id)) return null;
   await deleteLocation(id);
-  return redirect("/locations");
+  return redirect(routes.locations.list());
 }
 
 export function meta(_args: Route.MetaArgs) {

@@ -1,8 +1,9 @@
 import { redirect } from "react-router";
 import type { Route } from "./+types/locations.rooms.edit";
+import { routes } from "~/constants/routes";
 import { deleteRoom, getLocation, getRoom, updateRoom } from "~/api/client";
 import { Breadcrumb } from "~/components/breadcrumb";
-import { RoomForm } from "~/components/rooms";
+import { RoomForm } from "~/features/rooms";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const locationId = Number(params.id);
@@ -29,7 +30,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   if (formData.get("_action") === "delete") {
     await deleteRoom(roomId);
-    return redirect(`/locations/${locationId}/rooms`);
+    return redirect(routes.locations.rooms(locationId));
   }
   const name = formData.get("name");
   const description = formData.get("description");
@@ -44,7 +45,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         ? description.trim()
         : undefined,
   });
-  return redirect(`/locations/${locationId}/rooms`);
+  return redirect(routes.locations.rooms(locationId));
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -73,9 +74,9 @@ export default function LocationsRoomsEdit({
     <>
       <Breadcrumb
         crumbs={[
-          { label: "Locations", to: "/locations" },
-          { label: location.name ?? "Location", to: `/locations/${locationId}/edit` },
-          { label: "Rooms", to: `/locations/${locationId}/rooms` },
+          { label: "Locations", to: routes.locations.list() },
+          { label: location.name ?? "Location", to: routes.locations.edit(locationId) },
+          { label: "Rooms", to: routes.locations.rooms(locationId) },
           { label: room.name ?? "Room" },
         ]}
       />
@@ -85,7 +86,7 @@ export default function LocationsRoomsEdit({
         error={error}
         room={room}
         locationId={locationId}
-        cancelTo={`/locations/${locationId}/rooms`}
+        cancelTo={routes.locations.rooms(locationId)}
       />
     </>
   );
