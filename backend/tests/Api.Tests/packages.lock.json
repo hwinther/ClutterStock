@@ -404,6 +404,7 @@
           "Domain": "[1.0.0, )",
           "Infrastructure": "[1.0.0, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.3, )",
+          "Microsoft.OpenApi": "[2.4.1, )",
           "Swashbuckle.AspNetCore": "[10.1.4, )",
           "Swashbuckle.AspNetCore.ReDoc": "[10.1.4, )"
         }
