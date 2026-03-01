@@ -1,3 +1,3 @@
-namespace ClutterStock.Domain.Locations.AddLocation;
+namespace ClutterStock.Domain.Features.Locations.AddLocation;
 
 public record AddLocationCommand(string Name, string? Description);

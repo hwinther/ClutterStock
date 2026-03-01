@@ -180,7 +180,8 @@
       "domain": {
         "type": "Project",
         "dependencies": {
-          "Entities": "[1.0.0, )"
+          "Entities": "[1.0.0, )",
+          "Microsoft.EntityFrameworkCore": "[10.0.3, )"
         }
       },
       "entities": {

@@ -1,9 +1,9 @@
 using ClutterStock.Domain.Abstractions;
 using ClutterStock.Entities;
 
-namespace ClutterStock.Domain.Items.AddItem;
+namespace ClutterStock.Domain.Features.Items.AddItem;
 
-public class AddItemHandler(IItemRepository repository)
+public class AddItemHandler(IAppDbContext context)
 {
     public async Task<Item> HandleAsync(AddItemCommand command, CancellationToken cancellationToken = default)
     {
@@ -19,6 +19,8 @@ public class AddItemHandler(IItemRepository repository)
             UpdatedAtUtc = now
         };
 
-        return await repository.AddAsync(item, cancellationToken);
+        context.Items.Add(item);
+        await context.SaveChangesAsync(cancellationToken);
+        return item;
     }
 }

@@ -1,6 +1,7 @@
+using ClutterStock.Domain.Abstractions;
 using Microsoft.AspNetCore.Http;
 
-namespace ClutterStock.Domain.Rooms.AddRoom;
+namespace ClutterStock.Domain.Features.Rooms.AddRoom;
 
 public class AddRoomEndpoint : IEndpoint
 {

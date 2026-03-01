@@ -431,3 +431,8 @@ CoverageReport/
 
 # Docker container volumes
 **/docker-volumes/
+
+# Sqlite database files
+*.db
+*.db-shm
+*.db-wal

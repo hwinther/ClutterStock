@@ -1,7 +1,7 @@
 using System.Reflection;
-using ClutterStock.Domain;
+using ClutterStock.Domain.Abstractions;
 
-namespace Api.Extensions;
+namespace ClutterStock.Api.Extensions;
 
 public static class WebApplicationExtensions
 {

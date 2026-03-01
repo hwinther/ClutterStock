@@ -1,9 +1,9 @@
 using ClutterStock.Domain.Abstractions;
 using ClutterStock.Entities;
 
-namespace ClutterStock.Domain.Locations.AddLocation;
+namespace ClutterStock.Domain.Features.Locations.AddLocation;
 
-public class AddLocationHandler(ILocationRepository repository)
+public class AddLocationHandler(IAppDbContext context)
 {
     public async Task<Location> HandleAsync(AddLocationCommand command, CancellationToken cancellationToken = default)
     {
@@ -16,6 +16,8 @@ public class AddLocationHandler(ILocationRepository repository)
             UpdatedAtUtc = now
         };
 
-        return await repository.AddAsync(location, cancellationToken);
+        context.Locations.Add(location);
+        await context.SaveChangesAsync(cancellationToken);
+        return location;
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace ClutterStock.Domain;
+namespace ClutterStock.Domain.Abstractions;
 
 public interface IEndpoint
 {

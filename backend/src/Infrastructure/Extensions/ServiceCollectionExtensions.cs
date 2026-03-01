@@ -1,5 +1,5 @@
 using ClutterStock.Domain.Abstractions;
-using ClutterStock.Infrastructure.Persistence;
+using ClutterStock.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,12 +9,10 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, string connectionString)
     {
-        services.AddDbContext<AppDbContext>(options =>
+        services.AddDbContext<ApplicationContext>(options =>
             options.UseSqlite(connectionString));
 
-        services.AddScoped<ILocationRepository, LocationRepository>();
-        services.AddScoped<IRoomRepository, RoomRepository>();
-        services.AddScoped<IItemRepository, ItemRepository>();
+        services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<ApplicationContext>());
 
         return services;
     }

@@ -1,9 +1,9 @@
 using ClutterStock.Domain.Abstractions;
 using ClutterStock.Entities;
 
-namespace ClutterStock.Domain.Rooms.AddRoom;
+namespace ClutterStock.Domain.Features.Rooms.AddRoom;
 
-public class AddRoomHandler(IRoomRepository repository)
+public class AddRoomHandler(IAppDbContext context)
 {
     public async Task<Room> HandleAsync(AddRoomCommand command, CancellationToken cancellationToken = default)
     {
@@ -17,6 +17,8 @@ public class AddRoomHandler(IRoomRepository repository)
             UpdatedAtUtc = now
         };
 
-        return await repository.AddAsync(room, cancellationToken);
+        context.Rooms.Add(room);
+        await context.SaveChangesAsync(cancellationToken);
+        return room;
     }
 }

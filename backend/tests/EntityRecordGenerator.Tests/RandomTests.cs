@@ -9,6 +9,8 @@ namespace EntityRecordGenerator.Tests
         {
             var a = new Item
             {
+                Id = 0,
+                RowVersion = [],
                 Category = "test",
                 CreatedAtUtc = DateTime.UtcNow,
                 Description = "desc",

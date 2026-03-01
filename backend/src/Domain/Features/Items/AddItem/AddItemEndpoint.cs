@@ -1,6 +1,7 @@
+using ClutterStock.Domain.Abstractions;
 using Microsoft.AspNetCore.Http;
 
-namespace ClutterStock.Domain.Items.AddItem;
+namespace ClutterStock.Domain.Features.Items.AddItem;
 
 public class AddItemEndpoint : IEndpoint
 {

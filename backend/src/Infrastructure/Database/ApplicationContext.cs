@@ -1,15 +1,11 @@
+using ClutterStock.Domain.Abstractions;
 using ClutterStock.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace ClutterStock.Infrastructure.Persistence;
+namespace ClutterStock.Infrastructure.Database;
 
-public class AppDbContext : DbContext
+public class ApplicationContext(DbContextOptions<ApplicationContext> options) : DbContext(options), IAppDbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options)
-        : base(options)
-    {
-    }
-
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<Item> Items => Set<Item>();
@@ -17,6 +13,6 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationContext).Assembly);
     }
 }

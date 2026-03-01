@@ -1,6 +1,7 @@
+using ClutterStock.Domain.Abstractions;
 using Microsoft.AspNetCore.Http;
 
-namespace ClutterStock.Domain.Locations.AddLocation;
+namespace ClutterStock.Domain.Features.Locations.AddLocation;
 
 public class AddLocationEndpoint : IEndpoint
 {
