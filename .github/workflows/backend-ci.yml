@@ -132,7 +132,7 @@ jobs:
       #     sudo cat ${{ env.WORKFLOW_AGENT_PATH }}super-linter.out >> $GITHUB_STEP_SUMMARY
 
       - name: WebApi Tests
-        run: dotnet test ../../tests/backend/WebApi.Tests --no-restore --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" /p:CollectCoverage=true /p:CoverletOutput="../../tests/backend/WebApi.Tests/TestResults/" /p:CoverletOutputFormat=cobertura
+        run: dotnet test --no-restore --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" /p:CollectCoverage=true /p:CoverletOutput="TestResults/" /p:CoverletOutputFormat=cobertura
         continue-on-error: true
 
       #- uses: hwinther/test-reporter@dotnet-nunit # TODO: set back to original once nunit is supported: dorny/test-reporter@v2
@@ -140,17 +140,17 @@ jobs:
         id: test-reporter
         with:
           name: "WebApi Tests"
-          path: "tests/backend/WebApi.Tests/TestResults/test-results.trx"
+          path: "**/test-results.trx"
           reporter: dotnet-trx # dotnet-nunit
           fail-on-error: false
 
       - name: Generate report for all tests
         id: reportgenerator
         run: |
-          dotnet reportgenerator -reports:"../../tests/backend/**/TestResults/**/coverage.cobertura.xml" -targetdir:"../../tests/backend/CoverageReport" -reporttypes:"Html;Cobertura;MarkdownSummaryGithub;Badges"
-          cat ../../tests/backend/CoverageReport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+          dotnet reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"CoverageReport" -reporttypes:"Html;Cobertura;MarkdownSummaryGithub;Badges"
+          cat CoverageReport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
           echo "markdown<<EOF" >> $GITHUB_OUTPUT
-          cat ../../tests/backend/CoverageReport/SummaryGithub.md >> $GITHUB_OUTPUT
+          cat CoverageReport/SummaryGithub.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           # TODO: commit the badges for README.md
 
