@@ -57,11 +57,12 @@ jobs:
         run: dotnet restore --locked-mode ${{ env.BACKEND_SOLUTION_FILE }}
 
       - name: Publish container to GHCR
+        env:
+          ContainerImageTags: ${{ github.sha }};latest
         run: |
           dotnet publish ${{ env.API_PROJECT }} \
             -c Release \
             --no-restore \
             -p:PublishProfile=DefaultContainer \
             -p:ContainerRegistry=ghcr.io \
-            -p:ContainerRepository=${{ github.repository }}/api \
-            -p:ContainerImageTags='${{ github.sha }}%3Blatest'
+            -p:ContainerRepository=${{ github.repository }}/api

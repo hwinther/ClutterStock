@@ -2,13 +2,13 @@ name: "Frontend CI"
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
-    paths:
-      - "frontend/**"
+  # push:
+  #   branches:
+  #     - main
+  #   tags:
+  #     - "v*"
+  #   paths:
+  #     - "frontend/**"
   pull_request:
     branches:
       - main
