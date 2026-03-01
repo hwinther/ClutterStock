@@ -8,12 +8,12 @@ on:
     tags:
       - "v*"
     paths:
-      - "src/frontend/**"
+      - "frontend/**"
   pull_request:
     branches:
       - main
     paths:
-      - "src/frontend/**"
+      - "frontend/**"
       - ".github/workflows/frontend-ci.yml"
     types: [opened, reopened, labeled, synchronize, ready_for_review]
 
@@ -31,8 +31,8 @@ concurrency:
 env:
   NODE_VERSION: "24"
   WORKFLOW_SHORT_NAME: "frontend"
-  FRONTEND_PATH: "src/frontend"
-  TRAILING_AGENT_WORK_PATH: "/home/runner/work/test/test/"
+  FRONTEND_PATH: "frontend"
+  TRAILING_AGENT_WORK_PATH: "/home/runner/work/clutterstock/clutterstock/"
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:

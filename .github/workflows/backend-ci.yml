@@ -8,14 +8,12 @@ on:
     tags:
       - "v*"
     paths:
-      - "src/backend/**"
-      - "tests/backend/**"
+      - "backend/**"
   pull_request:
     branches:
       - main
     paths:
-      - "src/backend/**"
-      - "tests/backend/**"
+      - "backend/**"
       - ".github/workflows/backend-ci.yml"
     types: [opened, reopened, labeled, synchronize, ready_for_review]
 
@@ -34,10 +32,10 @@ concurrency:
 
 env:
   DOTNET_VERSION: "10.0.x"
-  BACKEND_SOLUTION_PATH: "src/backend"
-  BACKEND_SOLUTION_FILE: "Backend.sln"
+  BACKEND_SOLUTION_PATH: "backend"
+  BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
   WORKFLOW_SHORT_NAME: "backend-ci"
-  WORKFLOW_AGENT_PATH: "/home/runner/work/test/test/"
+  WORKFLOW_AGENT_PATH: "/home/runner/work/clutterstock/clutterstock/"
 
 jobs:
   build:
