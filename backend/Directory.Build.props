@@ -1,0 +1,32 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <DefineConstants></DefineConstants>
+    <InheritDocEnabled>true</InheritDocEnabled>
+    <AssemblyVersion>0.0.0.1</AssemblyVersion>
+    <FileVersion>0.0.0.1</FileVersion>
+    <InformationalVersion>0.0.0.1-local-dev</InformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NuGetAuditSuppress
+      Include="https://github.com/advisories/GHSA-5f2m-466j-3848;https://github.com/advisories/GHSA-x5qj-9vmx-7g6g;https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" />
+
+    <!-- TODO: GitVersion does not match the git tag well enough, in order to fully use it I think we would have to embrace their commit message format -->
+    <!--PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference-->
+
+    <!--PackageReference Include="SonarAnalyzer.CSharp" Version="9.11.0.78383">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference-->
+  </ItemGroup>
+</Project>

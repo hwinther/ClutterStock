@@ -1,0 +1,33 @@
+{
+  "name": "testfrontend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "dev": "react-router dev",
+    "start": "react-router-serve ./build/server/index.js",
+    "typecheck": "react-router typegen && tsc",
+    "openapi-typescript": "openapi-typescript http://localhost:5155/swagger/v1/swagger.json --enum -o ./app/api/types.ts"
+  },
+  "dependencies": {
+    "@react-router/node": "7.13.1",
+    "@react-router/serve": "7.13.1",
+    "isbot": "^5.1.35",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router": "7.13.1"
+  },
+  "devDependencies": {
+    "@react-router/dev": "7.13.1",
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/node": "^24.11.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "openapi-typescript": "^7.13.0",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-tsconfig-paths": "^6.1.1"
+  }
+}

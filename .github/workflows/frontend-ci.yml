@@ -1,0 +1,53 @@
+name: "Frontend CI"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - "frontend/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+    types: [opened, reopened, labeled, synchronize, ready_for_review]
+
+# Sets permissions of the GITHUB_TOKEN to allow creating checks and updating PR
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24"
+  WORKFLOW_SHORT_NAME: "frontend"
+  FRONTEND_PATH: "frontend"
+  TRAILING_AGENT_WORK_PATH: "/home/runner/work/clutterstock/clutterstock/"
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    defaults:
+      run:
+        working-directory: ${{ env.FRONTEND_PATH }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: ./.github/actions/frontend-build
+        with:
+          working_directory: ${{ env.FRONTEND_PATH }}
+          package_manager: "npm"
+          run_tests: "true"

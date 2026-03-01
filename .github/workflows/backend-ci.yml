@@ -1,0 +1,227 @@
+name: "Backend CI"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - "backend/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+    types: [opened, reopened, labeled, synchronize, ready_for_review]
+
+# Sets permissions of the GITHUB_TOKEN to allow creating checks and updating PR
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  actions: read # for super-linter
+  statuses: write # for super-linter
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  BACKEND_SOLUTION_PATH: "backend"
+  BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
+  WORKFLOW_SHORT_NAME: "backend-ci"
+  WORKFLOW_AGENT_PATH: "/home/runner/work/clutterstock/clutterstock/"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.draft == false }}
+    defaults:
+      run:
+        working-directory: ${{ env.BACKEND_SOLUTION_PATH }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # used by GitVersion to find the most recent tag outside of this branch
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "${{ env.BACKEND_SOLUTION_PATH }}/**/packages.lock.json"
+
+      - name: dotnet restore
+        run: dotnet restore --locked-mode ${{ env.BACKEND_SOLUTION_FILE }}
+
+      - name: dotnet tool restore
+        run: dotnet tool restore
+
+      - name: Build
+        id: dotnet-build
+        run: |
+          dotnet build ${{ env.BACKEND_SOLUTION_FILE }} -c Release --no-restore --nologo -consoleLoggerParameters:NoSummary -verbosity:quiet 1>build.out 2>&1 || (exit 0)
+          grep "): error " build.out > build.err || (exit 0)
+
+          if [ ! -s build.err ]
+          then
+            echo "## ✅ Build successful" > build.md
+          else
+            # Reformat error output as github error annotations
+            error_regex="(.+)\(([0-9]+),([0-9]+)\): error (.+) \[(.+)\]"
+            # Capture groups: 1=file path 2=line 3=character 4=warn: message 5=project path
+            cat build.err | while read line
+            do
+              if [[ $line =~ $error_regex ]]; then
+                echo "::error file=${BASH_REMATCH[1]},line=${BASH_REMATCH[2]}::${BASH_REMATCH[4]}"
+              fi
+            done
+
+            cat build.err | sed 's|${{ env.WORKFLOW_AGENT_PATH }}|| ; s|${{ env.WORKFLOW_AGENT_PATH }}||' > build.md
+            sed -i '/^$/d' build.md             # removes empty lines
+            sed -i -e 's/^/- ❌ /' build.md     # prefix with markdown list item and cross mark emoji
+            echo "## ❌ The following build issues should be fixed:" | cat - build.md > build.md.temp && mv build.md.temp build.md
+          fi
+
+          echo "result<<EOF"$'\n'"$(cat build.md)"$'\n'EOF >> $GITHUB_OUTPUT
+          cat build.md >> $GITHUB_STEP_SUMMARY
+
+          if [ -s build.err ]
+          then
+            exit 1
+          fi
+
+      - name: "Create or Update PR Comment"
+        uses: im-open/update-pr-comment@v1.2.2
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-identifier: "${{ env.WORKFLOW_SHORT_NAME }}-build-results"
+          comment-content: ${{ steps.dotnet-build.outputs.result }}
+
+      - name: Create Todo Comments
+        uses: gkampitakis/github-action-todo-commenter@v1
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          review-message: "Please take a look :eyes:"
+          tags: "TODO:,FIXME:,BUG:"
+
+      # # TODO: move?
+      # - name: Super-linter
+      #   uses: super-linter/super-linter@v6.4.1
+      #   env:
+      #     # To report GitHub Actions status checks
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     CREATE_LOG_FILE: true
+      #     LOG_FILE: super-linter.out
+      #     DISABLE_ERRORS: true
+
+      # - run: |
+      #     ls -la ${{ env.WORKFLOW_AGENT_PATH }}
+      #     sudo cat ${{ env.WORKFLOW_AGENT_PATH }}super-linter.out >> $GITHUB_STEP_SUMMARY
+
+      - name: Run tests
+        run: dotnet test --no-restore --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" /p:CollectCoverage=true /p:CoverletOutput="TestResults/" /p:CoverletOutputFormat=cobertura
+        continue-on-error: true
+
+      #- uses: hwinther/test-reporter@dotnet-nunit # TODO: set back to original once nunit is supported: dorny/test-reporter@v2
+      - uses: dorny/test-reporter@v2
+        id: test-reporter
+        with:
+          name: "WebApi Tests"
+          path: "**/test-results.trx"
+          reporter: dotnet-trx # dotnet-nunit
+          fail-on-error: false
+
+      - name: Generate report for all tests
+        id: reportgenerator
+        run: |
+          dotnet reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"CoverageReport" -reporttypes:"Html;Cobertura;MarkdownSummaryGithub;Badges"
+          cat CoverageReport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+          echo "markdown<<EOF" >> $GITHUB_OUTPUT
+          cat CoverageReport/SummaryGithub.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          # TODO: commit the badges for README.md
+
+      - name: "Create or Update PR Comment"
+        uses: im-open/update-pr-comment@v1.2.2
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-identifier: "${{ env.WORKFLOW_SHORT_NAME }}-reportgenerator"
+          comment-content: ${{ steps.reportgenerator.outputs.markdown }}${{ steps.test-reporter.outputs.conclusion }}
+
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: "**/coverage.cobertura.xml"
+          badge: true
+          fail_below_min: false
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: "60 80"
+
+      - name: Create output variable
+        id: code-coverage-summary
+        run: |
+          cat ../code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+          echo "markdown<<EOF" >> $GITHUB_OUTPUT
+          cat ../code-coverage-results.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: "Create or Update PR Comment"
+        uses: im-open/update-pr-comment@v1.2.2
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-identifier: "${{ env.WORKFLOW_SHORT_NAME }}-CodeCoverageSummary"
+          comment-content: ${{ steps.code-coverage-summary.outputs.markdown }}
+
+      # TODO: Temporarily disabled due to command line parsing issue
+      # - name: Stryker
+      #   id: stryker
+      #   if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
+      #   run: |
+      #     dotnet stryker --reporter "html" --reporter "json" --reporter "markdown" --solution Backend.sln --output StrykerOutput
+      #     cp -r StrykerOutput/reports StrykerReports
+      #     cat StrykerReports/mutation-report.md >> $GITHUB_STEP_SUMMARY
+      #     echo "markdown<<EOF" >> $GITHUB_OUTPUT
+      #     cat StrykerReports/mutation-report.md >> $GITHUB_OUTPUT
+      #     echo "EOF" >> $GITHUB_OUTPUT
+
+      # - uses: actions/upload-artifact@v5
+      #   if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
+      #   with:
+      #     name: StrykerReports
+      #     path: ${{ env.BACKEND_SOLUTION_PATH }}/StrykerReports
+
+      # - name: "Create or Update PR Comment"
+      #   uses: im-open/update-pr-comment@v1.2.2
+      #   if: ${{ always() && github.event_name == 'pull_request' && github.base_ref == 'main' }}
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     comment-identifier: "${{ env.WORKFLOW_SHORT_NAME }}-Stryker"
+      #     comment-content: ${{ steps.stryker.outputs.markdown }}
+
+      - name: Inspect code
+        uses: muno92/resharper_inspectcode@v1
+        if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
+        with:
+          workingDirectory: ${{ env.BACKEND_SOLUTION_PATH }}
+          solutionPath: ${{ env.BACKEND_SOLUTION_FILE }}
+          dotnetVersion: ${{ env.DOTNET_VERSION }}
+          failOnIssue: false
+          solutionWideAnalysis: true
+          include: |
+            **.cs
+          ignoreIssueType: PropertyCanBeMadeInitOnly.Global

@@ -1,0 +1,21 @@
+{
+  "folders": [
+    {
+      "path": "..",
+      "name": "ClutterStock (root)"
+    },
+    {
+      "path": "../frontend",
+      "name": "Frontend"
+    },
+    {
+      "path": "../backend",
+      "name": "Backend"
+    },
+    {
+      "path": "../e2e",
+      "name": "E2E"
+    }
+  ],
+  "settings": {}
+}

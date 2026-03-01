@@ -1,0 +1,4 @@
+.githooks/* eol=lf
+Makefile eol=lf
+*.sh eol=lf
+swagger.json eol=lf
