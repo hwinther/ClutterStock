@@ -1,0 +1,61 @@
+name: "Publish Contracts (NuGet to GitHub Packages)"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/public/Contracts/**"
+      - "backend/Directory.Build.props"
+      - ".github/workflows/contracts-nuget-publish.yml"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.ref }}"
+  cancel-in-progress: false
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  BACKEND_SOLUTION_PATH: "backend"
+  BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
+  CONTRACTS_PROJECT: "public/Contracts/Contracts.csproj"
+
+jobs:
+  pack-and-push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    defaults:
+      run:
+        working-directory: ${{ env.BACKEND_SOLUTION_PATH }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "${{ env.BACKEND_SOLUTION_PATH }}/**/packages.lock.json"
+
+      - name: Restore
+        run: dotnet restore --locked-mode ${{ env.BACKEND_SOLUTION_FILE }}
+
+      - name: Pack Contracts
+        run: dotnet pack ${{ env.CONTRACTS_PROJECT }} -c Release --no-restore -o nupkg
+
+      - name: Add GitHub Packages NuGet source
+        run: |
+          dotnet nuget add source \
+            --username ${{ github.actor }} \
+            --password ${{ secrets.GITHUB_TOKEN }} \
+            --store-password-in-clear-text \
+            --name github \
+            "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+      - name: Push to GitHub Packages
+        run: dotnet nuget push nupkg/*.nupkg --source github --skip-duplicate --api-key ${{ secrets.GITHUB_TOKEN }}
