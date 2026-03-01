@@ -158,6 +158,18 @@ public sealed class EndpointRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private const string FeaturesNamespacePrefix = "ClutterStock.Domain.Features.";
+
+    private static string GetOpenApiTagForEndpoint(INamedTypeSymbol endpointType)
+    {
+        var ns = endpointType.ContainingNamespace?.ToDisplayString() ?? "";
+        if (!ns.StartsWith(FeaturesNamespacePrefix, StringComparison.Ordinal))
+            return "Api";
+        var afterFeatures = ns.Substring(FeaturesNamespacePrefix.Length);
+        var dot = afterFeatures.IndexOf('.');
+        return dot >= 0 ? afterFeatures.Substring(0, dot) : afterFeatures;
+    }
+
     private static string GetMapMethodName(INamedTypeSymbol endpointType, INamedTypeSymbol? httpMethodAttributeType)
     {
         if (httpMethodAttributeType is null)
@@ -202,7 +214,8 @@ public sealed class EndpointRegistrationGenerator : IIncrementalGenerator
             var route = fullName + ".Route";
             var handler = fullName + ".Handler";
             var mapMethod = GetMapMethodName(type, httpMethodAttributeType);
-            sb.Append("        app.").Append(mapMethod).Append("(").Append(route).Append(", ").Append(handler).AppendLine(");");
+            var tag = GetOpenApiTagForEndpoint(type);
+            sb.Append("        app.").Append(mapMethod).Append("(").Append(route).Append(", ").Append(handler).Append(").WithTags(\"").Append(tag).AppendLine("\");");
         }
         sb.AppendLine("    }");
         sb.AppendLine("}");
