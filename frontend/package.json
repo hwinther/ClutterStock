@@ -12,7 +12,8 @@
     "openapi-typescript": "openapi-typescript http://localhost:5155/swagger/v1/swagger.json --enum -o ./app/api/types.ts",
     "test": "vitest",
     "test:run": "vitest run",
-    "coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:ci": "vitest run --coverage"
   },
   "dependencies": {
     "@react-router/node": "7.13.1",

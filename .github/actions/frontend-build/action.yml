@@ -180,10 +180,10 @@ runs:
         echo "::group::Test"
         set +e
         if [[ "${{ inputs.package_manager }}" == "npm" ]]; then
-          npm run test:run 1>test.out 2>&1
+          npm run test:ci 1>test.out 2>&1
           TEST_EXIT_CODE=$?
         elif [[ "${{ inputs.package_manager }}" == "yarn" ]]; then
-          yarn test:run 1>test.out 2>&1
+          yarn test:ci 1>test.out 2>&1
           TEST_EXIT_CODE=$?
         else
           echo "::error::Invalid package manager: ${{ inputs.package_manager }}"
