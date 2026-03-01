@@ -174,9 +174,9 @@ jobs:
       - name: Create output variable
         id: code-coverage-summary
         run: |
-          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+          cat ../code-coverage-results.md >> $GITHUB_STEP_SUMMARY
           echo "markdown<<EOF" >> $GITHUB_OUTPUT
-          cat code-coverage-results.md >> $GITHUB_OUTPUT
+          cat ../code-coverage-results.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: "Create or Update PR Comment"
