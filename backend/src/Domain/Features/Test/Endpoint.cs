@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 namespace ClutterStock.Domain.Features.Test;
 
 [HttpMethod(HttpVerb.Get)]
+[OpenApiDescription("Test endpoint that returns a greeting.")]
 public class Endpoint : IEndpoint
 {
     public static string Route => "/test";

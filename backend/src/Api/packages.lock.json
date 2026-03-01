@@ -40,6 +40,12 @@
           "Swashbuckle.AspNetCore.SwaggerUI": "10.1.4"
         }
       },
+      "Swashbuckle.AspNetCore.ReDoc": {
+        "type": "Direct",
+        "requested": "[10.1.4, )",
+        "resolved": "10.1.4",
+        "contentHash": "JYy8uCw9pJSa4x5uOyVY8R6BxYyBqTf/EL3fLFlLJyE14v4KlEh8Y3cJTQYjY5s2JNxMnz1XIkJne9bu+xkDzA=="
+      },
       "Humanizer.Core": {
         "type": "Transitive",
         "resolved": "2.14.1",
@@ -301,9 +307,13 @@
           "System.Composition.Runtime": "9.0.0"
         }
       },
+      "ClutterStock.Contracts": {
+        "type": "Project"
+      },
       "domain": {
         "type": "Project",
         "dependencies": {
+          "ClutterStock.Contracts": "[0.1.0, )",
           "Entities": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.3, )"
         }

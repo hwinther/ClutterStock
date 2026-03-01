@@ -177,9 +177,13 @@
           "SQLitePCLRaw.core": "2.1.11"
         }
       },
+      "ClutterStock.Contracts": {
+        "type": "Project"
+      },
       "domain": {
         "type": "Project",
         "dependencies": {
+          "ClutterStock.Contracts": "[1.0.0, )",
           "Entities": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.3, )"
         }

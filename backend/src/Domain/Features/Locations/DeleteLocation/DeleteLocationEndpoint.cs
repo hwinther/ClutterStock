@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ClutterStock.Domain.Features.Locations.DeleteLocation;
 
 [HttpMethod(HttpVerb.Delete)]
+[OpenApiDescription("Deletes a location by id.")]
 public class DeleteLocationEndpoint : IEndpoint
 {
     public static string Route => "/locations/{id}";

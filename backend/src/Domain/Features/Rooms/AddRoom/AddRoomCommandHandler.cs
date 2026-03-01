@@ -20,7 +20,7 @@ public class AddRoomCommandHandler(IAppDbContext context) : IAddRoomCommandHandl
             LocationId = command.LocationId,
             Name = command.Name,
             Description = command.Description,
-            CreatedAtUtc = now,
+            CreatedAtUtc = now
         };
 
         context.Rooms.Add(room);

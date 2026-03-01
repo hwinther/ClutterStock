@@ -19,7 +19,7 @@ public class AddLocationCommandHandler(IAppDbContext context) : IAddLocationComm
         {
             Name = command.Name,
             Description = command.Description,
-            CreatedAtUtc = now,
+            CreatedAtUtc = now
         };
 
         context.Locations.Add(location);

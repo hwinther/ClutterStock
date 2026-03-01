@@ -186,10 +186,12 @@ public sealed class HandlerRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
         sb.AppendLine();
-        sb.AppendLine("namespace ").Append(GeneratedNamespace).AppendLine(";");
+        sb.Append("namespace ").Append(GeneratedNamespace).AppendLine(";");
         sb.AppendLine();
-        sb.AppendLine("public static partial class ").Append(GeneratedClassName).AppendLine();
+        sb.AppendLine("/// Generated domain handlers mapper");
+        sb.Append("public static partial class ").Append(GeneratedClassName).AppendLine();
         sb.AppendLine("{");
+        sb.AppendLine("    /// Generated domain handlers mapper");
         sb.AppendLine("    public static IServiceCollection AddDomainHandlers(this IServiceCollection services)");
         sb.AppendLine("    {");
         foreach (var (handlerInterface, implementation) in registrations)

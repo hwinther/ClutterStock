@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ClutterStock.Contracts</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>API request/response contracts for ClutterStock. Use this package in C# API clients for strongly-typed requests.</Description>
+    <PackageId>ClutterStock.Contracts</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>ClutterStock</Authors>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+</Project>

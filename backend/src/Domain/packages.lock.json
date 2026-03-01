@@ -22,6 +22,9 @@
         "resolved": "10.0.3",
         "contentHash": "lVABgJTyTUNE7Bi0bSu4dWHiCHIXEGzTh/kLh0N07IgU/tIKwTeBPp8tgV4x2iKj4h7iPLo8oXzyHmLDGtAE1g=="
       },
+      "ClutterStock.Contracts": {
+        "type": "Project"
+      },
       "entities": {
         "type": "Project"
       }

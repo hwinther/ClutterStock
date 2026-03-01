@@ -304,6 +304,11 @@
           "Swashbuckle.AspNetCore.SwaggerUI": "10.1.4"
         }
       },
+      "Swashbuckle.AspNetCore.ReDoc": {
+        "type": "Transitive",
+        "resolved": "10.1.4",
+        "contentHash": "JYy8uCw9pJSa4x5uOyVY8R6BxYyBqTf/EL3fLFlLJyE14v4KlEh8Y3cJTQYjY5s2JNxMnz1XIkJne9bu+xkDzA=="
+      },
       "Swashbuckle.AspNetCore.Swagger": {
         "type": "Transitive",
         "resolved": "10.1.4",
@@ -395,15 +400,21 @@
       "api": {
         "type": "Project",
         "dependencies": {
+          "ClutterStock.Contracts": "[0.1.0, )",
           "Domain": "[1.0.0, )",
           "Infrastructure": "[1.0.0, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.3, )",
-          "Swashbuckle.AspNetCore": "[10.1.4, )"
+          "Swashbuckle.AspNetCore": "[10.1.4, )",
+          "Swashbuckle.AspNetCore.ReDoc": "[10.1.4, )"
         }
+      },
+      "ClutterStock.Contracts": {
+        "type": "Project"
       },
       "domain": {
         "type": "Project",
         "dependencies": {
+          "ClutterStock.Contracts": "[0.1.0, )",
           "Entities": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.3, )"
         }

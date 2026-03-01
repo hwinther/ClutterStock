@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ClutterStock.Domain.Features.Rooms.DeleteRoom;
 
 [HttpMethod(HttpVerb.Delete)]
+[OpenApiDescription("Deletes a room by id.")]
 public class DeleteRoomEndpoint : IEndpoint
 {
     public static string Route => "/rooms/{id}";

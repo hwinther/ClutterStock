@@ -22,7 +22,7 @@ public class AddItemCommandHandler(IAppDbContext context) : IAddItemCommandHandl
             Description = command.Description,
             Category = command.Category,
             Notes = command.Notes,
-            CreatedAtUtc = now,
+            CreatedAtUtc = now
         };
 
         context.Items.Add(item);
