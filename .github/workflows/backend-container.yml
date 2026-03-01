@@ -64,4 +64,4 @@ jobs:
             -p:PublishProfile=DefaultContainer \
             -p:ContainerRegistry=ghcr.io \
             -p:ContainerRepository=${{ github.repository }}/api \
-            -p:ContainerImageTags='${{ github.sha }};latest'
+            -p:ContainerImageTags='${{ github.sha }}%3Blatest'

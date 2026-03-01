@@ -1,0 +1,75 @@
+name: "API Docs (GitHub Pages)"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/api-docs-pages.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.ref }}"
+  cancel-in-progress: false
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  BACKEND_SOLUTION_PATH: "backend"
+  BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
+  API_PROJECT: "src/Api/Api.csproj"
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    defaults:
+      run:
+        working-directory: ${{ env.BACKEND_SOLUTION_PATH }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "${{ env.BACKEND_SOLUTION_PATH }}/**/packages.lock.json"
+
+      - name: Restore and publish API
+        run: |
+          dotnet restore --locked-mode ${{ env.BACKEND_SOLUTION_FILE }}
+          dotnet publish ${{ env.API_PROJECT }} -c Release --no-restore -o publish-api
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Generate OpenAPI spec (Swashbuckle CLI)
+        run: |
+          ConnectionStrings__ClutterStock="Data Source=:memory:" dotnet swagger tofile --output ../openapi.json publish-api/Api.dll v1
+        working-directory: ${{ github.workspace }}/${{ env.BACKEND_SOLUTION_PATH }}
+
+      - name: Build ReDoc static HTML
+        run: |
+          mkdir -p api-docs
+          npx --yes @redocly/cli build-docs openapi.json --output=api-docs/index.html
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: api-docs
+
+  deploy:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment: github-pages
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

@@ -7,11 +7,8 @@ namespace ClutterStock.Api.Extensions;
 
 internal static class OpenApiServiceExtensions
 {
-    public static IServiceCollection AddOpenApiDocumentation(this IServiceCollection services, IHostEnvironment environment)
+    public static IServiceCollection AddOpenApiDocumentation(this IServiceCollection services, IHostEnvironment _)
     {
-        if (!environment.IsDevelopment())
-            return services;
-
         services.AddOpenApi();
         services.AddSwaggerGen(static options =>
         {
