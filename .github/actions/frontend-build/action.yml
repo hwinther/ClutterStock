@@ -171,6 +171,62 @@ runs:
         fi
         echo "::endgroup::"
 
+    - name: Test
+      if: steps.dependency-install.outcome == 'success' && inputs.run_tests == 'true'
+      id: node-test
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "::group::Test"
+        set +e
+        if [[ "${{ inputs.package_manager }}" == "npm" ]]; then
+          npm run test:run 1>test.out 2>&1
+          TEST_EXIT_CODE=$?
+        elif [[ "${{ inputs.package_manager }}" == "yarn" ]]; then
+          yarn test:run 1>test.out 2>&1
+          TEST_EXIT_CODE=$?
+        else
+          echo "::error::Invalid package manager: ${{ inputs.package_manager }}"
+          exit 1
+        fi
+        echo "Test exit code: $TEST_EXIT_CODE"
+        set -e
+
+        echo -e "\nTest output:\n"
+        cat test.out
+
+        if [[ $TEST_EXIT_CODE -ne 0 ]]
+        then
+          echo "::error::Tests failed."
+          echo "## ❌ Tests failed:" > test.md
+          cat test.out >> test.md
+        else
+          echo "## ✅ All tests passed" > test.md
+          cat test.out | tail -20 >> test.md
+        fi
+
+        echo "result<<EOF"$'\n'"$(cat test.md)"$'\n'EOF >> $GITHUB_OUTPUT
+        cat test.md >> $GITHUB_STEP_SUMMARY
+
+        if [[ $TEST_EXIT_CODE -ne 0 ]]
+        then
+          exit 1
+        fi
+        echo "::endgroup::"
+
+    - name: Code Coverage Report
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: "**/coverage.cobertura.xml"
+        badge: true
+        fail_below_min: false
+        format: markdown
+        hide_branch_rate: false
+        hide_complexity: true
+        indicators: true
+        output: both
+        thresholds: "60 80"
+
     - name: Combine outputs to single PR comment
       if: always()
       id: pr-comment-combiner
@@ -181,6 +237,7 @@ runs:
         cat dependency.md >> combined.md
         [ -f build.md ] && cat build.md >> combined.md
         [ -f lint.md ] && cat lint.md >> combined.md
+        [ -f test.md ] && cat test.md >> combined.md
         echo "result<<EOF"$'\n'"$(cat combined.md)"$'\n'EOF >> $GITHUB_OUTPUT
 
     - name: "Create or Update PR Comment"
@@ -199,16 +256,10 @@ runs:
         review-message: "Please take a look :eyes:"
         tags: "TODO:,FIXME:,BUG:"
 
-    - name: vitest
-      if: ${{ env.run_tests == 'true' }}
-      shell: bash
-      working-directory: ${{ inputs.working_directory }}
-      run: yarn coverage
-
     - name: Test reporter
       uses: dorny/test-reporter@v2
       id: test-reporter
-      if: ${{ env.run_tests == 'true' }}
+      if: ${{ inputs.run_tests == 'true' }}
       with:
         name: "Frontend Tests"
         working-directory: ${{ inputs.working_directory }}
@@ -218,7 +269,7 @@ runs:
 
     - name: Code Coverage Report
       uses: irongut/CodeCoverageSummary@v1.3.0
-      if: ${{ env.run_tests == 'true' }}
+      if: ${{ inputs.run_tests == 'true' }}
       with:
         filename: "src/frontend/coverage/cobertura-coverage.xml"
         badge: true
@@ -234,7 +285,7 @@ runs:
       id: code-coverage-summary
       shell: bash
       working-directory: ${{ inputs.working_directory }}
-      if: ${{ env.run_tests == 'true' }}
+      if: ${{ inputs.run_tests == 'true' }}
       run: |
         cat ../../code-coverage-results.md >> $GITHUB_STEP_SUMMARY
         echo "markdown<<EOF" >> $GITHUB_OUTPUT
@@ -243,7 +294,7 @@ runs:
 
     - name: "Create or Update PR Comment"
       uses: im-open/update-pr-comment@v1.2.2
-      if: ${{ env.run_tests == 'true' && always() && github.event_name == 'pull_request' }}
+      if: ${{ inputs.run_tests == 'true' && always() && github.event_name == 'pull_request' }}
       with:
         github-token: ${{ env.GH_TOKEN }}
         comment-identifier: "${{ env.WORKFLOW_SHORT_NAME }}-CodeCoverageSummary"

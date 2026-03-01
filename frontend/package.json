@@ -9,7 +9,10 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "lint": "eslint .",
-    "openapi-typescript": "openapi-typescript http://localhost:5155/swagger/v1/swagger.json --enum -o ./app/api/types.ts"
+    "openapi-typescript": "openapi-typescript http://localhost:5155/swagger/v1/swagger.json --enum -o ./app/api/types.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@react-router/node": "7.13.1",
@@ -23,19 +26,24 @@
     "@eslint/js": "^9.39.3",
     "@react-router/dev": "7.13.1",
     "@tailwindcss/vite": "^4.2.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^24.11.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.3",
     "eslint-formatter-compact": "^9.0.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "jsdom": "^28.1.0",
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.1",
-    "vite-tsconfig-paths": "^6.1.1"
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.0.18"
   }
 }
