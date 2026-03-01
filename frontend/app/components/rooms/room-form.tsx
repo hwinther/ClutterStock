@@ -15,7 +15,7 @@ export function RoomForm({
   submitLabel,
   error,
   room,
-  locationId,
+  locationId: _locationId,
   cancelTo,
 }: RoomFormProps) {
   if (room === null) {
