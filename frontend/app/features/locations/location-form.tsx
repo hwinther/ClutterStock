@@ -1,29 +1,26 @@
 import { Form, Link } from "react-router";
-import type { RoomResponse } from "~/api/client";
+import { routes } from "~/constants/routes";
+import type { LocationResponse } from "~/api/client";
 
-type RoomFormProps = {
+type LocationFormProps = {
   title: string;
   submitLabel: string;
   error?: string;
-  room?: RoomResponse | null;
-  locationId: number;
-  cancelTo: string;
+  location?: LocationResponse | null;
 };
 
-export function RoomForm({
+export function LocationForm({
   title,
   submitLabel,
   error,
-  room,
-  locationId: _locationId,
-  cancelTo,
-}: RoomFormProps) {
-  if (room === null) {
+  location,
+}: LocationFormProps) {
+  if (location === null) {
     return (
       <div className="card-padded">
-        <p className="text-muted">Room not found.</p>
-        <Link to={cancelTo} className="link-text mt-2 inline-block">
-          Back to rooms
+        <p className="text-muted">Location not found.</p>
+        <Link to={routes.locations.list()} className="link-text mt-2 inline-block">
+          Back to locations
         </Link>
       </div>
     );
@@ -43,10 +40,10 @@ export function RoomForm({
             name="name"
             type="text"
             required
-            autoFocus={!room}
-            defaultValue={room?.name ?? ""}
+            autoFocus={!location}
+            defaultValue={location?.name ?? ""}
             className="form-input"
-            placeholder="e.g. Living Room, Garage"
+            placeholder="e.g. Home, Office"
           />
         </div>
         <div className="form-field">
@@ -57,33 +54,33 @@ export function RoomForm({
             id="description"
             name="description"
             rows={2}
-            defaultValue={room?.description ?? ""}
+            defaultValue={location?.description ?? ""}
             className="form-input"
-            placeholder="e.g. Main gathering space"
+            placeholder="e.g. Main residence"
           />
         </div>
         <div className="form-actions">
           <button type="submit" className="btn-primary">
             {submitLabel}
           </button>
-          <Link to={cancelTo} className="btn-secondary">
+          <Link to={routes.locations.list()} className="btn-secondary">
             Cancel
           </Link>
         </div>
       </Form>
-      {room?.id != null && (
+      {location?.id != null && (
         <Form
           method="post"
           className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700"
           onSubmit={(e) => {
-            if (!confirm("Delete this room and all its items?")) {
+            if (!confirm("Delete this location and all its rooms and items?")) {
               e.preventDefault();
             }
           }}
         >
           <input type="hidden" name="_action" value="delete" />
           <button type="submit" className="btn-danger">
-            Delete room
+            Delete location
           </button>
         </Form>
       )}

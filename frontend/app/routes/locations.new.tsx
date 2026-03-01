@@ -1,7 +1,8 @@
 import { redirect } from "react-router";
 import type { Route } from "./+types/locations.new";
+import { routes } from "~/constants/routes";
 import { createLocation } from "~/api/client";
-import { LocationForm } from "~/components/locations";
+import { LocationForm } from "~/features/locations";
 
 export function action({ request }: Route.ActionArgs) {
   return (async () => {
@@ -18,7 +19,7 @@ export function action({ request }: Route.ActionArgs) {
           ? description.trim()
           : undefined,
     });
-    return redirect("/locations");
+    return redirect(routes.locations.list());
   })();
 }
 

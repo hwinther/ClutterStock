@@ -1,7 +1,8 @@
 import { redirect } from "react-router";
 import type { Route } from "./+types/locations.edit";
+import { routes } from "~/constants/routes";
 import { deleteLocation, getLocation, updateLocation } from "~/api/client";
-import { LocationForm } from "~/components/locations";
+import { LocationForm } from "~/features/locations";
 
 export function loader({ params }: Route.LoaderArgs) {
   const id = Number(params.id);
@@ -15,7 +16,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   if (formData.get("_action") === "delete") {
     await deleteLocation(id);
-    return redirect("/locations");
+    return redirect(routes.locations.list());
   }
   const name = formData.get("name");
   const description = formData.get("description");
@@ -29,7 +30,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         ? description.trim()
         : undefined,
   });
-  return redirect("/locations");
+  return redirect(routes.locations.list());
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
