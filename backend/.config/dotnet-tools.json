@@ -4,22 +4,30 @@
   "tools": {
     "dotnet-ef": {
       "version": "10.0.1",
-      "commands": ["dotnet-ef"],
+      "commands": [
+        "dotnet-ef"
+      ],
       "rollForward": false
     },
     "dotnet-reportgenerator-globaltool": {
-      "version": "5.5.1",
-      "commands": ["reportgenerator"],
+      "version": "5.5.2",
+      "commands": [
+        "reportgenerator"
+      ],
       "rollForward": false
     },
     "swashbuckle.aspnetcore.cli": {
       "version": "10.0.1",
-      "commands": ["swagger"],
+      "commands": [
+        "swagger"
+      ],
       "rollForward": false
     },
     "dotnet-stryker": {
       "version": "4.9.0",
-      "commands": ["dotnet-stryker"],
+      "commands": [
+        "dotnet-stryker"
+      ],
       "rollForward": false
     }
   }
