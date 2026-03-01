@@ -131,7 +131,7 @@ jobs:
       #     ls -la ${{ env.WORKFLOW_AGENT_PATH }}
       #     sudo cat ${{ env.WORKFLOW_AGENT_PATH }}super-linter.out >> $GITHUB_STEP_SUMMARY
 
-      - name: WebApi Tests
+      - name: Run tests
         run: dotnet test --no-restore --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" /p:CollectCoverage=true /p:CoverletOutput="TestResults/" /p:CoverletOutputFormat=cobertura
         continue-on-error: true
 
@@ -165,7 +165,7 @@ jobs:
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: "tests/backend/CoverageReport/Cobertura.xml"
+          filename: "**/coverage.cobertura.xml"
           badge: true
           fail_below_min: false
           format: markdown
