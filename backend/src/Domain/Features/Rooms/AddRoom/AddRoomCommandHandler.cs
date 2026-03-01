@@ -5,9 +5,9 @@ namespace ClutterStock.Domain.Features.Rooms.AddRoom;
 
 public interface IAddRoomCommandHandler : ICommandHandler
 {
-    record Command(int LocationId, string Name, string? Description);
-
     Task<Room> HandleAsync(Command command, CancellationToken cancellationToken = default);
+
+    record Command(int LocationId, string Name, string? Description);
 }
 
 public class AddRoomCommandHandler(IAppDbContext context) : IAddRoomCommandHandler
@@ -21,7 +21,6 @@ public class AddRoomCommandHandler(IAppDbContext context) : IAddRoomCommandHandl
             Name = command.Name,
             Description = command.Description,
             CreatedAtUtc = now,
-            UpdatedAtUtc = now
         };
 
         context.Rooms.Add(room);

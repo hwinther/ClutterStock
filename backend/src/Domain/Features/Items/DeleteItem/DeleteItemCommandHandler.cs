@@ -1,14 +1,13 @@
 using ClutterStock.Domain.Abstractions;
-using ClutterStock.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClutterStock.Domain.Features.Items.DeleteItem;
 
 public interface IDeleteItemCommandHandler : ICommandHandler
 {
-    record Command(int Id);
-
     Task<bool> HandleAsync(Command command, CancellationToken cancellationToken = default);
+
+    record Command(int Id);
 }
 
 public class DeleteItemCommandHandler(IAppDbContext context) : IDeleteItemCommandHandler

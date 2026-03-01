@@ -10,7 +10,9 @@ namespace EntityRecordGenerator.Tests
             var a = new Item
             {
                 Id = 0,
+#if MSSQL
                 RowVersion = [],
+#endif
                 Category = "test",
                 CreatedAtUtc = DateTime.UtcNow,
                 Description = "desc",
@@ -38,8 +40,6 @@ namespace EntityRecordGenerator.Tests
 
             Assert.Equal("notes", test3.Notes);
             Assert.NotNull(test3.Name);
-            Assert.NotNull(test3.RowVersion);
-            Assert.Equal(8, test3.RowVersion.Length);
         }
     }
 }

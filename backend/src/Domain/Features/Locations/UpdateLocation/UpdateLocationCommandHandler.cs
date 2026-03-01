@@ -1,5 +1,4 @@
 using ClutterStock.Domain.Abstractions;
-using ClutterStock.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,9 +6,9 @@ namespace ClutterStock.Domain.Features.Locations.UpdateLocation;
 
 public interface IUpdateLocationCommandHandler : ICommandHandler
 {
-    record Command(int Id, string Name, string? Description);
-
     Task<IResult> HandleAsync(Command command, CancellationToken cancellationToken = default);
+
+    record Command(int Id, string Name, string? Description);
 }
 
 public class UpdateLocationCommandHandler(IAppDbContext context) : IUpdateLocationCommandHandler

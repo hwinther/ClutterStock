@@ -12,6 +12,7 @@ public abstract class ConcurrencyEntity
     /// <example>generate(int)</example>
     public int Id { get; set; } = 0;
 
+#if MSSQL
     /// <summary>
     ///     Concurrency token. SQL Server updates this automatically on each row modification.
     ///     EF Core uses it to detect concurrent updates and throw DbUpdateConcurrencyException.
@@ -19,4 +20,5 @@ public abstract class ConcurrencyEntity
     /// <example>generate(byte[8])</example>
     [Timestamp]
     public byte[] RowVersion { get; set; } = [];
+#endif
 }

@@ -14,7 +14,7 @@ public class GetItemsQueryHandler(IAppDbContext context) : IGetItemsQueryHandler
     public async Task<IReadOnlyList<Item>> HandleAsync(CancellationToken cancellationToken = default)
     {
         return await context.Items
-            .OrderBy(i => i.Id)
-            .ToListAsync(cancellationToken);
+                            .OrderBy(i => i.Id)
+                            .ToListAsync(cancellationToken);
     }
 }

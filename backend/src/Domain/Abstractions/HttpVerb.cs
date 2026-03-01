@@ -6,5 +6,5 @@ public enum HttpVerb
     Post,
     Put,
     Patch,
-    Delete,
+    Delete
 }

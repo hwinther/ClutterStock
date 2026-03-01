@@ -5,9 +5,9 @@ namespace ClutterStock.Domain.Features.Items.AddItem;
 
 public interface IAddItemCommandHandler : ICommandHandler
 {
-    record Command(int RoomId, string Name, string? Description, string? Category, string? Notes);
-
     Task<Item> HandleAsync(Command command, CancellationToken cancellationToken = default);
+
+    record Command(int RoomId, string Name, string? Description, string? Category, string? Notes);
 }
 
 public class AddItemCommandHandler(IAppDbContext context) : IAddItemCommandHandler
@@ -23,7 +23,6 @@ public class AddItemCommandHandler(IAppDbContext context) : IAddItemCommandHandl
             Category = command.Category,
             Notes = command.Notes,
             CreatedAtUtc = now,
-            UpdatedAtUtc = now
         };
 
         context.Items.Add(item);

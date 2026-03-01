@@ -14,7 +14,7 @@ public class GetLocationsQueryHandler(IAppDbContext context) : IGetLocationsQuer
     public async Task<IReadOnlyList<Location>> HandleAsync(CancellationToken cancellationToken = default)
     {
         return await context.Locations
-            .OrderBy(l => l.Id)
-            .ToListAsync(cancellationToken);
+                            .OrderBy(l => l.Id)
+                            .ToListAsync(cancellationToken);
     }
 }

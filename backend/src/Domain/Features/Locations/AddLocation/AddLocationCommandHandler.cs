@@ -5,9 +5,9 @@ namespace ClutterStock.Domain.Features.Locations.AddLocation;
 
 public interface IAddLocationCommandHandler : ICommandHandler
 {
-    record Command(string Name, string? Description);
-
     Task<Location> HandleAsync(Command command, CancellationToken cancellationToken = default);
+
+    record Command(string Name, string? Description);
 }
 
 public class AddLocationCommandHandler(IAppDbContext context) : IAddLocationCommandHandler
@@ -20,7 +20,6 @@ public class AddLocationCommandHandler(IAppDbContext context) : IAddLocationComm
             Name = command.Name,
             Description = command.Description,
             CreatedAtUtc = now,
-            UpdatedAtUtc = now
         };
 
         context.Locations.Add(location);

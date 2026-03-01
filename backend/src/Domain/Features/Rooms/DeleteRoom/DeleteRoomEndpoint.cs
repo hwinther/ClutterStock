@@ -9,13 +9,11 @@ public class DeleteRoomEndpoint : IEndpoint
 {
     public static string Route => "/rooms/{id}";
 
-    public static Delegate Handler =>
-        (Func<int, IDeleteRoomCommandHandler, CancellationToken, Task<IResult>>)Handle;
+    public static Delegate Handler => (Func<int, IDeleteRoomCommandHandler, CancellationToken, Task<IResult>>) Handle;
 
-    private static async Task<IResult> Handle(
-        [FromRoute] int id,
-        IDeleteRoomCommandHandler handler,
-        CancellationToken cancellationToken)
+    private static async Task<IResult> Handle([FromRoute] int id,
+                                              IDeleteRoomCommandHandler handler,
+                                              CancellationToken cancellationToken)
     {
         var deleted = await handler.HandleAsync(new IDeleteRoomCommandHandler.Command(id), cancellationToken);
         return deleted ? Results.NoContent() : Results.NotFound();

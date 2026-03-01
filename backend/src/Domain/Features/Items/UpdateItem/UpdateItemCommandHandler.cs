@@ -1,5 +1,4 @@
 using ClutterStock.Domain.Abstractions;
-using ClutterStock.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,9 +6,9 @@ namespace ClutterStock.Domain.Features.Items.UpdateItem;
 
 public interface IUpdateItemCommandHandler : ICommandHandler
 {
-    record Command(int Id, int RoomId, string Name, string? Description, string? Category, string? Notes);
-
     Task<IResult> HandleAsync(Command command, CancellationToken cancellationToken = default);
+
+    record Command(int Id, int RoomId, string Name, string? Description, string? Category, string? Notes);
 }
 
 public class UpdateItemCommandHandler(IAppDbContext context) : IUpdateItemCommandHandler

@@ -9,14 +9,10 @@ public class UpdateRoomEndpoint : IEndpoint
 {
     public static string Route => "/rooms/{id}";
 
-    public static Delegate Handler =>
-        (Func<IUpdateRoomCommandHandler.Command, IUpdateRoomCommandHandler, CancellationToken, Task<IResult>>)Handle;
+    public static Delegate Handler => (Func<IUpdateRoomCommandHandler.Command, IUpdateRoomCommandHandler, CancellationToken, Task<IResult>>) Handle;
 
-    private static async Task<IResult> Handle(
-        [FromBody] IUpdateRoomCommandHandler.Command command,
-        IUpdateRoomCommandHandler handler,
-        CancellationToken cancellationToken)
-    {
-        return await handler.HandleAsync(command, cancellationToken);
-    }
+    private static async Task<IResult> Handle([FromBody] IUpdateRoomCommandHandler.Command command,
+                                              IUpdateRoomCommandHandler handler,
+                                              CancellationToken cancellationToken) =>
+        await handler.HandleAsync(command, cancellationToken);
 }

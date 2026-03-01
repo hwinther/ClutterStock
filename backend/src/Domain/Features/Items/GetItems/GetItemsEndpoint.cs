@@ -8,12 +8,10 @@ public class GetItemsEndpoint : IEndpoint
 {
     public static string Route => "/items";
 
-    public static Delegate Handler =>
-        (Func<IGetItemsQueryHandler, CancellationToken, Task<IResult>>)Handle;
+    public static Delegate Handler => (Func<IGetItemsQueryHandler, CancellationToken, Task<IResult>>) Handle;
 
-    private static async Task<IResult> Handle(
-        IGetItemsQueryHandler handler,
-        CancellationToken cancellationToken)
+    private static async Task<IResult> Handle(IGetItemsQueryHandler handler,
+                                              CancellationToken cancellationToken)
     {
         var items = await handler.HandleAsync(cancellationToken);
         return Results.Ok(items);
