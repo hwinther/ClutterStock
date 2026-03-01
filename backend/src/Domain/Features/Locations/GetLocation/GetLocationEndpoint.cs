@@ -1,5 +1,6 @@
+using ClutterStock.Contracts.Locations;
 using ClutterStock.Domain.Abstractions;
-using ClutterStock.Entities;
+using ClutterStock.Domain.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -12,13 +13,13 @@ public class GetLocationEndpoint : IEndpoint
 {
     public static string Route => "/locations/{id}";
 
-    public static Delegate Handler => (Func<int, IGetLocationQueryHandler, CancellationToken, Task<Results<Ok<Location>, NotFound>>>) Handle;
+    public static Delegate Handler => (Func<int, IGetLocationQueryHandler, CancellationToken, Task<Results<Ok<LocationResponse>, NotFound>>>) Handle;
 
-    private static async Task<Results<Ok<Location>, NotFound>> Handle([FromRoute] int id,
-                                                                      IGetLocationQueryHandler handler,
-                                                                      CancellationToken cancellationToken)
+    private static async Task<Results<Ok<LocationResponse>, NotFound>> Handle([FromRoute] int id,
+                                                                              IGetLocationQueryHandler handler,
+                                                                              CancellationToken cancellationToken)
     {
         var location = await handler.HandleAsync(new IGetLocationQueryHandler.Query(id), cancellationToken);
-        return location is null ? TypedResults.NotFound() : TypedResults.Ok(location);
+        return location is null ? TypedResults.NotFound() : TypedResults.Ok(location.ToResponse());
     }
 }

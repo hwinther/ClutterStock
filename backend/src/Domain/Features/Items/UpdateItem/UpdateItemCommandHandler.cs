@@ -1,23 +1,26 @@
+using ClutterStock.Contracts.Items;
 using ClutterStock.Domain.Abstractions;
+using ClutterStock.Domain.Extensions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClutterStock.Domain.Features.Items.UpdateItem;
 
 public interface IUpdateItemCommandHandler : ICommandHandler
 {
-    Task<IResult> HandleAsync(Command command, CancellationToken cancellationToken = default);
+    Task<Results<Ok<ItemResponse>, NotFound>> HandleAsync(Command command, CancellationToken cancellationToken = default);
 
     record Command(int Id, int RoomId, string Name, string? Description, string? Category, string? Notes);
 }
 
 public class UpdateItemCommandHandler(IAppDbContext context) : IUpdateItemCommandHandler
 {
-    public async Task<IResult> HandleAsync(IUpdateItemCommandHandler.Command command, CancellationToken cancellationToken = default)
+    public async Task<Results<Ok<ItemResponse>, NotFound>> HandleAsync(IUpdateItemCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
         var item = await context.Items.FirstOrDefaultAsync(i => i.Id == command.Id, cancellationToken);
         if (item is null)
-            return Results.NotFound();
+            return TypedResults.NotFound();
 
         item.RoomId = command.RoomId;
         item.Name = command.Name;
@@ -27,6 +30,6 @@ public class UpdateItemCommandHandler(IAppDbContext context) : IUpdateItemComman
         item.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
-        return Results.Ok(item);
+        return TypedResults.Ok(item.ToResponse());
     }
 }

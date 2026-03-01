@@ -1,5 +1,6 @@
+using ClutterStock.Contracts.Items;
 using ClutterStock.Domain.Abstractions;
-using ClutterStock.Entities;
+using ClutterStock.Domain.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -11,12 +12,13 @@ public class GetItemsEndpoint : IEndpoint
 {
     public static string Route => "/items";
 
-    public static Delegate Handler => (Func<IGetItemsQueryHandler, CancellationToken, Task<Ok<IReadOnlyList<Item>>>>) Handle;
+    public static Delegate Handler => (Func<IGetItemsQueryHandler, CancellationToken, Task<Ok<IReadOnlyList<ItemResponse>>>>) Handle;
 
-    private static async Task<Ok<IReadOnlyList<Item>>> Handle(IGetItemsQueryHandler handler,
-                                                              CancellationToken cancellationToken)
+    private static async Task<Ok<IReadOnlyList<ItemResponse>>> Handle(IGetItemsQueryHandler handler,
+                                                                      CancellationToken cancellationToken)
     {
         var items = await handler.HandleAsync(cancellationToken);
-        return TypedResults.Ok(items);
+        return TypedResults.Ok((IReadOnlyList<ItemResponse>) items.Select(i => i.ToResponse())
+                                                                  .ToList());
     }
 }
