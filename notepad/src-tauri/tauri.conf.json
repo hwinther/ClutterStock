@@ -15,7 +15,9 @@
         "label": "main",
         "width": 900,
         "height": 600,
-        "resizable": true
+        "resizable": true,
+        "transparent": true,
+        "decorations": false
       }
     ]
   }

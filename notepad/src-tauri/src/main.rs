@@ -1,5 +1,9 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::FilePath;
+use tauri::tray::TrayIconBuilder;
 
 #[tauri::command]
 async fn open_file(app: tauri::AppHandle) -> Result<Option<(String, String)>, String> {
@@ -60,6 +64,18 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![open_file, save_file])
+        .setup(|app| {
+            #[cfg(target_os = "windows")]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window_vibrancy::apply_acrylic(&window, Some((18, 18, 18, 125)));
+                }
+            }
+            let _tray = TrayIconBuilder::new()
+            .icon(app.default_window_icon().unwrap().clone())
+            .build(app)?;
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running Plate Notepad");
 }
