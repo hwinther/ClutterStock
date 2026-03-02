@@ -1,398 +1,252 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { createEditor, Editor, Text, Transforms, type Descendant } from 'slate'
-import { Slate, Editable, withReact, type RenderLeafProps } from 'slate-react'
+import React, { useCallback, useEffect } from 'react'
+import type { Value } from 'platejs'
+import {
+  BoldPlugin,
+  ItalicPlugin,
+  UnderlinePlugin,
+  StrikethroughPlugin,
+  CodePlugin,
+  SubscriptPlugin,
+  SuperscriptPlugin,
+  H1Plugin,
+  H2Plugin,
+  H3Plugin,
+  BlockquotePlugin,
+} from '@platejs/basic-nodes/react'
+import { CodeBlockPlugin } from '@platejs/code-block/react'
+import { IndentPlugin } from '@platejs/indent/react'
+import { ListStyleType, toggleList, someList } from '@platejs/list'
+import { ListPlugin } from '@platejs/list/react'
+import { KEYS } from 'platejs'
+import { Plate, PlateContent, usePlateEditor, useEditorRef, useEditorSelector } from 'platejs/react'
 
-type EditorValue = Descendant[]
-
-const initialValue: EditorValue = [
+const initialValue: Value = [
   {
-    type: 'paragraph',
+    type: 'p',
     children: [{ text: '' }],
-  } as any,
+  },
 ]
 
-type MarkFormat = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'code' | 'superscript' | 'subscript'
-type BlockFormat =
-  | 'paragraph'
-  | 'heading-one'
-  | 'heading-two'
-  | 'heading-three'
-  | 'block-quote'
-  | 'bulleted-list'
-  | 'numbered-list'
-  | 'code-block'
+const SLATE_TO_PLATE: Record<string, string> = {
+  paragraph: 'p',
+  'heading-one': 'h1',
+  'heading-two': 'h2',
+  'heading-three': 'h3',
+  'block-quote': 'blockquote',
+  'bulleted-list': 'ul',
+  'numbered-list': 'ol',
+  'list-item': 'li',
+  'code-block': 'code_block',
+}
+
+function migrateSlateToPlate(nodes: unknown): Value {
+  if (!Array.isArray(nodes)) return initialValue
+  const migrate = (node: unknown): unknown => {
+    if (!node || typeof node !== 'object') return node
+    const n = node as Record<string, unknown>
+    const type = n.type as string
+    const mapped = SLATE_TO_PLATE[type] ?? type
+    const children = Array.isArray(n.children)
+      ? (n.children as unknown[]).map(migrate)
+      : n.children
+    if (mapped !== type) {
+      return { ...n, type: mapped, children }
+    }
+    return { ...n, ...(children !== undefined && { children }) }
+  }
+  const result = nodes.map(migrate) as Value
+  return result.length > 0 ? result : initialValue
+}
+
+function toPlateValue(contents: string): Value {
+  try {
+    const parsed = JSON.parse(contents) as unknown
+    return migrateSlateToPlate(parsed)
+  } catch {
+    const lines = contents.split(/\r?\n/)
+    return lines.map((line) => ({
+      type: 'p',
+      children: [{ text: line }],
+    })) as Value
+  }
+}
 
 export interface PlateNotepadProps {
   onChange?: () => void
 }
 
 export const PlateNotepad: React.FC<PlateNotepadProps> = ({ onChange }) => {
-  const [editor] = useState(() => withReact(createEditor()))
-  const [value, setValue] = useState<EditorValue>(initialValue)
-  const [docKey, setDocKey] = useState(0)
+  const editor = usePlateEditor({
+    id: 'plate-notepad',
+    plugins: [
+      BoldPlugin,
+      ItalicPlugin,
+      UnderlinePlugin,
+      StrikethroughPlugin,
+      CodePlugin,
+      SubscriptPlugin,
+      SuperscriptPlugin,
+      H1Plugin,
+      H2Plugin,
+      H3Plugin,
+      BlockquotePlugin,
+      CodeBlockPlugin,
+      IndentPlugin.configure({
+        inject: {
+          targetPlugins: [KEYS.p, ...KEYS.heading, KEYS.blockquote, KEYS.codeBlock],
+        },
+      }),
+      ListPlugin.configure({
+        inject: {
+          targetPlugins: [KEYS.p, ...KEYS.heading, KEYS.blockquote, KEYS.codeBlock],
+        },
+      }),
+    ],
+    value: initialValue,
+  })
 
   useEffect(() => {
     const handleNew = () => {
-      setValue(initialValue)
-      setDocKey((key) => key + 1)
+      editor.tf.setValue(initialValue)
     }
 
     const handleLoad = (event: Event) => {
       const custom = event as CustomEvent<{ contents: string }>
-      try {
-        const parsed = JSON.parse(custom.detail.contents) as EditorValue
-        if (Array.isArray(parsed)) {
-          setValue(parsed)
-          setDocKey((key) => key + 1)
-          return
-        }
-      } catch {
-        const lines = custom.detail.contents.split(/\r?\n/)
-        const next: EditorValue = lines.map((line) => ({
-          type: 'paragraph',
-          children: [{ text: line }],
-        }))
-        setValue(next.length ? next : initialValue)
-        setDocKey((key) => key + 1)
-        return
-      }
+      const value = toPlateValue(custom.detail.contents)
+      editor.tf.setValue(value)
     }
 
     const handleRequestSerialize = () => {
+      const value = editor.children
       const json = JSON.stringify(value)
       window.dispatchEvent(new CustomEvent('plate-notepad:serialize', { detail: json }))
     }
 
     window.addEventListener('plate-notepad:new', handleNew)
     window.addEventListener('plate-notepad:load', handleLoad as EventListener)
-    window.addEventListener(
-      'plate-notepad:request-serialize',
-      handleRequestSerialize as EventListener,
-    )
+    window.addEventListener('plate-notepad:request-serialize', handleRequestSerialize as EventListener)
 
     return () => {
       window.removeEventListener('plate-notepad:new', handleNew)
       window.removeEventListener('plate-notepad:load', handleLoad as EventListener)
-      window.removeEventListener(
-        'plate-notepad:request-serialize',
-        handleRequestSerialize as EventListener,
-      )
+      window.removeEventListener('plate-notepad:request-serialize', handleRequestSerialize as EventListener)
     }
-  }, [value])
-
-  const handleChange = useCallback(
-    (newValue: EditorValue) => {
-      setValue(newValue)
-      onChange?.()
-    },
-    [onChange],
-  )
-
-  const isMarkActive = useCallback(
-    (format: MarkFormat) => {
-      const [match] = Editor.nodes(editor, {
-        match: (n) => Text.isText(n) && (n as any)[format] === true,
-        universal: true,
-      })
-      return !!match
-    },
-    [editor],
-  )
-
-  const toggleMark = useCallback(
-    (format: MarkFormat) => {
-      const active = isMarkActive(format)
-      if (active) {
-        Editor.removeMark(editor, format)
-      } else {
-        Editor.addMark(editor, format, true)
-      }
-    },
-    [editor, isMarkActive],
-  )
-
-  const isBlockActive = useCallback(
-    (format: BlockFormat) => {
-      if (format === 'bulleted-list' || format === 'numbered-list') {
-        const [match] = Editor.nodes(editor, {
-          match: (n) => (n as any).type === 'list-item',
-        })
-        if (!match) return false
-        const [, path] = match
-        const [parent] = Editor.parent(editor, path)
-        return (parent as any).type === format
-      }
-      const [match] = Editor.nodes(editor, {
-        match: (n) => (n as any).type === format,
-      })
-      return !!match
-    },
-    [editor],
-  )
-
-  const toggleBlock = useCallback(
-    (format: BlockFormat) => {
-      if (format === 'bulleted-list' || format === 'numbered-list') {
-        const isList = isBlockActive('bulleted-list') || isBlockActive('numbered-list')
-        const isCurrentList =
-          format === 'bulleted-list' ? isBlockActive('bulleted-list') : isBlockActive('numbered-list')
-
-        if (isCurrentList) {
-          Transforms.unwrapNodes(editor, {
-            match: (n) =>
-              (n as any).type === 'bulleted-list' || (n as any).type === 'numbered-list',
-          })
-          Transforms.setNodes(editor, { type: 'paragraph' }, { match: (n) => (n as any).type === 'list-item' })
-        } else if (isList) {
-          Transforms.setNodes(editor, { type: format }, {
-            match: (n) =>
-              (n as any).type === 'bulleted-list' || (n as any).type === 'numbered-list',
-          })
-        } else {
-          Transforms.setNodes(editor, { type: 'list-item' })
-          Transforms.wrapNodes(editor, { type: format, children: [] })
-        }
-      } else {
-        const isActive = isBlockActive(format)
-        Transforms.setNodes(editor, {
-          type: isActive ? 'paragraph' : format,
-        })
-      }
-    },
-    [editor, isBlockActive],
-  )
-
-  const renderElement = useCallback((props: any) => {
-    const { attributes, children, element } = props
-    switch (element.type) {
-      case 'heading-one':
-        return (
-          <h1 {...attributes} className="slate-heading-one">
-            {children}
-          </h1>
-        )
-      case 'heading-two':
-        return (
-          <h2 {...attributes} className="slate-heading-two">
-            {children}
-          </h2>
-        )
-      case 'heading-three':
-        return (
-          <h3 {...attributes} className="slate-heading-three">
-            {children}
-          </h3>
-        )
-      case 'block-quote':
-        return (
-          <blockquote {...attributes} className="slate-block-quote">
-            {children}
-          </blockquote>
-        )
-      case 'bulleted-list':
-        return (
-          <ul {...attributes} className="slate-bulleted-list">
-            {children}
-          </ul>
-        )
-      case 'numbered-list':
-        return (
-          <ol {...attributes} className="slate-numbered-list">
-            {children}
-          </ol>
-        )
-      case 'list-item':
-        return (
-          <li {...attributes} className="slate-list-item">
-            {children}
-          </li>
-        )
-      case 'code-block':
-        return (
-          <pre {...attributes} className="slate-code-block">
-            <code>{children}</code>
-          </pre>
-        )
-      case 'paragraph':
-      default:
-        return <p {...attributes}>{children}</p>
-    }
-  }, [])
-
-  const renderLeaf = useCallback(
-    (props: RenderLeafProps) => {
-      const { attributes, children, leaf } = props
-
-      let content = children
-      if ((leaf as any).bold) content = <strong>{content}</strong>
-      if ((leaf as any).italic) content = <em>{content}</em>
-      if ((leaf as any).underline) content = <u>{content}</u>
-      if ((leaf as any).strikethrough) content = <s>{content}</s>
-      if ((leaf as any).code) content = <code className="slate-inline-code">{content}</code>
-      if ((leaf as any).superscript) content = <sup>{content}</sup>
-      if ((leaf as any).subscript) content = <sub>{content}</sub>
-
-      return <span {...attributes}>{content}</span>
-    },
-    [],
-  )
-
-  const BlockButton = ({
-    format,
-    label,
-    title,
-  }: {
-    format: BlockFormat
-    label: string
-    title: string
-  }) => {
-    const isActive = isBlockActive(format)
-    return (
-      <button
-        type="button"
-        className={isActive ? 'active' : ''}
-        title={title}
-        onMouseDown={(e) => {
-          e.preventDefault()
-          toggleBlock(format)
-        }}
-      >
-        {label}
-      </button>
-    )
-  }
-
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey) {
-        const key = event.key.toLowerCase()
-        if (key === 'b') {
-          event.preventDefault()
-          toggleMark('bold')
-          return
-        }
-        if (key === 'i') {
-          event.preventDefault()
-          toggleMark('italic')
-          return
-        }
-        if (key === 'u') {
-          event.preventDefault()
-          toggleMark('underline')
-          return
-        }
-        if (key === 's' && !event.shiftKey) {
-          event.preventDefault()
-          toggleMark('strikethrough')
-          return
-        }
-        if (key === '`' || key === 'k') {
-          event.preventDefault()
-          toggleMark('code')
-          return
-        }
-      }
-    },
-    [toggleMark],
-  )
+  }, [editor])
 
   return (
     <div className="editor-container">
-      <Slate key={docKey} editor={editor} initialValue={value} onChange={handleChange}>
+      <Plate
+        editor={editor}
+        onChange={({ value }) => {
+          if (value && value.length > 0) onChange?.()
+        }}
+      >
         <div className="editor-toolbar">
-          <button
-            type="button"
-            className={isMarkActive('bold') ? 'active' : ''}
-            title="Bold (Ctrl+B)"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              toggleMark('bold')
-            }}
-          >
-            B
-          </button>
-          <button
-            type="button"
-            className={isMarkActive('italic') ? 'active' : ''}
-            title="Italic (Ctrl+I)"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              toggleMark('italic')
-            }}
-          >
-            I
-          </button>
-          <button
-            type="button"
-            className={isMarkActive('underline') ? 'active' : ''}
-            title="Underline (Ctrl+U)"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              toggleMark('underline')
-            }}
-          >
-            U
-          </button>
-          <button
-            type="button"
-            className={isMarkActive('strikethrough') ? 'active' : ''}
-            title="Strikethrough (Ctrl+S)"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              toggleMark('strikethrough')
-            }}
-          >
-            S̶
-          </button>
-          <button
-            type="button"
-            className={isMarkActive('code') ? 'active' : ''}
-            title="Code (Ctrl+K)"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              toggleMark('code')
-            }}
-          >
-            {'</>'}
-          </button>
-          <button
-            type="button"
-            className={isMarkActive('superscript') ? 'active' : ''}
-            title="Superscript"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              toggleMark('superscript')
-            }}
-          >
-            x²
-          </button>
-          <button
-            type="button"
-            className={isMarkActive('subscript') ? 'active' : ''}
-            title="Subscript"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              toggleMark('subscript')
-            }}
-          >
-            x₂
-          </button>
+          <MarkButton nodeType="bold" label="B" title="Bold (Ctrl+B)" />
+          <MarkButton nodeType="italic" label="I" title="Italic (Ctrl+I)" />
+          <MarkButton nodeType="underline" label="U" title="Underline (Ctrl+U)" />
+          <MarkButton nodeType="strikethrough" label="S̶" title="Strikethrough (Ctrl+S)" />
+          <MarkButton nodeType="code" label={'</>'} title="Code (Ctrl+K)" />
+          <MarkButton nodeType="superscript" label="x²" title="Superscript" />
+          <MarkButton nodeType="subscript" label="x₂" title="Subscript" />
           <span className="toolbar-sep" />
-          <BlockButton format="heading-one" label="H1" title="Heading 1" />
-          <BlockButton format="heading-two" label="H2" title="Heading 2" />
-          <BlockButton format="heading-three" label="H3" title="Heading 3" />
-          <BlockButton format="block-quote" label="“" title="Block quote" />
-          <BlockButton format="bulleted-list" label="•" title="Bullet list" />
-          <BlockButton format="numbered-list" label="1." title="Numbered list" />
-          <BlockButton format="code-block" label="```" title="Code block" />
+          <BlockButton type="h1" label="H1" title="Heading 1" />
+          <BlockButton type="h2" label="H2" title="Heading 2" />
+          <BlockButton type="h3" label="H3" title="Heading 3" />
+          <BlockButton type="blockquote" label={'"'} title="Block quote" />
+          <ListButton listStyleType={ListStyleType.Disc} label="•" title="Bullet list" />
+          <ListButton listStyleType={ListStyleType.Decimal} label="1." title="Numbered list" />
+          <BlockButton type="code_block" label="```" title="Code block" />
         </div>
-        <Editable
+        <PlateContent
+          className="editor-content"
+          placeholder="Type here..."
           renderElement={renderElement}
-          renderLeaf={renderLeaf}
-          onKeyDown={handleKeyDown}
         />
-      </Slate>
+      </Plate>
     </div>
   )
 }
 
+function MarkButton({ nodeType, label, title }: { nodeType: string; label: string; title: string }) {
+  const editor = useEditorRef()
+  const isActive = useEditorSelector(
+    (e) => !!e.marks && (e.marks as Record<string, unknown>)[nodeType] === true,
+    [nodeType],
+  )
+  const toggle = useCallback(() => {
+    if (editor) (editor.tf as unknown as Record<string, { toggle: () => void }>)[nodeType]?.toggle()
+  }, [editor, nodeType])
+
+  return (
+    <button type="button" className={isActive ? 'active' : ''} title={title} onMouseDown={(e) => { e.preventDefault(); toggle() }}>
+      {label}
+    </button>
+  )
+}
+
+function BlockButton({ type, label, title }: { type: string; label: string; title: string }) {
+  const editor = useEditorRef()
+  const isActive = useEditorSelector(
+    (e) => {
+      const [match] = Array.from(e.api.nodes({ match: (n: { type?: string }) => n.type === type }))
+      return !!match
+    },
+    [type],
+  )
+  const toggle = useCallback(() => {
+    if (editor) (editor.tf as unknown as Record<string, { toggle: () => void }>)[type]?.toggle()
+  }, [editor, type])
+  return (
+    <button type="button" className={isActive ? 'active' : ''} title={title} onMouseDown={(e) => { e.preventDefault(); toggle() }}>
+      {label}
+    </button>
+  )
+}
+
+function ListButton({ listStyleType, label, title }: { listStyleType: string; label: string; title: string }) {
+  const editor = useEditorRef()
+  const pressed = useEditorSelector((e) => someList(e, listStyleType), [listStyleType])
+
+  return (
+    <button
+      type="button"
+      className={pressed ? 'active' : ''}
+      title={title}
+      onMouseDown={(e) => {
+        e.preventDefault()
+        if (editor) toggleList(editor, { listStyleType })
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+function renderElement(props: { attributes: React.HTMLAttributes<HTMLElement>; children: React.ReactNode; element: { type?: string } }) {
+  const { attributes, children, element } = props
+  const type = element.type ?? 'p'
+
+  const className = {
+    h1: 'slate-heading-one',
+    h2: 'slate-heading-two',
+    h3: 'slate-heading-three',
+    blockquote: 'slate-block-quote',
+    code_block: 'slate-code-block',
+  }[type]
+
+  switch (type) {
+    case 'h1':
+      return <h1 {...attributes} className={className}>{children}</h1>
+    case 'h2':
+      return <h2 {...attributes} className={className}>{children}</h2>
+    case 'h3':
+      return <h3 {...attributes} className={className}>{children}</h3>
+    case 'blockquote':
+      return <blockquote {...attributes} className={className}>{children}</blockquote>
+    case 'code_block':
+      return <pre {...attributes} className={className}><code>{children}</code></pre>
+    default:
+      return <p {...attributes}>{children}</p>
+  }
+}
