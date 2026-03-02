@@ -144,3 +144,65 @@ button:disabled {
   color: #f9fafb;
   border-color: #111827;
 }
+
+.toolbar-sep {
+  width: 1px;
+  height: 1.25rem;
+  background-color: #d1d5db;
+  margin: 0 0.25rem;
+  align-self: center;
+}
+
+/* Block element styles */
+.slate-heading-one {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0.5em 0 0.25em;
+}
+
+.slate-heading-two {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+}
+
+.slate-heading-three {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+}
+
+.slate-block-quote {
+  margin: 0.5em 0;
+  padding-left: 1em;
+  border-left: 4px solid #d1d5db;
+  color: #4b5563;
+}
+
+.slate-bulleted-list,
+.slate-numbered-list {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.slate-list-item {
+  margin: 0.15em 0;
+}
+
+.slate-code-block {
+  margin: 0.5em 0;
+  padding: 0.75em 1em;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  overflow-x: auto;
+}
+
+.slate-inline-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  background-color: #f3f4f6;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
