@@ -1,14 +1,38 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import './style.css'
 import { PlateNotepad } from './PlateNotepad'
-import { openFile, saveFile } from './fileApi'
+import { getInitialFilePath, loadFileAtPath, openFile, saveFile } from './fileApi'
 
 const appWindow = getCurrentWindow()
 
 export const App: React.FC = () => {
   const [currentPath, setCurrentPath] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
+
+  // When app is launched via file association (e.g. double-click .json), open that file.
+  useEffect(() => {
+    let cancelled = false
+    getInitialFilePath()
+      .then((path) => {
+        if (cancelled || !path) return
+        return loadFileAtPath(path)
+      })
+      .then((result) => {
+        if (cancelled || !result) return
+        window.dispatchEvent(
+          new CustomEvent('plate-notepad:load', {
+            detail: { contents: result.contents },
+          }),
+        )
+        setCurrentPath(result.path)
+        setDirty(false)
+      })
+      .catch((err) => console.error('Failed to open initial file', err))
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleNew = useCallback(() => {
     window.dispatchEvent(new CustomEvent('plate-notepad:new'))
