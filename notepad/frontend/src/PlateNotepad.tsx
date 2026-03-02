@@ -26,29 +26,6 @@ export const PlateNotepad: React.FC<PlateNotepadProps> = ({ onChange }) => {
       setDocKey((key) => key + 1)
     }
 
-    const handleLoadAsPlaintext = (event: Event) => {
-      const custom = event as CustomEvent<{ contents: string }>
-      const lines = custom.detail.contents.split(/\r?\n/)
-      const next: EditorValue = lines.map((line) => ({
-        type: 'paragraph',
-        children: [{ text: line }],
-      }))
-      setValue(next.length ? next : initialValue)
-      setDocKey((key) => key + 1)
-    }
-
-    const handleRequestSerializeToPlaintext = () => {
-      const lines = value.map((node) => {
-        if ('children' in node && Array.isArray(node.children)) {
-          return node.children.map((c: any) => ('text' in c ? c.text : '')).join('')
-        }
-        return ''
-      })
-
-      const text = lines.join('\n')
-      window.dispatchEvent(new CustomEvent('plate-notepad:serialize', { detail: text }))
-    }
-
     const handleLoad = (event: Event) => {
       const custom = event as CustomEvent<{ contents: string }>
       try {

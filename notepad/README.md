@@ -39,7 +39,7 @@ npm run dev
 In another terminal, run Tauri:
 
 ```bash
-cd notepad
+cd notepad/frontend
 cargo tauri dev
 ```
 
@@ -52,7 +52,7 @@ This should open a desktop window labeled **Plate Notepad** that hosts the React
 From the `notepad` directory:
 
 ```bash
-cd notepad
+cd notepad/frontend
 cargo tauri build
 ```
 
