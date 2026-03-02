@@ -209,8 +209,8 @@
       },
       "Microsoft.OpenApi": {
         "type": "Transitive",
-        "resolved": "2.4.1",
-        "contentHash": "u7QhXCISMQuab3flasb1hoaiERmUqyWsW7tmQODyILoQ7mJV5IRGM+2KKZYo0QUfC13evEOcHAb6TPWgqEQtrw=="
+        "resolved": "3.3.1",
+        "contentHash": "8Xo42prPRLeQpcSv9sjajQQ0o+gL7rZ4HMUsNNI47iqK+bxDrIwLOGlN9fLAlTpJk0iyXRNR51zupMt5IdhU/w=="
       },
       "Microsoft.Testing.Extensions.Telemetry": {
         "type": "Transitive",
@@ -404,7 +404,7 @@
           "Domain": "[1.0.0, )",
           "Infrastructure": "[1.0.0, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.3, )",
-          "Microsoft.OpenApi": "[2.4.1, )",
+          "Microsoft.OpenApi": "[3.3.1, )",
           "Swashbuckle.AspNetCore": "[10.1.4, )",
           "Swashbuckle.AspNetCore.ReDoc": "[10.1.4, )"
         }
