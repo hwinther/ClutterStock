@@ -30,9 +30,9 @@
       },
       "Microsoft.OpenApi": {
         "type": "Direct",
-        "requested": "[2.4.1, )",
-        "resolved": "2.4.1",
-        "contentHash": "u7QhXCISMQuab3flasb1hoaiERmUqyWsW7tmQODyILoQ7mJV5IRGM+2KKZYo0QUfC13evEOcHAb6TPWgqEQtrw=="
+        "requested": "[3.4.0, )",
+        "resolved": "3.4.0",
+        "contentHash": "5XsxYU401xZqrpBuSciVhYy4vzbzXM7zuYHjZDy+5QzYf6Iw9QdpFN/2E7WLT2gBcyz0BCKUNppm7ehWNfd8zQ=="
       },
       "Swashbuckle.AspNetCore": {
         "type": "Direct",
