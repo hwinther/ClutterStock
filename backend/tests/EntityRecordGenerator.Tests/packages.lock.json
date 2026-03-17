@@ -4,9 +4,9 @@
     "net10.0": {
       "coverlet.MTP": {
         "type": "Direct",
-        "requested": "[8.0.0, )",
-        "resolved": "8.0.0",
-        "contentHash": "r3+GPhzJd8G/qlw8UFOYGECZSFvpg0j+yRTGbSr8ikk1ed4Hui+Y56ghPcBT43S3DWYKEzZLGmZ/KFS28k1zHg==",
+        "requested": "[8.0.1, )",
+        "resolved": "8.0.1",
+        "contentHash": "C7fAK5bFbfkER6aolYuafaqvKtH4i6Zzj5iBd/aA4iuF2axKU/39g3CY35luYfqs1ly4pIIrTOlRKX6x0uT4Gw==",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.1",
           "Microsoft.Extensions.DependencyInjection": "8.0.1",
