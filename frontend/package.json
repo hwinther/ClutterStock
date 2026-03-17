@@ -9,11 +9,13 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:ci": "eslint . --report-unused-disable-directives --max-warnings 0 --format json",
     "openapi-typescript": "openapi-typescript http://localhost:5155/swagger/v1/swagger.json --enum -o ./app/api/types.ts",
     "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:ci": "vitest run --coverage"
+    "test:ui": "vitest --ui",
+    "coverage": "vitest --coverage",
+    "coverage:ci": "vitest run --coverage"
   },
   "dependencies": {
     "@react-router/node": "7.13.1",
