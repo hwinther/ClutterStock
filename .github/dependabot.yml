@@ -38,6 +38,8 @@ updates:
     microsoft:
       patterns:
       - "Microsoft.*"
+      exclude-patterns:
+      - "Microsoft.OpenApi"
     swashbuckle:
       patterns:
       - "Swashbuckle.*"
