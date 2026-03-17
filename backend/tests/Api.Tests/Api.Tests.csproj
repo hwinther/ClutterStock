@@ -3,7 +3,6 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Exe</OutputType>
-    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <RootNamespace>ClutterStock.Api.Tests</RootNamespace>
   </PropertyGroup>
 
