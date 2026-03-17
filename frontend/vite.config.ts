@@ -15,8 +15,14 @@ export default defineConfig({
     setupFiles: ["./app/test/setup.ts"],
     include: ["app/**/*.{test,spec}.{ts,tsx}"],
     coverage: {
+      enabled: true,
       provider: "v8",
-      reporter: ["text", "text-summary", "html", "json", "cobertura"],
+      reporter: ["cobertura", "lcov", "html", "json"],
+    },
+    reporters: ["verbose", "github-actions", "junit", "json"],
+    outputFile: {
+      junit: "./coverage/junit-report.xml",
+      json: "./coverage/json-report.json",
     },
   },
 });
