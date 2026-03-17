@@ -90,8 +90,6 @@ updates:
     testing:
       patterns:
       - "@testing-library/*"
-      - "vitest"
-      - "@vitest/*"
       - "jsdom"
       - "msw"
     vite:
@@ -99,6 +97,8 @@ updates:
       - "vite"
       - "vite-*"
       - "@vitejs/*"
+      - "vitest"
+      - "@vitest/*"
     tanstack:
       patterns:
       - "@tanstack/*"
