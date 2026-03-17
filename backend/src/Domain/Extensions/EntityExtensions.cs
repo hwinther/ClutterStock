@@ -19,7 +19,7 @@ internal static class EntityExtensions
                 entity.Notes,
                 entity.CreatedAtUtc,
                 entity.UpdatedAtUtc);
-    }
+    } // Test change
 
     extension(Room entity)
     {
