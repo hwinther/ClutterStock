@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   pr-build:
-    uses: hwinther/reusable-workflows/.github/workflows/pr-build.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/pr-build.yml@feat/dotnet-mtp-hint-on-error
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     secrets: inherit
     with:
