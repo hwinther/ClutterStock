@@ -1,0 +1,28 @@
+name: "Opprett tag og release"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Navn på tag (f.eks. v1.2.3)"
+        required: false
+        default: "auto"
+      release_notes:
+        description: "Utgivelsesnotater for denne taggen"
+        required: false
+      create_release:
+        description: "Opprett en GitHub Release for denne taggen"
+        required: false
+        default: "true"
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    uses: hwinther/reusable-workflows/.github/workflows/tag-and-release.yml@v1
+    with:
+      tag_name: ${{ inputs.tag_name }}
+      release_notes: ${{ inputs.release_notes }}
+      create_release: ${{ inputs.create_release }}
+    secrets: inherit

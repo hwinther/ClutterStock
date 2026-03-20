@@ -3,8 +3,8 @@ name: "API Docs (GitHub Pages)"
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
     paths:
       - "backend/**"
       - ".github/workflows/api-docs-pages.yml"
