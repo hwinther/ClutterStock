@@ -2,6 +2,11 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
 export default [
   index("routes/home.tsx"),
+  route("healthz", "routes/healthz.tsx", [
+    index("routes/healthz._index.tsx"),
+    route("live", "routes/healthz.live.tsx"),
+    route("ready", "routes/healthz.ready.tsx"),
+  ]),
   route("locations", "routes/locations.tsx", [
     index("routes/locations.index.tsx"),
     route("new", "routes/locations.new.tsx"),
@@ -18,5 +23,5 @@ export default [
       ":id/rooms/:roomId/items/:itemId/edit",
       "routes/locations.rooms.items.edit.tsx",
     ),
-  ]), // Test change
+  ]),
 ] satisfies RouteConfig;
