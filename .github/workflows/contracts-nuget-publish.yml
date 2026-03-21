@@ -1,4 +1,4 @@
-name: "Publish Contracts (NuGet to GitHub Packages)"
+name: "Publish Contracts NuGet package to GitHub"
 
 on:
   workflow_dispatch:
