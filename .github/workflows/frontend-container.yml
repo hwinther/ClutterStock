@@ -44,7 +44,7 @@ jobs:
       container_image_name: ${{ needs.prepare-repository-name.outputs.repository }}/frontend
 
   build-and-push:
-    name: Build and push (${{ needs.gitversion.outputs.image_tags }})
+    name: Build and push (${{ needs.gitversion.outputs.version || needs.gitversion.outputs.git_version_semver || github.ref_name }})
     needs: gitversion
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
