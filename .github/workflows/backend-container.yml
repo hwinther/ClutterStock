@@ -3,16 +3,16 @@ name: "Backend Container"
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
     paths:
       - "backend/**"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "backend/**"
-      - ".github/workflows/backend-container.yml"
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "backend/**"
+  #     - ".github/workflows/backend-container.yml"
 
 permissions:
   contents: read
@@ -39,6 +39,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Get container image tags
+        uses: hwinther/reusable-workflows/.github/workflows/gitversion.yml@v1
+        with:
+          docker_registry: ghcr.io
+          docker_image: ${{ github.repository }}/api
+
       - name: Set up .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -58,7 +64,7 @@ jobs:
 
       - name: Publish container to GHCR
         env:
-          ContainerImageTags: ${{ github.sha }};latest
+          ContainerImageTags: ${{ steps.gitversion.outputs.dockerTags }}
         run: |
           dotnet publish ${{ env.API_PROJECT }} \
             -c Release \
