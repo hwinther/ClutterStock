@@ -84,4 +84,4 @@ jobs:
             --no-restore \
             -p:PublishProfile=DefaultContainer \
             -p:ContainerRegistry=ghcr.io \
-            -p:ContainerRepository=${{ toLower(github.repository) }}/api
+            -p:ContainerRepository=${{ needs.prepare-repository-name.outputs.repository }}/api
