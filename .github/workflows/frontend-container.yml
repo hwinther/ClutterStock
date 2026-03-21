@@ -26,18 +26,20 @@ env:
   FRONTEND_PATH: "frontend"
 
 jobs:
+  gitversion:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    uses: hwinther/reusable-workflows/.github/workflows/gitversion.yml@v1
+    with:
+      docker_registry: ghcr.io
+      docker_image: ${{ github.repository }}/frontend
+
   build-and-push:
+    needs: gitversion
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Get container image tags
-        uses: hwinther/reusable-workflows/.github/workflows/gitversion.yml@v1
-        with:
-          docker_registry: ghcr.io
-          docker_image: ${{ github.repository }}/frontend
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -55,4 +57,4 @@ jobs:
           context: ${{ env.FRONTEND_PATH }}
           file: ${{ env.FRONTEND_PATH }}/Dockerfile
           push: true
-          tags: ${{ steps.gitversion.outputs.dockerTags }}
+          tags: ${{ needs.gitversion.outputs.dockerTags }}
