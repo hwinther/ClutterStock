@@ -32,9 +32,8 @@ jobs:
       repository: ${{ steps.lower-repo.outputs.repository }}
     steps:
       - id: lower-repo
-        shell: pwsh
         run: |
-          "::set-output name=repository::$($env:GITHUB_REPOSITORY.ToLowerInvariant())"
+          echo "repository=${GITHUB_REPOSITORY@L}" >> $GITHUB_OUTPUT
 
   gitversion:
     needs: prepare-repository-name
