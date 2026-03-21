@@ -22,50 +22,12 @@ concurrency:
   group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
   cancel-in-progress: true
 
-env:
-  FRONTEND_PATH: "frontend"
-
 jobs:
-  prepare-repository-name:
-    runs-on: ubuntu-latest
-    outputs:
-      repository: ${{ steps.lower-repo.outputs.repository }}
-    steps:
-      - id: lower-repo
-        run: |
-          echo "repository=${GITHUB_REPOSITORY@L}" >> $GITHUB_OUTPUT
-
-  gitversion:
-    needs: prepare-repository-name
+  frontend_container:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
-    uses: hwinther/reusable-workflows/.github/workflows/gitversion.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/docker-container.yml@feat/backend-frontend-container-workflows
     with:
       container_registry: ghcr.io
-      container_image_name: ${{ needs.prepare-repository-name.outputs.repository }}/frontend
-
-  build-and-push:
-    name: Build and push (${{ needs.gitversion.outputs.version || needs.gitversion.outputs.git_version_semver || github.ref_name }})
-    needs: gitversion
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push container to GHCR
-        uses: docker/build-push-action@v7
-        with:
-          context: ${{ env.FRONTEND_PATH }}
-          file: ${{ env.FRONTEND_PATH }}/Dockerfile
-          push: true
-          tags: ${{ needs.gitversion.outputs.container_image_tags }}
+      container_image_name_postfix: frontend
+      build_context: frontend
+      dockerfile: Dockerfile
