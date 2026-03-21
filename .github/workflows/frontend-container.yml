@@ -26,12 +26,23 @@ env:
   FRONTEND_PATH: "frontend"
 
 jobs:
+  prepare-repository-name:
+    runs-on: ubuntu-latest
+    outputs:
+      repository: ${{ steps.lower-repo.outputs.repository }}
+    steps:
+      - id: lower-repo
+        shell: pwsh
+        run: |
+          "::set-output name=repository::$($env:GITHUB_REPOSITORY.ToLowerInvariant())"
+
   gitversion:
+    needs: prepare-repository-name
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     uses: hwinther/reusable-workflows/.github/workflows/gitversion.yml@refactor/gitversion
     with:
       container_registry: ghcr.io
-      container_image_name: ${{ github.repository }}/frontend
+      container_image_name: ${{ needs.prepare-repository-name.outputs.repository }}/frontend
 
   build-and-push:
     needs: gitversion
