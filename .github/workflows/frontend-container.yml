@@ -1,4 +1,4 @@
-name: "Frontend Container"
+name: "Publish frontend container to GHCR"
 
 on:
   workflow_dispatch:
