@@ -30,4 +30,4 @@ jobs:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
       build_context: frontend
-      dockerfile: Dockerfile
+      dockerfile: frontend/Dockerfile
