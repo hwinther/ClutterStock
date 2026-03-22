@@ -25,7 +25,7 @@ concurrency:
 jobs:
   dotnet_container:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
-    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@feat/add-version-and-source-sha-to-container-images
+    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@v1
     with:
       dotnet_version: 10.0.x
       solution_path: backend

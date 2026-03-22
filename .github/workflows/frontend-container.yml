@@ -27,7 +27,7 @@ concurrency:
 jobs:
   frontend_container:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
-    uses: hwinther/reusable-workflows/.github/workflows/docker-container.yml@feat/add-version-and-source-sha-to-container-images
+    uses: hwinther/reusable-workflows/.github/workflows/docker-container.yml@v1
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
