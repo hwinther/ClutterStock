@@ -7,12 +7,19 @@ import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { WebTracerProvider } from "@opentelemetry/sdk-trace-web";
 import { getWebAutoInstrumentations } from "@opentelemetry/auto-instrumentations-web";
 
+import { readPublicRuntimeConfigFromWindow } from "~/public-runtime-config";
+
 export function startBrowserOpenTelemetry(): void {
-  const url = import.meta.env.VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
+  const fromDocument = readPublicRuntimeConfigFromWindow();
+  const url =
+    fromDocument?.otelTracesEndpoint?.trim() ||
+    import.meta.env.VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
   if (!url) return;
 
   const serviceName =
-    import.meta.env.VITE_OTEL_SERVICE_NAME ?? "clutterstock-frontend-web";
+    fromDocument?.otelServiceName?.trim() ||
+    import.meta.env.VITE_OTEL_SERVICE_NAME ||
+    "clutterstock-frontend-web";
 
   const exporter = new OTLPTraceExporter({ url });
 

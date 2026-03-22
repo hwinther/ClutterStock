@@ -5,10 +5,54 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useRouteLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import type { PublicRuntimeConfig } from "~/public-runtime-config";
 import "./app.css";
+
+export async function loader(): Promise<{ publicRuntime: PublicRuntimeConfig }> {
+  if (globalThis.window !== undefined) {
+    const w = globalThis.window as Window & {
+      __CLUTTERSTOCK_PUBLIC__?: PublicRuntimeConfig;
+    };
+    return {
+      publicRuntime: w.__CLUTTERSTOCK_PUBLIC__ ?? {
+        otelTracesEndpoint: "",
+        otelServiceName: "",
+      },
+    };
+  }
+
+  return {
+    publicRuntime: {
+      otelTracesEndpoint:
+        process.env.PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT?.trim() ||
+        process.env.VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT?.trim() ||
+        "",
+      otelServiceName:
+        process.env.PUBLIC_OTEL_SERVICE_NAME?.trim() ||
+        process.env.VITE_OTEL_SERVICE_NAME?.trim() ||
+        "",
+    },
+  };
+}
+
+function PublicRuntimeConfigScript() {
+  const data = useRouteLoaderData("root");
+  const cfg = data?.publicRuntime;
+  if (!cfg) return null;
+  const json = JSON.stringify(cfg);
+  return (
+    <script
+      // Runs before module scripts; hydrates browser OTEL + other public runtime config.
+      dangerouslySetInnerHTML={{
+        __html: `window.__CLUTTERSTOCK_PUBLIC__=${json};`,
+      }}
+    />
+  );
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -23,7 +67,11 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({
+  children,
+}: {
+  readonly children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <head>
@@ -34,6 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <PublicRuntimeConfigScript />
         <ScrollRestoration />
         <Scripts />
       </body>

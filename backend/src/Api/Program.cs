@@ -14,7 +14,7 @@ builder.Services.AddInfrastructure(
 builder.Services.AddDomainHandlers();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
-builder.Services.AddOpenApiDocumentation(builder.Environment);
+builder.Services.AddOpenApiDocumentation();
 
 var app = builder.Build();
 
