@@ -9,11 +9,8 @@ internal static class OpenApiApplicationExtensions
         app.MapOpenApi();
         app.UseSwagger();
 
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwaggerUI(static options => { options.DocExpansion(DocExpansion.None); });
-            app.UseReDoc(static options => { options.DocumentTitle = "ClutterStock API v1"; });
-        }
+        app.UseSwaggerUI(static options => { options.DocExpansion(DocExpansion.None); });
+        app.UseReDoc(static options => { options.DocumentTitle = "ClutterStock API v1"; });
 
         return app;
     }
