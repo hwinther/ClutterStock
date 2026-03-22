@@ -68,3 +68,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run frontend-container.yml --ref "${{ steps.ref.outputs.ref }}"
+
+      - name: Dispatch api-docs-pages workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run api-docs-pages.yml --ref "${{ steps.ref.outputs.ref }}"
