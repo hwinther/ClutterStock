@@ -12,6 +12,8 @@ env:
 jobs:
   update-lockfiles:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     steps:
       - name: Checkout ${{ github.head_ref }}
