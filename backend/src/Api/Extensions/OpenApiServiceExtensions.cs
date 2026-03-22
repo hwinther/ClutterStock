@@ -14,12 +14,15 @@ internal static class OpenApiServiceExtensions
         {
             options.CustomSchemaIds(static type => type.FullName?.Replace("+", ".") ?? type.Name);
 
+            const string intro =
+                "Because \"somewhere in the garage\" isn't a location. Home inventory for your actual clutter—electronics, parts, homelab and all.";
+
             options.SwaggerDoc("v1",
                                new OpenApiInfo
                                {
                                    Version = "v1",
                                    Title = "ClutterStock API",
-                                   Description = "Because \"somewhere in the garage\" isn't a location. Home inventory for your actual clutter—electronics, parts, homelab and all."
+                                   Description = ApiBuildMetadata.BuildOpenApiDescription(intro)
                                });
 
             var apiXml = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
