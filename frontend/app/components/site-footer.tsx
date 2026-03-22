@@ -16,7 +16,12 @@ export function SiteFooter() {
 
   return (
     <footer className="border-t border-neutral-200 bg-neutral-50/80 py-3 text-center text-xs text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950/40 dark:text-neutral-400">
-      <p className="font-mono tabular-nums">{line}</p>
+      <p
+        className="font-mono tabular-nums"
+        title={sha.length > 0 ? sha : undefined}
+      >
+        {line}
+      </p>
     </footer>
   );
 }
