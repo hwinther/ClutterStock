@@ -9,6 +9,7 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { SiteFooter } from "~/components/site-footer";
 import type { PublicRuntimeConfig } from "~/public-runtime-config";
 import "./app.css";
 
@@ -80,8 +81,9 @@ export function Layout({
         <Meta />
         <Links />
       </head>
-      <body>
-        {children}
+      <body className="min-h-screen flex flex-col">
+        <div className="flex-1 flex flex-col">{children}</div>
+        <SiteFooter />
         <PublicRuntimeConfigScript />
         <ScrollRestoration />
         <Scripts />

@@ -7,6 +7,7 @@ export default [
     route("live", "routes/healthz.live.tsx"),
     route("ready", "routes/healthz.ready.tsx"),
   ]),
+  route("debug/config", "routes/debug.config.tsx"),
   route("locations", "routes/locations.tsx", [
     index("routes/locations.index.tsx"),
     route("new", "routes/locations.new.tsx"),
