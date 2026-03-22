@@ -90,6 +90,32 @@ export default function DebugConfigRoute({ loaderData }: Route.ComponentProps) {
       </header>
 
       <section className="space-y-3">
+        <h2 className="text-lg font-medium">Build (baked at image build)</h2>
+        <dl className="grid gap-2 text-sm font-mono">
+          <div className="flex flex-wrap gap-x-2 gap-y-1">
+            <dt className="text-neutral-500 shrink-0">VITE_APP_VERSION</dt>
+            <dd className="break-all">
+              {import.meta.env.VITE_APP_VERSION || (
+                <span className="text-neutral-400 dark:text-neutral-500 italic">
+                  (unset)
+                </span>
+              )}
+            </dd>
+          </div>
+          <div className="flex flex-wrap gap-x-2 gap-y-1">
+            <dt className="text-neutral-500 shrink-0">VITE_GIT_SHA</dt>
+            <dd className="break-all">
+              {import.meta.env.VITE_GIT_SHA || (
+                <span className="text-neutral-400 dark:text-neutral-500 italic">
+                  (unset)
+                </span>
+              )}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section className="space-y-3">
         <h2 className="text-lg font-medium">API base (effective)</h2>
         <dl className="grid gap-2 text-sm font-mono">
           <div className="flex flex-wrap gap-x-2 gap-y-1">
