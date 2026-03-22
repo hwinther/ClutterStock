@@ -77,7 +77,8 @@ export async function apiFetch(
   try {
     const response = await fetch(url, { ...init, headers });
     const durationMs =
-      (typeof performance !== "undefined" && typeof performance.now === "function"
+      (typeof performance !== "undefined" &&
+      typeof performance.now === "function"
         ? performance.now()
         : Date.now()) - t0;
     logListener?.({
@@ -95,9 +96,7 @@ export async function apiFetch(
     return response;
   } catch (error) {
     logListener?.({ kind: "error", method, url, error });
-    if (import.meta.env.DEV) {
-      console.error(`[api] ${method} ${url} failed`, error);
-    }
+    console.error(`[api] ${method} ${url} failed`, error);
     throw error;
   }
 }
