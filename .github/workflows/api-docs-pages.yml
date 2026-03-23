@@ -45,7 +45,7 @@ jobs:
       - name: Restore and publish API
         run: |
           dotnet restore --locked-mode ${{ env.BACKEND_SOLUTION_FILE }}
-          dotnet publish ${{ env.API_PROJECT }} -c Release --no-restore -o publish-api
+          dotnet publish ${{ env.API_PROJECT }} -c Release --no-restore -p:InformationalVersion=${{ github.ref_name }} -p:SourceRevisionId=${{ github.sha }} -o publish-api
 
       - name: Restore .NET tools
         run: dotnet tool restore
