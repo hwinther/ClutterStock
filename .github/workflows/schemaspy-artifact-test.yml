@@ -66,6 +66,7 @@ jobs:
             -db "/workspace/schemaspy.db" \
             -u "schemaspy" \
             -dp /drivers \
+            -cat "%" \
             -s main
 
       - name: Upload SchemaSpy artifact
