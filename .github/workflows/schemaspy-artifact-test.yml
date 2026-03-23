@@ -21,6 +21,7 @@ env:
   BACKEND_SOLUTION_PATH: "backend"
   BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
   SCHEMASPY_DB_PATH: "${{ github.workspace }}/backend/schemaspy.db"
+  SCHEMASPY_DB_WORKDIR: "${{ github.workspace }}/schemaspy-db"
   SCHEMASPY_OUTPUT_PATH: "${{ github.workspace }}/schemaspy-report"
   SCHEMASPY_DRIVERS_PATH: "${{ github.workspace }}/schemaspy-drivers"
   SQLITE_JDBC_VERSION: "3.49.1.0"
@@ -54,11 +55,19 @@ jobs:
           mkdir -p "${SCHEMASPY_DRIVERS_PATH}"
           curl -fsSL "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/${SQLITE_JDBC_VERSION}/sqlite-jdbc-${SQLITE_JDBC_VERSION}.jar" -o "${SCHEMASPY_DRIVERS_PATH}/sqlite-jdbc.jar"
 
+      - name: Prepare writable SQLite database directory
+        run: |
+          rm -rf "${SCHEMASPY_DB_WORKDIR}"
+          mkdir -p "${SCHEMASPY_DB_WORKDIR}"
+          cp "${SCHEMASPY_DB_PATH}" "${SCHEMASPY_DB_WORKDIR}/schemaspy.db"
+          chmod 777 "${SCHEMASPY_DB_WORKDIR}"
+          chmod 666 "${SCHEMASPY_DB_WORKDIR}/schemaspy.db"
+
       - name: Generate SchemaSpy report
         run: |
           mkdir -p "${SCHEMASPY_OUTPUT_PATH}"
           docker run --rm \
-            -v "${{ github.workspace }}/backend:/workspace" \
+            -v "${SCHEMASPY_DB_WORKDIR}:/workspace" \
             -v "${SCHEMASPY_DRIVERS_PATH}:/drivers" \
             -v "${SCHEMASPY_OUTPUT_PATH}:/output" \
             schemaspy/schemaspy:latest \
