@@ -22,6 +22,8 @@ env:
   BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
   SCHEMASPY_DB_PATH: "${{ github.workspace }}/backend/schemaspy.db"
   SCHEMASPY_OUTPUT_PATH: "${{ github.workspace }}/schemaspy-report"
+  SCHEMASPY_DRIVERS_PATH: "${{ github.workspace }}/schemaspy-drivers"
+  SQLITE_JDBC_VERSION: "3.49.1.0"
 
 jobs:
   schemaspy-report:
@@ -47,16 +49,23 @@ jobs:
           rm -f "${SCHEMASPY_DB_PATH}"
           ConnectionStrings__ClutterStock="Data Source=${SCHEMASPY_DB_PATH}" dotnet run --project src/Migrator/Migrator.csproj --no-restore
 
+      - name: Download SQLite JDBC driver for SchemaSpy
+        run: |
+          mkdir -p "${SCHEMASPY_DRIVERS_PATH}"
+          curl -fsSL "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/${SQLITE_JDBC_VERSION}/sqlite-jdbc-${SQLITE_JDBC_VERSION}.jar" -o "${SCHEMASPY_DRIVERS_PATH}/sqlite-jdbc.jar"
+
       - name: Generate SchemaSpy report
         run: |
           mkdir -p "${SCHEMASPY_OUTPUT_PATH}"
           docker run --rm \
             -v "${{ github.workspace }}/backend:/workspace" \
+            -v "${SCHEMASPY_DRIVERS_PATH}:/drivers" \
             -v "${SCHEMASPY_OUTPUT_PATH}:/output" \
             schemaspy/schemaspy:latest \
             -t sqlite-xerial \
             -db "/workspace/schemaspy.db" \
             -u "schemaspy" \
+            -dp /drivers \
             -s main
 
       - name: Upload SchemaSpy artifact
