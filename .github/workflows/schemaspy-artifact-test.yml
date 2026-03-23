@@ -1,0 +1,73 @@
+name: "SchemaSpy Report (Test Artifact)"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/schemaspy-artifact-test.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  BACKEND_SOLUTION_PATH: "backend"
+  BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
+  SCHEMASPY_DB_PATH: "${{ github.workspace }}/backend/schemaspy.db"
+  SCHEMASPY_OUTPUT_PATH: "${{ github.workspace }}/schemaspy-report"
+
+jobs:
+  schemaspy-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "${{ env.BACKEND_SOLUTION_PATH }}/**/packages.lock.json"
+
+      - name: Restore backend dependencies
+        working-directory: ${{ env.BACKEND_SOLUTION_PATH }}
+        run: dotnet restore --locked-mode ${{ env.BACKEND_SOLUTION_FILE }}
+
+      - name: Build SQLite database from migrations
+        working-directory: ${{ env.BACKEND_SOLUTION_PATH }}
+        run: |
+          rm -f "${SCHEMASPY_DB_PATH}"
+          ConnectionStrings__ClutterStock="Data Source=${SCHEMASPY_DB_PATH}" dotnet run --project src/Migrator/Migrator.csproj --no-restore
+
+      - name: Generate SchemaSpy report
+        run: |
+          mkdir -p "${SCHEMASPY_OUTPUT_PATH}"
+          docker run --rm \
+            -v "${{ github.workspace }}/backend:/workspace" \
+            -v "${SCHEMASPY_OUTPUT_PATH}:/output" \
+            schemaspy/schemaspy:latest \
+            -t sqlite-xerial \
+            -db "/workspace/schemaspy.db" \
+            -s main \
+            -o /output
+
+      - name: Upload SchemaSpy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: schemaspy-report
+          path: ${{ env.SCHEMASPY_OUTPUT_PATH }}
+          if-no-files-found: error
+
+      - name: Add artifact info to summary
+        run: |
+          echo "## SchemaSpy Report Generated" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Artifact: schemaspy-report" >> "$GITHUB_STEP_SUMMARY"
