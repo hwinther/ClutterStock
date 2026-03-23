@@ -30,9 +30,9 @@
       },
       "Microsoft.OpenApi": {
         "type": "Direct",
-        "requested": "[2.4.1, )",
-        "resolved": "2.4.1",
-        "contentHash": "u7QhXCISMQuab3flasb1hoaiERmUqyWsW7tmQODyILoQ7mJV5IRGM+2KKZYo0QUfC13evEOcHAb6TPWgqEQtrw=="
+        "requested": "[3.5.0, )",
+        "resolved": "3.5.0",
+        "contentHash": "td+/lsg+Y+XH51laKjSWIK9V8UDmh0v0oc3/+SiHgt4ZnfChnvYaLkFW4tDTTiD8oQLgw5b0Jvvyzd71hWbOOw=="
       },
       "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
         "type": "Direct",
