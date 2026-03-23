@@ -80,7 +80,7 @@ jobs:
             -s main
 
       - name: Upload SchemaSpy artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: schemaspy-report
           path: ${{ env.SCHEMASPY_OUTPUT_PATH }}
