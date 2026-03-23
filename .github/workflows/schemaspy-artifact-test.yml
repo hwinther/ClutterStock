@@ -66,6 +66,7 @@ jobs:
       - name: Generate SchemaSpy report
         run: |
           mkdir -p "${SCHEMASPY_OUTPUT_PATH}"
+          chmod 777 "${SCHEMASPY_OUTPUT_PATH}"
           docker run --rm \
             -v "${SCHEMASPY_DB_WORKDIR}:/workspace" \
             -v "${SCHEMASPY_DRIVERS_PATH}:/drivers" \
