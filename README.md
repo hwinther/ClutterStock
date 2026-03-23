@@ -1,6 +1,8 @@
 # ClutterStock
 [![Poutine - GitHub Actions SAST](https://github.com/hwinther/ClutterStock/actions/workflows/poutine.yml/badge.svg?branch=main)](https://github.com/hwinther/ClutterStock/actions/workflows/poutine.yml)
 [![API Docs (GitHub Pages)](https://github.com/hwinther/ClutterStock/actions/workflows/api-docs-pages.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/api-docs-pages.yml)
+[![Publish api container to GHCR](https://github.com/hwinther/ClutterStock/actions/workflows/api-container.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/api-container.yml)
+[![Publish frontend container to GHCR](https://github.com/hwinther/ClutterStock/actions/workflows/frontend-container.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/frontend-container.yml)
 [![Publish migrator container to GHCR](https://github.com/hwinther/ClutterStock/actions/workflows/migrator-container.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/migrator-container.yml)
 [![Opprett tag og release](https://github.com/hwinther/ClutterStock/actions/workflows/tag-and-release.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/tag-and-release.yml)
 [![Release](https://img.shields.io/github/v/release/hwinther/ClutterStock)](https://github.com/hwinther/ClutterStock/releases)
