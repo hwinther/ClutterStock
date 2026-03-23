@@ -4,7 +4,6 @@
     <RootNamespace>ClutterStock.Migrator</RootNamespace>
     <ContainerBaseImage>mcr.microsoft.com/dotnet/runtime:10.0</ContainerBaseImage>
     <ContainerRepository>clutterstock/migrator</ContainerRepository>
-    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
   </PropertyGroup>
 
   <ItemGroup>
