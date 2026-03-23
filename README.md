@@ -10,4 +10,4 @@
 
 Because “somewhere in the garage” isn’t a location. Home inventory for your actual clutter—electronics, parts, homelab and all.
 
-The API and other aspects of the system are documented on [GitHub Pages](https://hwinther.github.io/ClutterStock/)
+The API and other aspects of the system are documented on [GitHub Pages](https://hwinther.github.io/ClutterStock/) — OpenAPI / ReDoc at the site root and the [database schema (SchemaSpy)](https://hwinther.github.io/ClutterStock/database/) under `/database/`.
