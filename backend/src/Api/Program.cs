@@ -32,12 +32,15 @@ app.UseOpenApiDocumentation();
 
 app.UseHttpsRedirection();
 
-app.MapGet("/healthz", static () => Results.Text("OK", "text/plain"));
-app.MapGet("/healthz/live", static () => Results.Text("OK", "text/plain"));
+app.MapGet("/healthz", static () => Results.Text("OK", "text/plain"))
+   .WithTags("Health");
+app.MapGet("/healthz/live", static () => Results.Text("OK", "text/plain"))
+   .WithTags("Health");
 app.MapGet("/healthz/ready", static async (ApplicationContext db, CancellationToken cancellationToken) =>
     await db.Database.CanConnectAsync(cancellationToken)
         ? Results.Text("OK", "text/plain")
-        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable))
+   .WithTags("Health");
 
 app.MapDiscoveredEndpoints();
 app.MapControllers();

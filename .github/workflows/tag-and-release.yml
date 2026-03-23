@@ -64,6 +64,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run api-container.yml --ref "${{ steps.ref.outputs.ref }}"
 
+      - name: Dispatch migrator container workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run migrator-container.yml --ref "${{ steps.ref.outputs.ref }}"
+
       - name: Dispatch frontend container workflow
         env:
           GH_TOKEN: ${{ github.token }}

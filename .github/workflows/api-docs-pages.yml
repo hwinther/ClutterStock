@@ -45,7 +45,7 @@ jobs:
       - name: Restore and publish API
         run: |
           dotnet restore --locked-mode ${{ env.BACKEND_SOLUTION_FILE }}
-          dotnet publish ${{ env.API_PROJECT }} -c Release --no-restore -o publish-api
+          dotnet publish ${{ env.API_PROJECT }} -c Release --no-restore -p:InformationalVersion=${{ github.ref_name }} -p:SourceRevisionId=${{ github.sha }} -p:IncludeSourceRevisionInInformationalVersion=false -o publish-api
 
       - name: Restore .NET tools
         run: dotnet tool restore
@@ -72,4 +72,11 @@ jobs:
     environment: github-pages
     steps:
       - name: Deploy to GitHub Pages
+        id: deploy-pages
         uses: actions/deploy-pages@v4
+
+      - name: Add GitHub Pages URL to summary
+        run: |
+          echo "## API Docs Published" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: ${{ steps.deploy-pages.outputs.page_url }}" >> "$GITHUB_STEP_SUMMARY"
