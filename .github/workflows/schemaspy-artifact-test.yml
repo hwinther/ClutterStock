@@ -56,6 +56,7 @@ jobs:
             schemaspy/schemaspy:latest \
             -t sqlite-xerial \
             -db "/workspace/schemaspy.db" \
+            -u "schemaspy" \
             -s main
 
       - name: Upload SchemaSpy artifact
