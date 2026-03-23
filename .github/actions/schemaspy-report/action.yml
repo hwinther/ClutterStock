@@ -1,0 +1,87 @@
+name: SchemaSpy report
+description: >-
+  Generate an HTML database schema report with SchemaSpy from SQLite built by EF migrations
+  (Migrator), JDBC driver download, and Docker.
+
+inputs:
+  backend-path:
+    description: Path to the backend solution directory (relative to the workspace root)
+    required: false
+    default: backend
+  solution-file:
+    description: Solution file name inside backend-path
+    required: false
+    default: ClutterStock.slnx
+  migrator-project:
+    description: Path to the Migrator project (relative to backend-path)
+    required: false
+    default: src/Migrator/Migrator.csproj
+  output-path:
+    description: Absolute path where SchemaSpy writes its HTML output (directory is created)
+    required: true
+  sqlite-jdbc-version:
+    description: Maven coordinate version for org.xerial sqlite-jdbc used as SchemaSpy driver
+    required: false
+    default: "3.49.1.0"
+
+runs:
+  using: composite
+  steps:
+    - name: Restore backend dependencies
+      shell: bash
+      working-directory: ${{ github.workspace }}/${{ inputs.backend-path }}
+      run: dotnet restore --locked-mode "${{ inputs.solution-file }}"
+
+    - name: Build SQLite database from migrations
+      shell: bash
+      env:
+        SCHEMASPY_DB_PATH: ${{ github.workspace }}/${{ inputs.backend-path }}/schemaspy.db
+      working-directory: ${{ github.workspace }}/${{ inputs.backend-path }}
+      run: |
+        rm -f "${SCHEMASPY_DB_PATH}"
+        ConnectionStrings__ClutterStock="Data Source=${SCHEMASPY_DB_PATH}" \
+          dotnet run --project "${{ inputs.migrator-project }}" --no-restore
+
+    - name: Download SQLite JDBC driver for SchemaSpy
+      shell: bash
+      env:
+        SCHEMASPY_DRIVERS_PATH: ${{ github.workspace }}/schemaspy-drivers
+        SQLITE_JDBC_VERSION: ${{ inputs.sqlite-jdbc-version }}
+      run: |
+        mkdir -p "${SCHEMASPY_DRIVERS_PATH}"
+        curl -fsSL \
+          "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/${SQLITE_JDBC_VERSION}/sqlite-jdbc-${SQLITE_JDBC_VERSION}.jar" \
+          -o "${SCHEMASPY_DRIVERS_PATH}/sqlite-jdbc.jar"
+
+    - name: Prepare writable SQLite database directory
+      shell: bash
+      env:
+        SCHEMASPY_DB_PATH: ${{ github.workspace }}/${{ inputs.backend-path }}/schemaspy.db
+        SCHEMASPY_DB_WORKDIR: ${{ github.workspace }}/schemaspy-db
+      run: |
+        rm -rf "${SCHEMASPY_DB_WORKDIR}"
+        mkdir -p "${SCHEMASPY_DB_WORKDIR}"
+        cp "${SCHEMASPY_DB_PATH}" "${SCHEMASPY_DB_WORKDIR}/schemaspy.db"
+        chmod 777 "${SCHEMASPY_DB_WORKDIR}"
+        chmod 666 "${SCHEMASPY_DB_WORKDIR}/schemaspy.db"
+
+    - name: Generate SchemaSpy report
+      shell: bash
+      env:
+        SCHEMASPY_DB_WORKDIR: ${{ github.workspace }}/schemaspy-db
+        SCHEMASPY_DRIVERS_PATH: ${{ github.workspace }}/schemaspy-drivers
+        SCHEMASPY_OUTPUT_PATH: ${{ inputs.output-path }}
+      run: |
+        mkdir -p "${SCHEMASPY_OUTPUT_PATH}"
+        chmod 777 "${SCHEMASPY_OUTPUT_PATH}"
+        docker run --rm \
+          -v "${SCHEMASPY_DB_WORKDIR}:/workspace" \
+          -v "${SCHEMASPY_DRIVERS_PATH}:/drivers" \
+          -v "${SCHEMASPY_OUTPUT_PATH}:/output" \
+          schemaspy/schemaspy:latest \
+          -t sqlite-xerial \
+          -db "/workspace/schemaspy.db" \
+          -u "schemaspy" \
+          -dp /drivers \
+          -cat "%" \
+          -s main
