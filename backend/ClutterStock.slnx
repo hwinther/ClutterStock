@@ -15,6 +15,7 @@
     <Project Path="src/Entities/Entities.csproj" Id="6525a55e-95aa-4f6c-b5ac-22f44fed1ebc" />
     <Project Path="src/EntityRecordGenerator/EntityRecordGenerator.csproj" />
     <Project Path="src/Infrastructure/Infrastructure.csproj" Id="7cc1cc70-a0b3-4f19-aa14-e8bcadcc1b3c" />
+    <Project Path="src/Migrator/Migrator.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests/Directory.Build.props" />
