@@ -2,6 +2,7 @@ using ClutterStock.Api.Extensions;
 using ClutterStock.Api.Generated;
 using ClutterStock.Infrastructure.Database;
 using ClutterStock.Infrastructure.Extensions;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,9 @@ builder.Services.AddOpenTelemetryObservability(builder.Environment);
 
 builder.Services.AddInfrastructure(
     builder.Configuration.GetConnectionString("ClutterStock") ?? throw new InvalidOperationException("Missing connection string for ClutterStock in the configuration"));
+
+builder.Services.AddHealthChecks()
+       .AddDbContextCheck<ApplicationContext>(tags: ["ready"]);
 
 builder.Services.AddDomainHandlers();
 builder.Services.AddControllers();
@@ -32,14 +36,23 @@ app.UseOpenApiDocumentation();
 
 app.UseHttpsRedirection();
 
-app.MapGet("/healthz", static () => Results.Text("OK", "text/plain"))
+var liveness = new HealthCheckOptions
+{
+    Predicate = static _ => false
+};
+
+var readiness = new HealthCheckOptions
+{
+    Predicate = static r => r.Tags.Contains("ready")
+};
+
+app.MapHealthChecks("/healthz", liveness)
    .WithTags("Health");
-app.MapGet("/healthz/live", static () => Results.Text("OK", "text/plain"))
+
+app.MapHealthChecks("/healthz/live", liveness)
    .WithTags("Health");
-app.MapGet("/healthz/ready", static async (ApplicationContext db, CancellationToken cancellationToken) =>
-    await db.Database.CanConnectAsync(cancellationToken)
-        ? Results.Text("OK", "text/plain")
-        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable))
+
+app.MapHealthChecks("/healthz/ready", readiness)
    .WithTags("Health");
 
 app.MapDiscoveredEndpoints();

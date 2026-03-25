@@ -272,6 +272,32 @@
           "Microsoft.Extensions.Options": "10.0.5"
         }
       },
+      "Microsoft.Extensions.Diagnostics.HealthChecks": {
+        "type": "Transitive",
+        "resolved": "10.0.5",
+        "contentHash": "REdt95QXHscGdtw/UUgyCW2lF9DJcAOJxmebKW2IkgUjuCAdMODIi2HNOWg5utW98nm8ekgV0Gjqs/sljwwqMw==",
+        "dependencies": {
+          "Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
+          "Microsoft.Extensions.Options": "10.0.5"
+        }
+      },
+      "Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions": {
+        "type": "Transitive",
+        "resolved": "10.0.5",
+        "contentHash": "NrIMTy7dpqxAvA6kHAYH8cXID/YgeNOy0OqFKpLtkPu5X4WS/basX91UszANzVrMNRAICJ2GOnGiRxJtsRyEQw=="
+      },
+      "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": {
+        "type": "Transitive",
+        "resolved": "10.0.5",
+        "contentHash": "RtNhAwrnZcUZgi3SUMvaDVF405ZtKVR7l/6OHcqFj6JY5nT7QOdBxxULnby9dUQ6Jhnfl7cdDlMjsexfASNyjg==",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Relational": "10.0.5",
+          "Microsoft.Extensions.Diagnostics.HealthChecks": "10.0.5",
+          "Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions": "10.0.5"
+        }
+      },
       "Microsoft.Extensions.FileProviders.Abstractions": {
         "type": "Transitive",
         "resolved": "10.0.5",
@@ -525,6 +551,16 @@
           "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.15.0, 2.0.0)"
         }
       },
+      "OpenTelemetry.Instrumentation.EntityFrameworkCore": {
+        "type": "Transitive",
+        "resolved": "1.15.0-beta.1",
+        "contentHash": "N01GzP+r8lpSBiqjRX0/WjSp17r+zk6dKvGKthiASyFzF44lrJo8cA3ihXnw3p4Rnqg1mVjOYy19R6iJ84NTpg==",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration": "10.0.0",
+          "Microsoft.Extensions.Options": "10.0.0",
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "[1.15.0, 2.0.0)"
+        }
+      },
       "OpenTelemetry.Instrumentation.Http": {
         "type": "Transitive",
         "resolved": "1.15.0",
@@ -676,10 +712,12 @@
           "Domain": "[1.0.0, )",
           "Infrastructure": "[1.0.0, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.5, )",
+          "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "[10.0.5, )",
           "Microsoft.OpenApi": "[2.4.1, )",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "[1.15.0, )",
           "OpenTelemetry.Extensions.Hosting": "[1.15.0, )",
           "OpenTelemetry.Instrumentation.AspNetCore": "[1.15.1, )",
+          "OpenTelemetry.Instrumentation.EntityFrameworkCore": "[1.15.0-beta.1, )",
           "OpenTelemetry.Instrumentation.Http": "[1.15.0, )",
           "OpenTelemetry.Instrumentation.Runtime": "[1.15.0, )",
           "Swashbuckle.AspNetCore": "[10.1.5, )",
