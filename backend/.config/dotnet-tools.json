@@ -17,7 +17,7 @@
       "rollForward": false
     },
     "swashbuckle.aspnetcore.cli": {
-      "version": "10.1.6",
+      "version": "10.1.7",
       "commands": [
         "swagger"
       ],
