@@ -1,0 +1,64 @@
+name: "ReSharper CleanupCode"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.ref }}"
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_WORKING_DIRECTORY: "backend"
+  DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
+
+jobs:
+  cleanupcode:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "${{ env.DOTNET_WORKING_DIRECTORY }}/**/packages.lock.json"
+
+      - name: Restore
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+        run: dotnet restore --locked-mode "${{ env.DOTNET_SOLUTION_FILE }}"
+
+      - name: Install JetBrains.ReSharper.GlobalTools
+        run: dotnet tool install JetBrains.ReSharper.GlobalTools --global
+
+      - name: Run CleanupCode
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+        run: jb cleanupcode "${{ env.DOTNET_SOLUTION_FILE }}"
+
+      - name: Branch, commit, and open pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes after CleanupCode; skipping PR."
+            exit 0
+          fi
+          branch="jb/cleanupcode-${{ github.run_id }}"
+          git checkout -b "$branch"
+          git add -A
+          git commit -m "chore(backend): apply ReSharper CleanupCode"
+          git push origin "$branch"
+          gh pr create \
+            --base "${{ github.ref_name }}" \
+            --head "$branch" \
+            --auto-merge "squash" \
+            --title "chore(backend): apply ReSharper CleanupCode" \
+            --body "Automated changes from JetBrains [CleanupCode](https://www.jetbrains.com/help/resharper/CleanupCode.html) (\`jb cleanupcode\` via [JetBrains.ReSharper.GlobalTools](https://www.nuget.org/packages/JetBrains.ReSharper.GlobalTools))."
