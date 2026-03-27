@@ -39,7 +39,7 @@ jobs:
 
       - name: Test with Stryker
         working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
-        run: >
+        run: |
           dotnet tool install -g dotnet-stryker
           dotnet stryker --solution "${{ env.DOTNET_SOLUTION_FILE }}" --test-runner mtp --mutation-level Standard -r html -r json -r cleartext
 
