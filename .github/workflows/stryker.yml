@@ -1,0 +1,50 @@
+name: "Stryker (Mutation Testing)"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.ref }}"
+  cancel-in-progress: false
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_WORKING_DIRECTORY: "backend"
+  DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
+
+jobs:
+  dotnet-stryker:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "${{ env.DOTNET_WORKING_DIRECTORY }}/**/packages.lock.json"
+
+      - name: Restore
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+        run: dotnet restore --locked-mode "${{ env.DOTNET_SOLUTION_FILE }}"
+
+      - name: Test with Stryker
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+        run: >
+          dotnet tool install -g dotnet-stryker
+          dotnet stryker --solution "${{ env.DOTNET_SOLUTION_FILE }}" --test-runner mtp --mutation-level Standard -r html -r json -r cleartext
+
+      - name: Upload dotnet stryker report artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: github-pages-stryker-dotnet
+          path: stryker-report-dotnet
