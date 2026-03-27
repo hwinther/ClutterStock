@@ -18,6 +18,8 @@ env:
   DOTNET_VERSION: "10.0.x"
   DOTNET_WORKING_DIRECTORY: "backend"
   DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
+  STRYKER_MUTATION_LEVEL: "Standard"
+  STRYKER_EXTRA_ARGUMENTS: "--diag"
 
 jobs:
   dotnet-stryker:
@@ -42,7 +44,7 @@ jobs:
         run: |
           dotnet tool restore
           # dotnet tool install -g dotnet-stryker # For now relying on the local tool
-          dotnet stryker --solution "${{ env.DOTNET_SOLUTION_FILE }}" --test-runner mtp --mutation-level Standard -r html -r json -r cleartext
+          dotnet stryker --solution "${{ env.DOTNET_SOLUTION_FILE }}" --test-runner mtp --mutation-level ${{ env.STRYKER_MUTATION_LEVEL }} -r html -r json -r cleartext ${{ env.STRYKER_EXTRA_ARGUMENTS }}
 
           # TODO: Remove this
           ls -la
