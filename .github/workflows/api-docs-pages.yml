@@ -25,6 +25,7 @@ env:
   DOTNET_WORKING_DIRECTORY: "backend"
   DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
   API_PROJECT: "src/Api/Api.csproj"
+  API_OPENAPI_JSON: "src/Api/openapi.json"
   NODE_VERSION: "24.x"
   NODE_WORKING_DIRECTORY: "frontend"
 
@@ -54,19 +55,40 @@ jobs:
       - name: Build ReDoc static HTML
         run: |
           mkdir -p api-docs
-          npx --yes @redocly/cli build-docs openapi.json --output=api-docs/index.html
-        working-directory: ${{ github.workspace }}
-
-      - name: Generate database docs (SchemaSpy)
-        uses: ./.github/actions/schemaspy-report
-        with:
-          output-path: ${{ github.workspace }}/api-docs/database
+          npx --yes @redocly/cli build-docs ${{ env.API_OPENAPI_JSON }} --output=api-docs/index.html
 
       - name: Upload API docs artifact
         uses: actions/upload-artifact@v7
         with:
           name: github-pages-api-docs
-          path: api-docs
+          path: ${{ env.DOTNET_WORKING_DIRECTORY }}/api-docs
+
+  dotnet-database-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "${{ env.DOTNET_WORKING_DIRECTORY }}/**/packages.lock.json"
+
+      - name: Generate database docs (SchemaSpy)
+        uses: ./.github/actions/schemaspy-report
+        with:
+          working_directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+          solution_file: ${{ env.DOTNET_SOLUTION_FILE }}
+          migrator_project: src/Migrator/Migrator.csproj
+          output_path: ${{ github.workspace }}/api-docs/database
+
+      - name: Upload database docs artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: github-pages-database-docs
+          path: api-docs/database
 
   dotnet-test-and-coverage:
     runs-on: ubuntu-latest
