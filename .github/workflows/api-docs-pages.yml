@@ -22,8 +22,8 @@ concurrency:
 
 env:
   DOTNET_VERSION: "10.0.x"
-  BACKEND_SOLUTION_PATH: "backend"
-  BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
+  DOTNET_WORKING_DIRECTORY: "backend"
+  DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
   API_PROJECT: "src/Api/Api.csproj"
   NODE_VERSION: "24.x"
   NODE_WORKING_DIRECTORY: "frontend"
@@ -34,7 +34,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     defaults:
       run:
-        working-directory: ${{ env.BACKEND_SOLUTION_PATH }}
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -44,11 +44,11 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           cache: true
-          cache-dependency-path: "${{ env.BACKEND_SOLUTION_PATH }}/**/packages.lock.json"
+          cache-dependency-path: "${{ env.DOTNET_WORKING_DIRECTORY }}/**/packages.lock.json"
 
       - name: Restore and publish API
         run: |
-          dotnet restore --locked-mode ${{ env.BACKEND_SOLUTION_FILE }}
+          dotnet restore --locked-mode ${{ env.DOTNET_SOLUTION_FILE }}
           dotnet publish ${{ env.API_PROJECT }} -c Release --no-restore -p:InformationalVersion=${{ github.ref_name }} -p:SourceRevisionId=${{ github.sha }} -p:IncludeSourceRevisionInInformationalVersion=false -o publish-api
 
       - name: Restore .NET tools
@@ -57,7 +57,7 @@ jobs:
       - name: Generate OpenAPI spec (Swashbuckle CLI)
         run: |
           ConnectionStrings__ClutterStock="Data Source=:memory:" dotnet swagger tofile --output ../openapi.json publish-api/Api.dll v1
-        working-directory: ${{ github.workspace }}/${{ env.BACKEND_SOLUTION_PATH }}
+        working-directory: ${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}
 
       - name: Build ReDoc static HTML
         run: |
@@ -88,16 +88,16 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           cache: true
-          cache-dependency-path: "${{ env.BACKEND_SOLUTION_PATH }}/**/packages.lock.json"
+          cache-dependency-path: "${{ env.DOTNET_WORKING_DIRECTORY }}/**/packages.lock.json"
 
       - name: Restore
-        working-directory: ${{ env.BACKEND_SOLUTION_PATH }}
-        run: dotnet restore --locked-mode "${{ env.BACKEND_SOLUTION_FILE }}"
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+        run: dotnet restore --locked-mode "${{ env.DOTNET_SOLUTION_FILE }}"
 
       - name: Test with Coverlet (Cobertura)
-        working-directory: ${{ env.BACKEND_SOLUTION_PATH }}
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
         run: >
-          dotnet test --solution "${{ env.BACKEND_SOLUTION_FILE }}"
+          dotnet test --solution "${{ env.DOTNET_SOLUTION_FILE }}"
           --no-restore
           --coverlet
           --coverlet-output-format cobertura
@@ -106,7 +106,7 @@ jobs:
       - name: Generate coverage HTML (ReportGenerator)
         uses: danielpalme/ReportGenerator-GitHub-Action@v5
         with:
-          reports: "${{ github.workspace }}/${{ env.BACKEND_SOLUTION_PATH }}/**/TestResults/**/coverage.cobertura.xml"
+          reports: "${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}/**/TestResults/**/coverage.cobertura.xml"
           targetdir: "${{ github.workspace }}/coverage-html-dotnet"
           reporttypes: Html
 
