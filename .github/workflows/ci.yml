@@ -61,4 +61,4 @@ jobs:
           solutionWideAnalysis: true
           include: |
             **.cs
-          # ignoreIssueType: PropertyCanBeMadeInitOnly.Global
+          ignoreIssueType: NotAccessedPositionalProperty.Global,RedundantNameQualifier
