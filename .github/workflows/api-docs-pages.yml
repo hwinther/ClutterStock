@@ -180,6 +180,12 @@ jobs:
           name: github-pages-api-docs
           path: site
 
+      - name: Download dotnet database docs
+        uses: actions/download-artifact@v8
+        with:
+          name: github-pages-database-docs
+          path: site/database
+
       - name: Download dotnet coverage report
         uses: actions/download-artifact@v8
         with:
