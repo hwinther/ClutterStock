@@ -168,6 +168,7 @@ jobs:
   assemble-github-pages:
     needs:
       - build-api-docs
+      - dotnet-database-docs
       - dotnet-test-and-coverage
       - node-test-and-coverage
     runs-on: ubuntu-latest
