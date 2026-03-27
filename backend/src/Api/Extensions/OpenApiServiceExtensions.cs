@@ -35,6 +35,7 @@ internal static class OpenApiServiceExtensions
                 options.IncludeXmlComments(contractsXml);
 
             options.OperationFilter<GlobalResponsesOperationFilter>();
+            options.SwaggerGeneratorOptions.XmlCommentEndOfLine = "\n";
         });
 
         return services;

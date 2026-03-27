@@ -2,7 +2,7 @@
   "openapi": "3.0.4",
   "info": {
     "title": "ClutterStock API",
-    "description": "Because \"somewhere in the garage\" isn't a location. Home inventory for your actual clutter—electronics, parts, homelab and all.\r\n\r\n---\r\n\r\n**Version:** `0.0.0.1-local-dev`",
+    "description": "Because \"somewhere in the garage\" isn't a location. Home inventory for your actual clutter—electronics, parts, homelab and all.\n\n---\n\n**Version:** `0.0.0.1-local-dev`",
     "version": "v1"
   },
   "paths": {
