@@ -57,8 +57,10 @@ jobs:
           workingDirectory: backend
           solutionPath: "ClutterStock.slnx"
           dotnetVersion: "10.0.x"
-          failOnIssue: false
           solutionWideAnalysis: true
+          minimumReportSeverity: warning
+          failOnIssue: false
+          minimumSeverity: error
           include: |
             **.cs
           ignoreIssueType: NotAccessedPositionalProperty.Global,RedundantNameQualifier
