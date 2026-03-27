@@ -136,7 +136,7 @@ jobs:
 
       - name: Test with coverage (Cobertura)
         working-directory: ${{ env.NODE_WORKING_DIRECTORY }}
-        run: npm run coverage:ci
+        run: npm run coverage:ci -- --coverage.include=app/**/*.ts --coverage.include=app/**/*.tsx
 
       - name: Generate coverage HTML (ReportGenerator)
         uses: danielpalme/ReportGenerator-GitHub-Action@v5
