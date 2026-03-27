@@ -71,7 +71,7 @@ jobs:
           output-path: ${{ github.workspace }}/api-docs/database
 
       - name: Upload API docs artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: github-pages-api-docs
           path: api-docs
@@ -111,7 +111,7 @@ jobs:
           reporttypes: Html
 
       - name: Upload dotnet coverage report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: github-pages-coverage-dotnet
           path: coverage-html-dotnet
@@ -146,7 +146,7 @@ jobs:
           reporttypes: Html
 
       - name: Upload node coverage report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: github-pages-coverage-node
           path: coverage-html-node
@@ -160,19 +160,19 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     steps:
       - name: Download API docs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: github-pages-api-docs
           path: site
 
       - name: Download dotnet coverage report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: github-pages-coverage-dotnet
           path: site/coverage-dotnet
 
       - name: Download node coverage report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: github-pages-coverage-node
           path: site/coverage-node
