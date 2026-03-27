@@ -42,4 +42,18 @@
     <AdditionalFiles Include="../../public/Contracts/bin/$(Configuration)/net10.0/Contracts.xml" />
   </ItemGroup>
 
+  <Target Name="RestoreDotnetTools" BeforeTargets="CollectPackageReferences">
+    <Message Text="Restoring dotnet tools" Importance="High" />
+    <Exec Command="dotnet tool restore --tool-manifest $(ProjectDir)/../../.config/dotnet-tools.json" />
+  </Target>
+
+  <PropertyGroup Condition="$(Configuration)=='Debug'">
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <Target Name="CreateSwaggerJson" AfterTargets="Build" Condition="$(Configuration)=='Debug'">
+    <Message Text="Updating swagger schema file" Importance="High" />
+    <Exec EnvironmentVariables="DOTNET_ENVIRONMENT=Swagger;ASPNETCORE_ENVIRONMENT=Swagger" Command="dotnet swagger tofile --output openapi.json $(OutputPath)$(AssemblyName).dll v1" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+
 </Project>

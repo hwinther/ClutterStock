@@ -45,7 +45,7 @@ internal static class ApiBuildMetadata
             sb.AppendLine("`");
         }
 
-        return sb.ToString().TrimEnd();
+        return sb.ToString().Replace("\r\n", "\n").TrimEnd();
     }
 
     private static (string SemVer, string? Commit) ParseInformationalVersion(string? informational)
