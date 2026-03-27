@@ -50,7 +50,7 @@ jobs:
       - name: Restore and publish API
         run: |
           dotnet restore --locked-mode ${{ env.DOTNET_SOLUTION_FILE }}
-          dotnet publish ${{ env.API_PROJECT }} -c Debug --no-restore -p:InformationalVersion=${{ github.ref_name }} -p:SourceRevisionId=${{ github.sha }} -p:IncludeSourceRevisionInInformationalVersion=false
+          dotnet publish ${{ env.API_PROJECT }} -c Debug --no-restore -p:InformationalVersion=${{ github.ref_name }} -p:SourceRevisionId=${{ github.sha }}
 
       - name: Build ReDoc static HTML
         run: |

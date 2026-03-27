@@ -1,0 +1,991 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "ClutterStock API",
+    "description": "Because \"somewhere in the garage\" isn't a location. Home inventory for your actual clutter—electronics, parts, homelab and all.\r\n\r\n---\r\n\r\n**Version:** `0.0.0.1-local-dev`",
+    "version": "v1"
+  },
+  "paths": {
+    "/items": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "description": "Creates a new item.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClutterStock.Contracts.Items.AddItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClutterStock.Contracts.Items.ItemResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "description": "Returns all items.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClutterStock.Contracts.Items.ItemResponse"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{id}": {
+      "delete": {
+        "tags": [
+          "Items"
+        ],
+        "description": "Deletes an item by id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "description": "Returns a single item by id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClutterStock.Contracts.Items.ItemResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Items"
+        ],
+        "description": "Updates an existing item by id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClutterStock.Contracts.Items.UpdateItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClutterStock.Contracts.Items.ItemResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/locations": {
+      "post": {
+        "tags": [
+          "Locations"
+        ],
+        "description": "Creates a new location.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClutterStock.Contracts.Locations.AddLocationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClutterStock.Contracts.Locations.LocationResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Locations"
+        ],
+        "description": "Returns all locations.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClutterStock.Contracts.Locations.LocationResponse"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/locations/{id}": {
+      "delete": {
+        "tags": [
+          "Locations"
+        ],
+        "description": "Deletes a location by id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Locations"
+        ],
+        "description": "Returns a single location by id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClutterStock.Contracts.Locations.LocationResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Locations"
+        ],
+        "description": "Updates an existing location by id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClutterStock.Contracts.Locations.UpdateLocationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClutterStock.Contracts.Locations.LocationResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rooms": {
+      "post": {
+        "tags": [
+          "Rooms"
+        ],
+        "description": "Creates a new room.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClutterStock.Contracts.Rooms.AddRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClutterStock.Contracts.Rooms.RoomResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "description": "Returns all rooms.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClutterStock.Contracts.Rooms.RoomResponse"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rooms/{id}": {
+      "delete": {
+        "tags": [
+          "Rooms"
+        ],
+        "description": "Deletes a room by id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "description": "Returns a single room by id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClutterStock.Contracts.Rooms.RoomResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Rooms"
+        ],
+        "description": "Updates an existing room by id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClutterStock.Contracts.Rooms.UpdateRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClutterStock.Contracts.Rooms.RoomResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test": {
+      "get": {
+        "tags": [
+          "Test"
+        ],
+        "description": "Test endpoint that returns a greeting.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Microsoft.AspNetCore.Mvc.ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ClutterStock.Contracts.Items.AddItemRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "integer",
+            "description": "Id of the room this item belongs to.",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the item.",
+            "nullable": true,
+            "example": "Vintage Lamp"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional longer description.",
+            "nullable": true,
+            "example": "Brass table lamp, 1980s"
+          },
+          "category": {
+            "type": "string",
+            "description": "Optional category (e.g. Electronics, Furniture).",
+            "nullable": true,
+            "example": "Electronics"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional free-form notes.",
+            "nullable": true,
+            "example": "Needs new shade"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for creating an item."
+      },
+      "ClutterStock.Contracts.Items.ItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique identifier of the item.",
+            "format": "int32",
+            "example": 1
+          },
+          "roomId": {
+            "type": "integer",
+            "description": "Id of the room this item belongs to.",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the item.",
+            "nullable": true,
+            "example": "Vintage Lamp"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional longer description.",
+            "nullable": true,
+            "example": "Brass table lamp, 1980s"
+          },
+          "category": {
+            "type": "string",
+            "description": "Optional category (e.g. Electronics, Furniture).",
+            "nullable": true,
+            "example": "Electronics"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional free-form notes.",
+            "nullable": true,
+            "example": "Needs new shade"
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "description": "UTC timestamp when the item was created.",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "description": "UTC timestamp when the item was last updated.",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2024-02-01T14:00:00Z"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response payload for an item."
+      },
+      "ClutterStock.Contracts.Items.UpdateItemRequest": {
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "integer",
+            "description": "Id of the room this item belongs to.",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the item.",
+            "nullable": true,
+            "example": "Vintage Lamp"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional longer description.",
+            "nullable": true,
+            "example": "Brass table lamp, 1980s"
+          },
+          "category": {
+            "type": "string",
+            "description": "Optional category (e.g. Electronics, Furniture).",
+            "nullable": true,
+            "example": "Electronics"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional free-form notes.",
+            "nullable": true,
+            "example": "Needs new shade"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for updating an item. Id is provided in the route."
+      },
+      "ClutterStock.Contracts.Locations.AddLocationRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name of the location (e.g. home, office).",
+            "nullable": true,
+            "example": "Home"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the location.",
+            "nullable": true,
+            "example": "Main residence"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for creating a location."
+      },
+      "ClutterStock.Contracts.Locations.LocationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique identifier of the location.",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the location (e.g. home, office).",
+            "nullable": true,
+            "example": "Home"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the location.",
+            "nullable": true,
+            "example": "Main residence"
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "description": "UTC timestamp when the location was created.",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "description": "UTC timestamp when the location was last updated.",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2024-02-01T14:00:00Z"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response payload for a location."
+      },
+      "ClutterStock.Contracts.Locations.UpdateLocationRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name of the location (e.g. home, office).",
+            "nullable": true,
+            "example": "Home"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the location.",
+            "nullable": true,
+            "example": "Main residence"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for updating a location. Id is provided in the route."
+      },
+      "ClutterStock.Contracts.Rooms.AddRoomRequest": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "integer",
+            "description": "Id of the parent location.",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the room (e.g. Living Room, Garage).",
+            "nullable": true,
+            "example": "Living Room"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the room.",
+            "nullable": true,
+            "example": "Main gathering space"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for creating a room."
+      },
+      "ClutterStock.Contracts.Rooms.RoomResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique identifier of the room.",
+            "format": "int32",
+            "example": 1
+          },
+          "locationId": {
+            "type": "integer",
+            "description": "Id of the parent location.",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the room (e.g. Living Room, Garage).",
+            "nullable": true,
+            "example": "Living Room"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the room.",
+            "nullable": true,
+            "example": "Main gathering space"
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "description": "UTC timestamp when the room was created.",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "description": "UTC timestamp when the room was last updated.",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2024-02-01T14:00:00Z"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response payload for a room."
+      },
+      "ClutterStock.Contracts.Rooms.UpdateRoomRequest": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "integer",
+            "description": "Id of the parent location.",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the room (e.g. Living Room, Garage).",
+            "nullable": true,
+            "example": "Living Room"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the room.",
+            "nullable": true,
+            "example": "Main gathering space"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for updating a room. Id is provided in the route."
+      },
+      "Microsoft.AspNetCore.Mvc.ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Items"
+    },
+    {
+      "name": "Locations"
+    },
+    {
+      "name": "Rooms"
+    },
+    {
+      "name": "Test"
+    }
+  ]
+}
