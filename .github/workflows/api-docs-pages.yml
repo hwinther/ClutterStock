@@ -7,6 +7,7 @@ on:
       - "v*"
     paths:
       - "backend/**"
+      - "frontend/**"
       - ".github/workflows/api-docs-pages.yml"
       - ".github/actions/schemaspy-report/**"
 
@@ -21,9 +22,11 @@ concurrency:
 
 env:
   DOTNET_VERSION: "10.0.x"
-  BACKEND_SOLUTION_PATH: "backend"
-  BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
+  DOTNET_WORKING_DIRECTORY: "backend"
+  DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
   API_PROJECT: "src/Api/Api.csproj"
+  NODE_VERSION: "24.x"
+  NODE_WORKING_DIRECTORY: "frontend"
 
 jobs:
   build-api-docs:
@@ -31,7 +34,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     defaults:
       run:
-        working-directory: ${{ env.BACKEND_SOLUTION_PATH }}
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -41,11 +44,11 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           cache: true
-          cache-dependency-path: "${{ env.BACKEND_SOLUTION_PATH }}/**/packages.lock.json"
+          cache-dependency-path: "${{ env.DOTNET_WORKING_DIRECTORY }}/**/packages.lock.json"
 
       - name: Restore and publish API
         run: |
-          dotnet restore --locked-mode ${{ env.BACKEND_SOLUTION_FILE }}
+          dotnet restore --locked-mode ${{ env.DOTNET_SOLUTION_FILE }}
           dotnet publish ${{ env.API_PROJECT }} -c Release --no-restore -p:InformationalVersion=${{ github.ref_name }} -p:SourceRevisionId=${{ github.sha }} -p:IncludeSourceRevisionInInformationalVersion=false -o publish-api
 
       - name: Restore .NET tools
@@ -54,7 +57,7 @@ jobs:
       - name: Generate OpenAPI spec (Swashbuckle CLI)
         run: |
           ConnectionStrings__ClutterStock="Data Source=:memory:" dotnet swagger tofile --output ../openapi.json publish-api/Api.dll v1
-        working-directory: ${{ github.workspace }}/${{ env.BACKEND_SOLUTION_PATH }}
+        working-directory: ${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}
 
       - name: Build ReDoc static HTML
         run: |
@@ -67,13 +70,120 @@ jobs:
         with:
           output-path: ${{ github.workspace }}/api-docs/database
 
+      - name: Upload API docs artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: github-pages-api-docs
+          path: api-docs
+
+  dotnet-test-and-coverage:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "${{ env.DOTNET_WORKING_DIRECTORY }}/**/packages.lock.json"
+
+      - name: Restore
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+        run: dotnet restore --locked-mode "${{ env.DOTNET_SOLUTION_FILE }}"
+
+      - name: Test with Coverlet (Cobertura)
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+        run: >
+          dotnet test --solution "${{ env.DOTNET_SOLUTION_FILE }}"
+          --no-restore
+          --coverlet
+          --coverlet-output-format cobertura
+          --configuration Release
+
+      - name: Generate coverage HTML (ReportGenerator)
+        uses: danielpalme/ReportGenerator-GitHub-Action@v5
+        with:
+          reports: "${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}/**/TestResults/**/coverage.cobertura.xml"
+          targetdir: "${{ github.workspace }}/coverage-html-dotnet"
+          reporttypes: Html
+
+      - name: Upload dotnet coverage report artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: github-pages-coverage-dotnet
+          path: coverage-html-dotnet
+
+  node-test-and-coverage:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: "${{ env.NODE_WORKING_DIRECTORY }}/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: ${{ env.NODE_WORKING_DIRECTORY }}
+        run: npm ci
+
+      - name: Test with coverage (Cobertura)
+        working-directory: ${{ env.NODE_WORKING_DIRECTORY }}
+        run: npm run coverage:ci -- --coverage.include=app/**/*.ts --coverage.include=app/**/*.tsx
+
+      - name: Generate coverage HTML (ReportGenerator)
+        uses: danielpalme/ReportGenerator-GitHub-Action@v5
+        with:
+          reports: "${{ github.workspace }}/${{ env.NODE_WORKING_DIRECTORY }}/coverage/cobertura-coverage.xml"
+          targetdir: "${{ github.workspace }}/coverage-html-node"
+          reporttypes: Html
+
+      - name: Upload node coverage report artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: github-pages-coverage-node
+          path: coverage-html-node
+
+  assemble-github-pages:
+    needs:
+      - build-api-docs
+      - dotnet-test-and-coverage
+      - node-test-and-coverage
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Download API docs
+        uses: actions/download-artifact@v8
+        with:
+          name: github-pages-api-docs
+          path: site
+
+      - name: Download dotnet coverage report
+        uses: actions/download-artifact@v8
+        with:
+          name: github-pages-coverage-dotnet
+          path: site/coverage-dotnet
+
+      - name: Download node coverage report
+        uses: actions/download-artifact@v8
+        with:
+          name: github-pages-coverage-node
+          path: site/coverage-node
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: api-docs
+          path: site
 
   deploy:
-    needs: build-api-docs
+    needs: assemble-github-pages
     runs-on: ubuntu-latest
     environment: github-pages
     steps:
@@ -85,4 +195,9 @@ jobs:
         run: |
           echo "## API Docs Published" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- URL: ${{ steps.deploy-pages.outputs.page_url }}" >> "$GITHUB_STEP_SUMMARY"
+          base="${{ steps.deploy-pages.outputs.page_url }}"
+          base="${base%/}"
+          echo "- URL: ${base}/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dotnet coverage: ${base}/coverage-dotnet/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Node coverage: ${base}/coverage-node/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Database docs (SchemaSpy): ${base}/database/" >> "$GITHUB_STEP_SUMMARY"

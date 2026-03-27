@@ -5,10 +5,6 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - "frontend/**"
-      - "backend/**"
-      - ".github/workflows/ci.yml"
     types: [opened, reopened, labeled, synchronize, ready_for_review]
 
 permissions:
