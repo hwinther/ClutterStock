@@ -49,15 +49,7 @@ jobs:
       - name: Restore and publish API
         run: |
           dotnet restore --locked-mode ${{ env.DOTNET_SOLUTION_FILE }}
-          dotnet publish ${{ env.API_PROJECT }} -c Release --no-restore -p:InformationalVersion=${{ github.ref_name }} -p:SourceRevisionId=${{ github.sha }} -p:IncludeSourceRevisionInInformationalVersion=false -o publish-api
-
-      - name: Restore .NET tools
-        run: dotnet tool restore
-
-      - name: Generate OpenAPI spec (Swashbuckle CLI)
-        run: |
-          ConnectionStrings__ClutterStock="Data Source=:memory:" dotnet swagger tofile --output ../openapi.json publish-api/Api.dll v1
-        working-directory: ${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}
+          dotnet publish ${{ env.API_PROJECT }} -c Debug --no-restore -p:InformationalVersion=${{ github.ref_name }} -p:SourceRevisionId=${{ github.sha }} -p:IncludeSourceRevisionInInformationalVersion=false
 
       - name: Build ReDoc static HTML
         run: |
