@@ -40,7 +40,8 @@ jobs:
       - name: Test with Stryker
         working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
         run: |
-          dotnet tool install -g dotnet-stryker
+          dotnet tool restore
+          # dotnet tool install -g dotnet-stryker # For now relying on the local tool
           dotnet stryker --solution "${{ env.DOTNET_SOLUTION_FILE }}" --test-runner mtp --mutation-level Standard -r html -r json -r cleartext
 
       - name: Upload dotnet stryker report artifact
