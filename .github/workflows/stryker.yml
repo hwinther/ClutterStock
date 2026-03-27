@@ -44,6 +44,9 @@ jobs:
           # dotnet tool install -g dotnet-stryker # For now relying on the local tool
           dotnet stryker --solution "${{ env.DOTNET_SOLUTION_FILE }}" --test-runner mtp --mutation-level Standard -r html -r json -r cleartext
 
+          # TODO: Remove this
+          ls -la
+
       - name: Upload dotnet stryker report artifact
         uses: actions/upload-artifact@v7
         with:
