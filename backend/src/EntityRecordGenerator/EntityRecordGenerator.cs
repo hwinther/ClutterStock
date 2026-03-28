@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 using System.Xml;
 using Microsoft.CodeAnalysis;
@@ -125,6 +123,7 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
         // Include nullable reference type annotation (e.g. string? ) so generated records match entity shape
         if (type.NullableAnnotation == NullableAnnotation.Annotated && !result.EndsWith("?", StringComparison.Ordinal))
             result += "?";
+
         return result;
     }
 
@@ -133,17 +132,17 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
     {
         if (string.IsNullOrEmpty(value))
             return value;
+
         return value
-            .Replace("\r", "")
-            .Replace("\n", " ")
-            .Replace("  ", " ");
+               .Replace("\r", "")
+               .Replace("\n", " ")
+               .Replace("  ", " ");
     }
 
     /// <summary>Gets all data properties from the type and its base types, excluding navigation properties.</summary>
-    private static IEnumerable<IPropertySymbol> GetDataProperties(
-        INamedTypeSymbol type,
-        ImmutableArray<INamedTypeSymbol> entityTypes,
-        SymbolEqualityComparer comparer)
+    private static IEnumerable<IPropertySymbol> GetDataProperties(INamedTypeSymbol type,
+                                                                  ImmutableArray<INamedTypeSymbol> entityTypes,
+                                                                  SymbolEqualityComparer comparer)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var current = type;
@@ -161,6 +160,7 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
 
                 yield return prop;
             }
+
             current = current.BaseType;
         }
     }
@@ -170,8 +170,10 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
     {
         if (type is INamedTypeSymbol named && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
             return false;
+
         if (type.NullableAnnotation == NullableAnnotation.Annotated)
             return false;
+
         return true;
     }
 
@@ -180,6 +182,7 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
     {
         if (type is INamedTypeSymbol named && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
             return "null";
+
         switch (type.SpecialType)
         {
             case SpecialType.System_String:
@@ -200,10 +203,13 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
             case SpecialType.System_Double:
                 return "0";
         }
+
         if (type is IArrayTypeSymbol arr && arr.ElementType.SpecialType == SpecialType.System_Byte)
             return "System.Array.Empty<byte>()";
+
         if (type.IsReferenceType || type.NullableAnnotation == NullableAnnotation.Annotated)
             return "null";
+
         return "default";
     }
 
@@ -212,6 +218,7 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
     {
         if (type is INamedTypeSymbol named && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
             return "null";
+
         switch (type.SpecialType)
         {
             case SpecialType.System_String:
@@ -234,20 +241,31 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
             case SpecialType.System_DateTime:
                 return "default";
         }
+
         if (type.IsReferenceType || type.NullableAnnotation == NullableAnnotation.Annotated)
             return "null";
+
         return "default";
     }
 
-    /// <summary>Tries to get the default value expression from the entity property's initializer (e.g. = string.Empty, = 0, = []). Returns null when not available (e.g. from metadata).</summary>
+    /// <summary>
+    ///     Tries to get the default value expression from the entity property's initializer (e.g. = string.Empty, = 0, =
+    ///     []). Returns null when not available (e.g. from metadata).
+    /// </summary>
     private static string? TryGetDefaultValueFromEntityProperty(IPropertySymbol property)
     {
         if (property.DeclaringSyntaxReferences.Length == 0)
             return null;
-        var syntax = property.DeclaringSyntaxReferences[0].GetSyntax();
+
+        var syntax = property.DeclaringSyntaxReferences[0]
+                             .GetSyntax();
+
         if (syntax is not PropertyDeclarationSyntax propDecl || propDecl.Initializer == null)
             return null;
-        var valueText = propDecl.Initializer.Value.ToFullString().Trim();
+
+        var valueText = propDecl.Initializer.Value.ToFullString()
+                                .Trim();
+
         return string.IsNullOrEmpty(valueText) ? null : SanitizeForSource(valueText);
     }
 
@@ -257,6 +275,7 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
         var xml = property.GetDocumentationCommentXml(expandIncludes: true, cancellationToken: default);
         if (string.IsNullOrWhiteSpace(xml))
             return null;
+
         try
         {
             var doc = new XmlDocument();
@@ -274,64 +293,94 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
     {
         if (string.IsNullOrEmpty(value))
             return value;
+
         return value
-            .Replace("&", "&amp;")
-            .Replace("<", "&lt;")
-            .Replace(">", "&gt;")
-            .Replace("\"", "&quot;");
+               .Replace("&", "&amp;")
+               .Replace("<", "&lt;")
+               .Replace(">", "&gt;")
+               .Replace("\"", "&quot;");
     }
 
-    /// <summary>Handles special placeholders like generate(int), generate(guid), generate(utcnow). Returns null if not a special value.</summary>
+    /// <summary>
+    ///     Handles special placeholders like generate(int), generate(guid), generate(utcnow). Returns null if not a
+    ///     special value.
+    /// </summary>
     private static string? TryGetSpecialValueExpression(string trimmed, ITypeSymbol type)
     {
         if (!trimmed.StartsWith("generate(", StringComparison.OrdinalIgnoreCase))
             return null;
-        var inner = trimmed.Substring(9).Trim().TrimEnd(')').Trim();
+
+        var inner = trimmed.Substring(9)
+                           .Trim()
+                           .TrimEnd(')')
+                           .Trim();
+
         if (string.IsNullOrEmpty(inner))
             return null;
+
         if (inner.Equals("int", StringComparison.OrdinalIgnoreCase) || inner.Equals("Int32", StringComparison.OrdinalIgnoreCase))
             return "System.Random.Shared.Next()";
+
         if (inner.Equals("long", StringComparison.OrdinalIgnoreCase) || inner.Equals("Int64", StringComparison.OrdinalIgnoreCase))
             return "System.Random.Shared.NextInt64()";
+
         if (inner.Equals("guid", StringComparison.OrdinalIgnoreCase) || inner.Equals("Guid", StringComparison.OrdinalIgnoreCase))
             return "System.Guid.NewGuid()";
+
         if (inner.Equals("datetime", StringComparison.OrdinalIgnoreCase) || inner.Equals("DateTime", StringComparison.OrdinalIgnoreCase) || inner.Equals("utcnow", StringComparison.OrdinalIgnoreCase))
             return "System.DateTime.UtcNow";
+
         if (inner.Equals("datetimeoffset", StringComparison.OrdinalIgnoreCase) || inner.Equals("DateTimeOffset", StringComparison.OrdinalIgnoreCase) || inner.Equals("utcoffset", StringComparison.OrdinalIgnoreCase))
             return "System.DateTimeOffset.UtcNow";
+
         if (inner.Equals("bytes", StringComparison.OrdinalIgnoreCase) || inner.Equals("byte[]", StringComparison.OrdinalIgnoreCase))
             return "System.Array.ConvertAll(new byte[8], _ => (byte)System.Random.Shared.Next(256))";
+
         if (inner.StartsWith("byte[", StringComparison.OrdinalIgnoreCase) && inner.EndsWith("]"))
         {
-            var lenStr = inner.Substring(5, inner.Length - 6).Trim();
+            var lenStr = inner.Substring(5, inner.Length - 6)
+                              .Trim();
+
             if (int.TryParse(lenStr, out var len) && len > 0 && len <= 1024)
                 return "System.Array.ConvertAll(new byte[" + len + "], _ => (byte)System.Random.Shared.Next(256))";
         }
+
         if (inner.StartsWith("bytes[", StringComparison.OrdinalIgnoreCase) && inner.EndsWith("]"))
         {
-            var lenStr = inner.Substring(6, inner.Length - 7).Trim();
+            var lenStr = inner.Substring(6, inner.Length - 7)
+                              .Trim();
+
             if (int.TryParse(lenStr, out var len) && len > 0 && len <= 1024)
                 return "System.Array.ConvertAll(new byte[" + len + "], _ => (byte)System.Random.Shared.Next(256))";
         }
+
         return null;
     }
 
-    /// <summary>Returns a C# expression for the given example text and property type; falls back to default when example is null/empty or unparseable.</summary>
+    /// <summary>
+    ///     Returns a C# expression for the given example text and property type; falls back to default when example is
+    ///     null/empty or unparseable.
+    /// </summary>
     private static string GetExampleValueExpression(string? exampleText, ITypeSymbol type)
     {
         if (string.IsNullOrWhiteSpace(exampleText))
             return GetDefaultValueExpression(type);
+
         var trimmed = exampleText!.Trim();
         if (trimmed.Equals("null", StringComparison.OrdinalIgnoreCase))
             return "null";
+
         var special = TryGetSpecialValueExpression(trimmed, type);
         if (special != null)
             return special;
+
         if (type is INamedTypeSymbol named && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
             return "null";
+
         var typeDisplay = type.ToDisplayString();
         if (typeDisplay.IndexOf("DateTimeOffset", StringComparison.Ordinal) >= 0 && trimmed.IndexOf("generate(", StringComparison.OrdinalIgnoreCase) >= 0 && trimmed.IndexOf("DateTimeOffset", StringComparison.OrdinalIgnoreCase) >= 0)
             return "System.DateTimeOffset.UtcNow";
+
         switch (type.SpecialType)
         {
             case SpecialType.System_String:
@@ -343,30 +392,34 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
             case SpecialType.System_Int32:
                 return int.TryParse(trimmed, out var i32) ? i32.ToString() : GetDefaultValueExpression(type);
             case SpecialType.System_Int64:
-                return long.TryParse(trimmed, out var i64) ? i64.ToString() + "L" : GetDefaultValueExpression(type);
+                return long.TryParse(trimmed, out var i64) ? i64 + "L" : GetDefaultValueExpression(type);
             case SpecialType.System_Int16:
                 return short.TryParse(trimmed, out var i16) ? i16.ToString() : GetDefaultValueExpression(type);
             case SpecialType.System_UInt32:
-                return uint.TryParse(trimmed, out var u32) ? u32.ToString() + "u" : GetDefaultValueExpression(type);
+                return uint.TryParse(trimmed, out var u32) ? u32 + "u" : GetDefaultValueExpression(type);
             case SpecialType.System_UInt64:
-                return ulong.TryParse(trimmed, out var u64) ? u64.ToString() + "UL" : GetDefaultValueExpression(type);
+                return ulong.TryParse(trimmed, out var u64) ? u64 + "UL" : GetDefaultValueExpression(type);
             case SpecialType.System_Byte:
                 return byte.TryParse(trimmed, out var b) ? b.ToString() : GetDefaultValueExpression(type);
             case SpecialType.System_SByte:
                 return sbyte.TryParse(trimmed, out var sb) ? sb.ToString() : GetDefaultValueExpression(type);
             case SpecialType.System_Decimal:
-                return decimal.TryParse(trimmed, out var dec) ? dec.ToString() + "m" : GetDefaultValueExpression(type);
+                return decimal.TryParse(trimmed, out var dec) ? dec + "m" : GetDefaultValueExpression(type);
             case SpecialType.System_Single:
-                return float.TryParse(trimmed, out var f) ? f.ToString() + "f" : GetDefaultValueExpression(type);
+                return float.TryParse(trimmed, out var f) ? f + "f" : GetDefaultValueExpression(type);
             case SpecialType.System_Double:
-                return double.TryParse(trimmed, out var d) ? d.ToString() + "d" : GetDefaultValueExpression(type);
+                return double.TryParse(trimmed, out var d) ? d + "d" : GetDefaultValueExpression(type);
             case SpecialType.System_DateTime:
                 if (DateTime.TryParse(trimmed, out _))
                     return "System.DateTime.Parse(\"" + EscapeCSharpString(trimmed) + "\")";
+
                 return GetDefaultValueExpression(type);
         }
-        if (type.ToDisplayString().IndexOf("DateTimeOffset", StringComparison.Ordinal) >= 0 && DateTimeOffset.TryParse(trimmed, out _))
+
+        if (type.ToDisplayString()
+                .IndexOf("DateTimeOffset", StringComparison.Ordinal) >= 0 && DateTimeOffset.TryParse(trimmed, out _))
             return "System.DateTimeOffset.Parse(\"" + EscapeCSharpString(trimmed) + "\")";
+
         if (type is IArrayTypeSymbol arr && arr.ElementType.SpecialType == SpecialType.System_Byte)
         {
             var parts = trimmed.Split(',');
@@ -376,12 +429,16 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
                 if (byte.TryParse(part.Trim(), out var b))
                     bytes.Add(b);
             }
+
             if (bytes.Count > 0)
                 return "new byte[] { " + string.Join(", ", bytes) + " }";
+
             return GetDefaultValueExpression(type);
         }
+
         if (type.IsReferenceType || type.NullableAnnotation == NullableAnnotation.Annotated)
             return "\"" + EscapeCSharpString(trimmed) + "\"";
+
         return GetDefaultValueExpression(type);
     }
 
@@ -389,13 +446,14 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
     {
         if (string.IsNullOrEmpty(value))
             return value;
+
         return value
-            .Replace("\\", "\\\\")
-            .Replace("\"", "\\\"")
-            .Replace("\0", "\\0")
-            .Replace("\n", "\\n")
-            .Replace("\r", "\\r")
-            .Replace("\t", "\\t");
+               .Replace("\\", "\\\\")
+               .Replace("\"", "\\\"")
+               .Replace("\0", "\\0")
+               .Replace("\n", "\\n")
+               .Replace("\r", "\\r")
+               .Replace("\t", "\\t");
     }
 
     private static string GenerateSeedDataRecords(Compilation compilation, ImmutableArray<INamedTypeSymbol> entityTypes)
@@ -412,8 +470,8 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
         foreach (var type in entityTypes)
         {
             var dataProps = GetDataProperties(type, entityTypes, comparer)
-                .OrderBy(static p => p.Name switch { "Id" => 0, "RowVersion" => 1, _ => 2 })
-                .ToList();
+                            .OrderBy(static p => p.Name switch {"Id" => 0, "RowVersion" => 1, _ => 2})
+                            .ToList();
 
             if (dataProps.Count == 0)
                 continue;
@@ -424,27 +482,47 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
               .Append(crefType)
               .AppendLine("\"/>.</summary>");
 
-            sb.Append("public record ").Append(recordName).AppendLine("()");
+            sb.Append("public record ")
+              .Append(recordName)
+              .AppendLine("()");
+
             sb.AppendLine("{");
             foreach (var p in dataProps)
             {
                 var exampleText = TryGetExampleFromEntityProperty(p, compilation);
                 if (exampleText != null && !string.IsNullOrEmpty(exampleText))
-                    sb.Append("    /// <example>").Append(EscapeForXmlDoc(exampleText)).AppendLine("</example>");
+                    sb.Append("    /// <example>")
+                      .Append(EscapeForXmlDoc(exampleText))
+                      .AppendLine("</example>");
+
                 var typeStr = ToRecordTypeDisplay(p.Type);
                 var defaultFromEntity = TryGetDefaultValueFromEntityProperty(p);
                 if (IsRequired(p.Type) && defaultFromEntity == null)
                     sb.Append("    public required ");
                 else
                     sb.Append("    public ");
-                sb.Append(typeStr).Append(" ").Append(p.Name).Append(" { get; init; }");
+
+                sb.Append(typeStr)
+                  .Append(" ")
+                  .Append(p.Name)
+                  .Append(" { get; init; }");
+
                 if (defaultFromEntity != null)
-                    sb.Append(" = ").Append(defaultFromEntity).Append(";");
+                    sb.Append(" = ")
+                      .Append(defaultFromEntity)
+                      .Append(";");
+
                 sb.AppendLine();
             }
+
             sb.AppendLine();
             sb.AppendLine("    /// <summary>Creates an instance with initial values matching the &lt;example&gt; values in the property XML docs.</summary>");
-            sb.Append("    public static ").Append(recordName).Append(" CreateWithExampleValues() => new ").Append(recordName).AppendLine();
+            sb.Append("    public static ")
+              .Append(recordName)
+              .Append(" CreateWithExampleValues() => new ")
+              .Append(recordName)
+              .AppendLine();
+
             sb.AppendLine("    {");
             foreach (var p in dataProps)
             {
@@ -452,37 +530,65 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
                 var defaultFromEntity = TryGetDefaultValueFromEntityProperty(p);
                 var initValue = exampleForInit != null && exampleForInit.Length > 0
                     ? GetExampleValueExpression(exampleForInit, p.Type)
-                    : (defaultFromEntity ?? GetDefaultValueExpression(p.Type));
-                sb.Append("        ").Append(p.Name).Append(" = ").Append(initValue).AppendLine(",");
+                    : defaultFromEntity ?? GetDefaultValueExpression(p.Type);
+
+                sb.Append("        ")
+                  .Append(p.Name)
+                  .Append(" = ")
+                  .Append(initValue)
+                  .AppendLine(",");
             }
+
             sb.AppendLine("    };");
             sb.AppendLine();
             var entityFullName = SanitizeForSource("global::" + type.ToDisplayString());
             sb.AppendLine("    /// <summary>Converts this seed record to an entity instance for saving to the database.</summary>");
             sb.AppendLine("    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(self))]");
-            sb.Append("    public static implicit operator ").Append(entityFullName).Append("?(").Append(recordName).AppendLine("? self)");
+            sb.Append("    public static implicit operator ")
+              .Append(entityFullName)
+              .Append("?(")
+              .Append(recordName)
+              .AppendLine("? self)");
+
             sb.AppendLine("    {");
             sb.AppendLine("        if (self is null) return null;");
-            sb.Append("        return new ").Append(entityFullName).AppendLine();
+            sb.Append("        return new ")
+              .Append(entityFullName)
+              .AppendLine();
+
             sb.AppendLine("        {");
             foreach (var p in dataProps)
-            {
-                sb.Append("            ").Append(p.Name).Append(" = self.").Append(p.Name).AppendLine(",");
-            }
+                sb.Append("            ")
+                  .Append(p.Name)
+                  .Append(" = self.")
+                  .Append(p.Name)
+                  .AppendLine(",");
+
             sb.AppendLine("        };");
             sb.AppendLine("    }");
             sb.AppendLine();
             sb.AppendLine("    /// <summary>Converts an entity from the database to its seed record twin.</summary>");
             sb.AppendLine("    [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull(nameof(entity))]");
-            sb.Append("    public static implicit operator ").Append(recordName).Append("?(").Append(entityFullName).AppendLine("? entity)");
+            sb.Append("    public static implicit operator ")
+              .Append(recordName)
+              .Append("?(")
+              .Append(entityFullName)
+              .AppendLine("? entity)");
+
             sb.AppendLine("    {");
             sb.AppendLine("        if (entity is null) return null;");
-            sb.Append("        return new ").Append(recordName).AppendLine();
+            sb.Append("        return new ")
+              .Append(recordName)
+              .AppendLine();
+
             sb.AppendLine("        {");
             foreach (var p in dataProps)
-            {
-                sb.Append("            ").Append(p.Name).Append(" = entity.").Append(p.Name).AppendLine(",");
-            }
+                sb.Append("            ")
+                  .Append(p.Name)
+                  .Append(" = entity.")
+                  .Append(p.Name)
+                  .AppendLine(",");
+
             sb.AppendLine("        };");
             sb.AppendLine("    }");
             sb.AppendLine("}");

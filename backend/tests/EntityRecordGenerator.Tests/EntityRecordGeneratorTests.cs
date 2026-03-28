@@ -155,19 +155,16 @@ public class EntityRecordGeneratorTests
     /// <summary>Gets metadata references from the current runtime so BCL types (DateTime, ICollection, etc.) resolve.</summary>
     private static MetadataReference[] GetMetadataReferences()
     {
-        var types = new Type[]
+        var types = new[]
         {
-            typeof(object),
-            typeof(DateTime),
-            typeof(List<>),
-            typeof(System.Collections.Generic.ICollection<>)
+            typeof(object), typeof(DateTime), typeof(List<>), typeof(ICollection<>)
         };
 
         return types
-            .Select(static t => t.Assembly)
-            .Distinct()
-            .Where(static a => !string.IsNullOrEmpty(a.Location))
-            .Select(static a => MetadataReference.CreateFromFile(a.Location))
-            .ToArray();
+               .Select(static t => t.Assembly)
+               .Distinct()
+               .Where(static a => !string.IsNullOrEmpty(a.Location))
+               .Select(static a => MetadataReference.CreateFromFile(a.Location))
+               .ToArray();
     }
 }
