@@ -10,7 +10,7 @@ on:
         type: boolean
         default: true
       sync_git_blame_ignore_revs:
-        description: "Step 2 only: after the CleanupCode PR is merged to the default branch (squash/rebase changes the SHA). Checks out origin default branch, finds commits whose message contains the CleanupCode subject, updates .git-blame-ignore-revs, commits, and pushes."
+        description: "Step 2 only: after the CleanupCode PR is merged to the default branch (squash/rebase changes the SHA). Updates .git-blame-ignore-revs from default-branch history and opens a PR (direct push to main is blocked by branch rules)."
         type: boolean
         default: false
 
@@ -92,6 +92,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sync .git-blame-ignore-revs from CleanupCode commits on default branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -169,6 +171,9 @@ jobs:
             exit 0
           fi
 
+          branch="jb/blame-ignore-revs-${{ github.run_id }}"
+          git checkout -b "$branch"
+
           mv "$tmpfile" "$ignore_file"
           git add "$ignore_file"
 
@@ -183,4 +188,9 @@ jobs:
             git commit -m "$msg"
           fi
 
-          git push origin "HEAD:${default_branch}"
+          git push origin "$branch"
+          gh pr create \
+            --base "$default_branch" \
+            --head "$branch" \
+            --title "chore: sync .git-blame-ignore-revs with ReSharper CleanupCode commits" \
+            --body "Adds missing full SHAs for commits on \`${default_branch}\` whose message contains the CleanupCode subject (see workflow \`CLEANUPCODE_COMMIT_SUBJECT\`). Merge after required checks (e.g. pr-build, CodeQL) pass."
