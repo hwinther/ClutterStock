@@ -56,8 +56,13 @@ jobs:
           git add -A
           git commit -m "chore(backend): apply ReSharper CleanupCode"
           git push origin "$branch"
+          base_branch="${{ github.ref_name }}"
+          if [ -z "$(git ls-remote origin "refs/heads/${base_branch}")" ]; then
+            base_branch="${{ github.event.repository.default_branch }}"
+            echo "::warning::Trigger branch ${{ github.ref_name }} is not on origin; opening PR against ${base_branch}."
+          fi
           gh pr create \
-            --base "${{ github.ref_name }}" \
+            --base "$base_branch" \
             --head "$branch" \
             --title "chore(backend): apply ReSharper CleanupCode" \
             --body "Automated changes from JetBrains [CleanupCode](https://www.jetbrains.com/help/resharper/CleanupCode.html) (\`jb cleanupcode\` via [JetBrains.ReSharper.GlobalTools](https://www.nuget.org/packages/JetBrains.ReSharper.GlobalTools))."
