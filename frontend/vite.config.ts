@@ -19,6 +19,7 @@ export default defineConfig({
       enabled: true,
       provider: "v8",
       reporter: ["cobertura", "lcov", "html", "json"],
+      exclude: ["node_modules", "app/api/types.ts", "app/constants", "test/**"],
     },
     reporters: ["verbose", "github-actions", "junit", "json"],
     outputFile: {

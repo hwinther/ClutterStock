@@ -32,3 +32,35 @@ jobs:
       dotnet_version: "10.0.x"
       dotnet_working_directory: "backend"
       dotnet_solution_file: "ClutterStock.slnx"
+
+  inspect-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+          cache: true
+          cache-dependency-path: "backend/**/packages.lock.json"
+
+      - name: Restore
+        working-directory: backend
+        run: dotnet restore --locked-mode "ClutterStock.slnx"
+
+      - name: Inspect code
+        uses: muno92/resharper_inspectcode@v1
+        #if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
+        with:
+          workingDirectory: backend
+          solutionPath: "ClutterStock.slnx"
+          dotnetVersion: "10.0.x"
+          solutionWideAnalysis: true
+          minimumReportSeverity: warning
+          failOnIssue: false
+          minimumSeverity: error
+          include: |
+            **.cs
+          ignoreIssueType: NotAccessedPositionalProperty.Global,RedundantNameQualifier

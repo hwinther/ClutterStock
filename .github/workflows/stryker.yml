@@ -1,0 +1,86 @@
+name: "Stryker (Mutation Testing)"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, labeled, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.ref }}"
+  cancel-in-progress: false
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_WORKING_DIRECTORY: "backend"
+  DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
+  NODE_VERSION: "24.x"
+  NODE_WORKING_DIRECTORY: "frontend"
+  STRYKER_MUTATION_LEVEL: "Standard"
+  STRYKER_EXTRA_ARGUMENTS: "--diag"
+
+jobs:
+  dotnet-stryker:
+    runs-on: ubuntu-latest
+    if: false # Does not seem to work with MTP as of 4.14.0 - the process never completes
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: "${{ env.DOTNET_WORKING_DIRECTORY }}/**/packages.lock.json"
+
+      - name: Restore
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+        run: dotnet restore --locked-mode "${{ env.DOTNET_SOLUTION_FILE }}"
+
+      - name: Test with Stryker
+        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
+        run: |
+          dotnet tool restore
+          # dotnet tool install -g dotnet-stryker # For now relying on the local tool
+          dotnet stryker --solution "${{ env.DOTNET_SOLUTION_FILE }}" --test-runner mtp --mutation-level ${{ env.STRYKER_MUTATION_LEVEL }} -r html -r json -r cleartext ${{ env.STRYKER_EXTRA_ARGUMENTS }}
+
+          # TODO: Remove this
+          ls -la
+
+      - name: Upload dotnet stryker report artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: github-pages-stryker-dotnet
+          path: stryker-report-dotnet
+
+  node-stryker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: "${{ env.NODE_WORKING_DIRECTORY }}/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: ${{ env.NODE_WORKING_DIRECTORY }}
+        run: npm ci
+
+      - name: Run Stryker
+        working-directory: ${{ env.NODE_WORKING_DIRECTORY }}
+        run: npm run stryker
+
+      - name: Upload frontend Stryker report artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: github-pages-stryker-node
+          path: "${{ env.NODE_WORKING_DIRECTORY }}/reports/mutation"

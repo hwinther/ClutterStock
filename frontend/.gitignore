@@ -8,3 +8,11 @@ build/
 
 # Coverage report files
 coverage/
+
+# stryker temp files
+.stryker-tmp
+reports/
+
+# Playwright
+playwright-report/
+test-results/
