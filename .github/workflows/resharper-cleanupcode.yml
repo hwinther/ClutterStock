@@ -5,14 +5,13 @@ name: "ReSharper CleanupCode"
 on:
   workflow_dispatch:
     inputs:
-      run_cleanupcode:
-        description: "Step 1: run CleanupCode and open a PR. Merge that PR to the default branch (squash/rebase is fine) before enabling sync in a separate dispatch."
-        type: boolean
-        default: true
-      sync_git_blame_ignore_revs:
-        description: "Step 2 only: after the CleanupCode PR is merged to the default branch (squash/rebase changes the SHA). Updates .git-blame-ignore-revs from default-branch history and opens a PR (direct push to main is blocked by branch rules)."
-        type: boolean
-        default: false
+      mode:
+        description: "CleanupCode — run jb cleanupcode and open a PR. Blame ignore revs — after CleanupCode has merged to the default branch (squash/rebase), sync .git-blame-ignore-revs from that history and open a PR. Both runs CleanupCode then sync (sync still only sees SHAs already on the default branch)."
+        type: choice
+        default: cleanupcode
+        options:
+          - cleanupcode
+          - blame-ignore-revs
 
 permissions:
   contents: write
@@ -30,7 +29,7 @@ env:
 
 jobs:
   cleanupcode:
-    if: ${{ github.event.inputs.run_cleanupcode == 'true' }}
+    if: ${{ github.event.inputs.mode == 'cleanupcode' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -81,8 +80,7 @@ jobs:
             --body "Automated changes from JetBrains [CleanupCode](https://www.jetbrains.com/help/resharper/CleanupCode.html) (\`jb cleanupcode\` via [JetBrains.ReSharper.GlobalTools](https://www.nuget.org/packages/JetBrains.ReSharper.GlobalTools))."
 
   sync-git-blame-ignore-revs:
-    needs: [cleanupcode]
-    if: ${{ always() && github.event.inputs.sync_git_blame_ignore_revs == 'true' && (needs.cleanupcode.result == 'success' || needs.cleanupcode.result == 'skipped') }}
+    if: ${{ github.event.inputs.mode == 'blame-ignore-revs' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (full history)
