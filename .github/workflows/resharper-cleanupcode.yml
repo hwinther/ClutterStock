@@ -59,6 +59,5 @@ jobs:
           gh pr create \
             --base "${{ github.ref_name }}" \
             --head "$branch" \
-            --auto-merge "squash" \
             --title "chore(backend): apply ReSharper CleanupCode" \
             --body "Automated changes from JetBrains [CleanupCode](https://www.jetbrains.com/help/resharper/CleanupCode.html) (\`jb cleanupcode\` via [JetBrains.ReSharper.GlobalTools](https://www.nuget.org/packages/JetBrains.ReSharper.GlobalTools))."
