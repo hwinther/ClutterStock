@@ -4,7 +4,7 @@ using System.Text;
 namespace ClutterStock.Api.Extensions;
 
 /// <summary>
-/// Reads version info baked in at publish (<c>InformationalVersion</c>, <c>SourceRevisionId</c>).
+///     Reads version info baked in at publish (<c>InformationalVersion</c>, <c>SourceRevisionId</c>).
 /// </summary>
 internal static class ApiBuildMetadata
 {
@@ -12,7 +12,8 @@ internal static class ApiBuildMetadata
     {
         var asm = Assembly.GetExecutingAssembly();
         var informational =
-            asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+               ?.InformationalVersion;
 
         var (semver, commitFromInfo) = ParseInformationalVersion(informational);
         var commit = !string.IsNullOrWhiteSpace(commitFromInfo)
@@ -45,7 +46,9 @@ internal static class ApiBuildMetadata
             sb.AppendLine("`");
         }
 
-        return sb.ToString().Replace("\r\n", "\n").TrimEnd();
+        return sb.ToString()
+                 .Replace("\r\n", "\n")
+                 .TrimEnd();
     }
 
     private static (string SemVer, string? Commit) ParseInformationalVersion(string? informational)
@@ -58,8 +61,12 @@ internal static class ApiBuildMetadata
         if (plus < 0)
             return (trimmed, null);
 
-        var semver = trimmed[..plus].Trim();
-        var commit = trimmed[(plus + 1)..].Trim();
+        var semver = trimmed[..plus]
+            .Trim();
+
+        var commit = trimmed[(plus + 1)..]
+            .Trim();
+
         return (semver, string.IsNullOrEmpty(commit) ? null : commit);
     }
 
