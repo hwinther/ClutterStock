@@ -2,6 +2,11 @@ name: "Publish migrator container to GHCR"
 
 on:
   workflow_dispatch:
+    inputs:
+      grype_fail_build:
+        description: "Fail the build if Grype finds vulnerabilities"
+        type: boolean
+        default: true
   push:
     tags:
       - "v*"
@@ -31,3 +36,4 @@ jobs:
       project_file: src/Migrator/Migrator.csproj
       container_registry: ghcr.io
       container_image_name_postfix: migrator
+      grype_fail_build: ${{ github.event_name != 'workflow_dispatch' || fromJSON(github.event.inputs.grype_fail_build || 'true') }}

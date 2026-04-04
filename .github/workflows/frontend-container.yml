@@ -2,6 +2,11 @@ name: "Publish frontend container to GHCR"
 
 on:
   workflow_dispatch:
+    inputs:
+      grype_fail_build:
+        description: "Fail the build if Grype finds vulnerabilities"
+        type: boolean
+        default: true
   push:
     tags:
       - "v*"
@@ -35,3 +40,4 @@ jobs:
       container_image_name_postfix: frontend
       build_context: frontend
       dockerfile: frontend/Dockerfile
+      grype_fail_build: ${{ github.event_name != 'workflow_dispatch' || fromJSON(github.event.inputs.grype_fail_build || 'true') }}
