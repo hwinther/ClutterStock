@@ -36,4 +36,4 @@ jobs:
       project_file: src/Migrator/Migrator.csproj
       container_registry: ghcr.io
       container_image_name_postfix: migrator
-      grype_fail_build: ${{ github.event.inputs.grype_fail_build || true }}
+      grype_fail_build: ${{ github.event_name != 'workflow_dispatch' || fromJSON(github.event.inputs.grype_fail_build || 'true') }}

@@ -42,4 +42,4 @@ jobs:
       project_file: src/Api/Api.csproj
       container_registry: ghcr.io
       container_image_name_postfix: api
-      grype_fail_build: ${{ github.event.inputs.grype_fail_build || true }}
+      grype_fail_build: ${{ github.event_name != 'workflow_dispatch' || fromJSON(github.event.inputs.grype_fail_build || 'true') }}
