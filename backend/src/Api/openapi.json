@@ -6,7 +6,7 @@
     "version": "v1"
   },
   "paths": {
-    "/items": {
+    "/api/v1/items": {
       "post": {
         "tags": [
           "Items"
@@ -77,7 +77,7 @@
         }
       }
     },
-    "/items/{id}": {
+    "/api/v1/items/{id}": {
       "delete": {
         "tags": [
           "Items"
@@ -208,7 +208,7 @@
         }
       }
     },
-    "/locations": {
+    "/api/v1/locations": {
       "post": {
         "tags": [
           "Locations"
@@ -279,7 +279,7 @@
         }
       }
     },
-    "/locations/{id}": {
+    "/api/v1/locations/{id}": {
       "delete": {
         "tags": [
           "Locations"
@@ -410,7 +410,7 @@
         }
       }
     },
-    "/rooms": {
+    "/api/v1/rooms": {
       "post": {
         "tags": [
           "Rooms"
@@ -481,7 +481,7 @@
         }
       }
     },
-    "/rooms/{id}": {
+    "/api/v1/rooms/{id}": {
       "delete": {
         "tags": [
           "Rooms"
@@ -612,7 +612,7 @@
         }
       }
     },
-    "/test": {
+    "/api/v1/test": {
       "get": {
         "tags": [
           "Test"

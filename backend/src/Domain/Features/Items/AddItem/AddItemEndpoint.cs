@@ -21,6 +21,6 @@ public class AddItemEndpoint : IEndpoint
     {
         var command = new IAddItemCommandHandler.Command(request.RoomId, request.Name, request.Description, request.Category, request.Notes);
         var item = await handler.HandleAsync(command, cancellationToken);
-        return TypedResults.Created($"/items/{item.Id}", item.ToResponse());
+        return TypedResults.Created($"{ApiRoutePrefix.V1}/items/{item.Id}", item.ToResponse());
     }
 }
