@@ -1,4 +1,4 @@
-import { getApiBase } from "~/constants/api";
+import { apiPathVersionPrefix, getApiBase } from "~/constants/api";
 
 export type ApiHeaderProvider = () =>
   | HeadersInit
@@ -40,7 +40,8 @@ export function setApiLogListener(
 function resolveUrl(path: string): string {
   const base = getApiBase().replace(/\/$/, "");
   const p = path.replace(/^\//, "");
-  return base ? `${base}/${p}` : `/${p}`;
+  const versionedPath = `${apiPathVersionPrefix}/${p}`;
+  return base ? `${base}/${versionedPath}` : `/${versionedPath}`;
 }
 
 /**

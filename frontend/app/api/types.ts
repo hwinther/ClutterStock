@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/items": {
+    "/api/v1/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -82,7 +82,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/items/{id}": {
+    "/api/v1/items/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -214,7 +214,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/locations": {
+    "/api/v1/locations": {
         parameters: {
             query?: never;
             header?: never;
@@ -292,7 +292,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/locations/{id}": {
+    "/api/v1/locations/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -424,7 +424,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/rooms": {
+    "/api/v1/rooms": {
         parameters: {
             query?: never;
             header?: never;
@@ -502,7 +502,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/rooms/{id}": {
+    "/api/v1/rooms/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -634,7 +634,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/test": {
+    "/api/v1/test": {
         parameters: {
             query?: never;
             header?: never;

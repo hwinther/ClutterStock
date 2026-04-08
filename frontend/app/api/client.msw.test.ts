@@ -14,7 +14,7 @@ describe("API client (MSW + openapi-msw)", () => {
 
   it("allows per-test overrides with typed handlers", async () => {
     testApiServer.use(
-      apiHttp.get("/locations", ({ response }) =>
+      apiHttp.get("/api/v1/locations", ({ response }) =>
         response(200).json([
           { id: 1, name: "Home", description: "Main", createdAtUtc: "2024-01-01T00:00:00Z" },
         ]),
@@ -32,7 +32,7 @@ describe("API client (MSW + openapi-msw)", () => {
 
   it("getLocation parses JSON when the handler returns 200", async () => {
     testApiServer.use(
-      apiHttp.get("/locations/{id}", ({ params, response }) =>
+      apiHttp.get("/api/v1/locations/{id}", ({ params, response }) =>
         response(200).json({
           id: Number(params.id),
           name: "Garage",

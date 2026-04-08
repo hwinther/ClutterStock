@@ -4,9 +4,13 @@ const { getApiBaseMock } = vi.hoisted(() => ({
   getApiBaseMock: vi.fn(() => ""),
 }));
 
-vi.mock("~/constants/api", () => ({
-  getApiBase: () => getApiBaseMock(),
-}));
+vi.mock("~/constants/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("~/constants/api")>();
+  return {
+    ...actual,
+    getApiBase: () => getApiBaseMock(),
+  };
+});
 
 import { apiFetch, setApiHeaderProvider, setApiLogListener } from "./http";
 
@@ -42,7 +46,7 @@ describe("apiFetch", () => {
     getApiBaseMock.mockReturnValue("");
     await apiFetch("locations");
     expect(fetchMock).toHaveBeenCalledWith(
-      "/locations",
+      "/api/v1/locations",
       expect.objectContaining({ headers: expect.any(Headers) }),
     );
   });
@@ -51,7 +55,7 @@ describe("apiFetch", () => {
     getApiBaseMock.mockReturnValue("https://api.example.com");
     await apiFetch("/foo/bar");
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.example.com/foo/bar",
+      "https://api.example.com/api/v1/foo/bar",
       expect.anything(),
     );
   });
@@ -60,7 +64,7 @@ describe("apiFetch", () => {
     getApiBaseMock.mockReturnValue("https://api.example.com/");
     await apiFetch("x");
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.example.com/x",
+      "https://api.example.com/api/v1/x",
       expect.anything(),
     );
   });
