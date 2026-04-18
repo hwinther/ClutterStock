@@ -8,8 +8,10 @@ on:
     paths:
       - "backend/**"
       - "frontend/**"
+      - "docs/**"
       - ".github/workflows/api-docs-pages.yml"
       - ".github/actions/schemaspy-report/**"
+      - ".github/scripts/render_project_docs.py"
 
 concurrency:
   group: "${{ github.workflow }} @ ${{ github.ref }}"
@@ -23,6 +25,9 @@ env:
   API_OPENAPI_JSON: "src/Api/openapi.json"
   NODE_VERSION: "24.x"
   NODE_WORKING_DIRECTORY: "frontend"
+  # Pin Docker images used by build-project-docs (render_project_docs.py).
+  PANDOC_DOCKER_IMAGE: "pandoc/minimal:3.7"
+  MERMAID_CLI_DOCKER_IMAGE: "minlag/mermaid-cli:11.4.2"
 
 jobs:
   build-api-docs:
@@ -94,6 +99,26 @@ jobs:
         with:
           name: github-pages-database-docs
           path: api-docs/database
+
+  build-project-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Render project docs (Pandoc + Mermaid CLI)
+        run: python3 .github/scripts/render_project_docs.py
+
+      - name: Upload project docs artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-pages-project-docs
+          path: api-docs/project-docs
 
   dotnet-test-and-coverage:
     runs-on: ubuntu-latest
@@ -184,6 +209,7 @@ jobs:
     needs:
       - build-api-docs
       - dotnet-database-docs
+      - build-project-docs
       - dotnet-test-and-coverage
       - node-test-and-coverage
     runs-on: ubuntu-latest
@@ -203,6 +229,12 @@ jobs:
         with:
           name: github-pages-database-docs
           path: site/database
+
+      - name: Download project docs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages-project-docs
+          path: site/project-docs
 
       - name: Download dotnet coverage report
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -244,3 +276,4 @@ jobs:
           echo "- Dotnet coverage: ${base}/coverage-dotnet/" >> "$GITHUB_STEP_SUMMARY"
           echo "- Node coverage: ${base}/coverage-node/" >> "$GITHUB_STEP_SUMMARY"
           echo "- Database docs (SchemaSpy): ${base}/database/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Project docs (Markdown): ${base}/project-docs/" >> "$GITHUB_STEP_SUMMARY"
