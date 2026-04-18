@@ -479,8 +479,8 @@
       },
       "Microsoft.OpenApi": {
         "type": "Transitive",
-        "resolved": "2.4.1",
-        "contentHash": "u7QhXCISMQuab3flasb1hoaiERmUqyWsW7tmQODyILoQ7mJV5IRGM+2KKZYo0QUfC13evEOcHAb6TPWgqEQtrw=="
+        "resolved": "3.5.2",
+        "contentHash": "AaNCVaa5lH1p+zkYySMYfsig1+UKZykqW8UPcEg60z+xch7wqAXAtBeLn9JZpf52zEaalcPa7SSA++Os53hBiw=="
       },
       "Microsoft.Testing.Extensions.Telemetry": {
         "type": "Transitive",
@@ -723,7 +723,7 @@
           "Infrastructure": "[1.0.0, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.6, )",
           "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "[10.0.6, )",
-          "Microsoft.OpenApi": "[2.4.1, )",
+          "Microsoft.OpenApi": "[3.5.2, )",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "[1.15.2, )",
           "OpenTelemetry.Extensions.Hosting": "[1.15.2, )",
           "OpenTelemetry.Instrumentation.AspNetCore": "[1.15.1, )",
