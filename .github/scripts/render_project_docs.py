@@ -79,6 +79,9 @@ def _docker_pandoc(
 ) -> None:
     in_posix = input_rel.as_posix()
     out_posix = output_rel.as_posix()
+    # pandoc/* Docker images set ENTRYPOINT to pandoc; do not pass "pandoc" again
+    # or the first input path becomes the literal word "pandoc" and fails with
+    # withBinaryFile: does not exist.
     cmd = [
         "docker",
         "run",
@@ -88,7 +91,6 @@ def _docker_pandoc(
         "-w",
         "/data",
         image,
-        "pandoc",
         in_posix,
         "-o",
         out_posix,
