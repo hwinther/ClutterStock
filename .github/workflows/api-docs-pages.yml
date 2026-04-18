@@ -321,6 +321,9 @@ jobs:
 
   deploy:
     needs: assemble-github-pages
+    # When optional jobs are skipped, assemble still runs via always(); without an
+    # explicit if here, deploy can be incorrectly skipped (actions/runner#2205).
+    if: always() && needs.assemble-github-pages.result == 'success' && !cancelled()
     runs-on: ubuntu-latest
     environment: github-pages
     permissions:
