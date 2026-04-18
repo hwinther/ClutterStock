@@ -2,14 +2,38 @@ name: "API Docs (GitHub Pages)"
 
 on:
   workflow_dispatch:
+    inputs:
+      include_api_redoc:
+        description: Include OpenAPI / ReDoc (/api/)
+        type: boolean
+        default: true
+      include_database_docs:
+        description: Include SchemaSpy database docs (/database/)
+        type: boolean
+        default: true
+      include_project_docs:
+        description: Include Markdown project docs (/project-docs/)
+        type: boolean
+        default: true
+      include_dotnet_coverage:
+        description: Include .NET coverage (/coverage-dotnet/)
+        type: boolean
+        default: true
+      include_node_coverage:
+        description: Include Node coverage (/coverage-node/)
+        type: boolean
+        default: true
   push:
     tags:
       - "v*"
     paths:
       - "backend/**"
       - "frontend/**"
+      - "docs/**"
       - ".github/workflows/api-docs-pages.yml"
       - ".github/actions/schemaspy-report/**"
+      - ".github/scripts/render_project_docs.py"
+      - "README.md"
 
 concurrency:
   group: "${{ github.workflow }} @ ${{ github.ref }}"
@@ -23,11 +47,16 @@ env:
   API_OPENAPI_JSON: "src/Api/openapi.json"
   NODE_VERSION: "24.x"
   NODE_WORKING_DIRECTORY: "frontend"
+  # Pin Docker images used by build-project-docs (render_project_docs.py).
+  PANDOC_DOCKER_IMAGE: "pandoc/minimal:3.7"
+  MERMAID_CLI_DOCKER_IMAGE: "minlag/mermaid-cli:11.4.2"
 
 jobs:
   build-api-docs:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_api_redoc)
     permissions:
       contents: read
       actions: write
@@ -65,6 +94,9 @@ jobs:
 
   dotnet-database-docs:
     runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_database_docs)
     permissions:
       contents: read
       actions: write
@@ -95,9 +127,34 @@ jobs:
           name: github-pages-database-docs
           path: api-docs/database
 
+  build-project-docs:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_project_docs)
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Render project docs (Pandoc + Mermaid CLI)
+        run: python3 .github/scripts/render_project_docs.py
+
+      - name: Upload project docs artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-pages-project-docs
+          path: api-docs/project-docs
+
   dotnet-test-and-coverage:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_dotnet_coverage)
     permissions:
       contents: read
       actions: write
@@ -142,7 +199,9 @@ jobs:
 
   node-test-and-coverage:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_node_coverage)
     permissions:
       contents: read
       actions: write
@@ -184,33 +243,80 @@ jobs:
     needs:
       - build-api-docs
       - dotnet-database-docs
+      - build-project-docs
       - dotnet-test-and-coverage
       - node-test-and-coverage
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: |
+      always() &&
+      !cancelled() &&
+      (
+        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+        github.event_name == 'workflow_dispatch'
+      ) &&
+      (needs.build-api-docs.result == 'success' || needs.build-api-docs.result == 'skipped') &&
+      (needs.dotnet-database-docs.result == 'success' || needs.dotnet-database-docs.result == 'skipped') &&
+      (needs.build-project-docs.result == 'success' || needs.build-project-docs.result == 'skipped') &&
+      (needs.dotnet-test-and-coverage.result == 'success' || needs.dotnet-test-and-coverage.result == 'skipped') &&
+      (needs.node-test-and-coverage.result == 'success' || needs.node-test-and-coverage.result == 'skipped') &&
+      needs.build-api-docs.result != 'failure' &&
+      needs.dotnet-database-docs.result != 'failure' &&
+      needs.build-project-docs.result != 'failure' &&
+      needs.dotnet-test-and-coverage.result != 'failure' &&
+      needs.node-test-and-coverage.result != 'failure'
     permissions:
       contents: read
       actions: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Render repository README as site home page
+        run: |
+          mkdir -p site
+          docker run --rm \
+            -v "${{ github.workspace }}:/data" \
+            -w /data \
+            "${{ env.PANDOC_DOCKER_IMAGE }}" \
+            README.md \
+            -o site/index.html \
+            -f gfm \
+            -t html \
+            -s \
+            --metadata title=ClutterStock
+
       - name: Download API docs
+        if: needs.build-api-docs.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: github-pages-api-docs
-          path: site
+          path: site/api
 
       - name: Download dotnet database docs
+        if: needs.dotnet-database-docs.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: github-pages-database-docs
           path: site/database
 
+      - name: Download project docs
+        if: needs.build-project-docs.result == 'success'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages-project-docs
+          path: site/project-docs
+
       - name: Download dotnet coverage report
+        if: needs.dotnet-test-and-coverage.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: github-pages-coverage-dotnet
           path: site/coverage-dotnet
 
       - name: Download node coverage report
+        if: needs.node-test-and-coverage.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: github-pages-coverage-node
@@ -223,6 +329,9 @@ jobs:
 
   deploy:
     needs: assemble-github-pages
+    # When optional jobs are skipped, assemble still runs via always(); without an
+    # explicit if here, deploy can be incorrectly skipped (actions/runner#2205).
+    if: always() && needs.assemble-github-pages.result == 'success' && !cancelled()
     runs-on: ubuntu-latest
     environment: github-pages
     permissions:
@@ -236,11 +345,13 @@ jobs:
 
       - name: Add GitHub Pages URL to summary
         run: |
-          echo "## API Docs Published" >> "$GITHUB_STEP_SUMMARY"
+          echo "## GitHub Pages published" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           base="${{ steps.deploy-pages.outputs.page_url }}"
           base="${base%/}"
-          echo "- URL: ${base}/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Site home (README): ${base}/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- OpenAPI / ReDoc: ${base}/api/" >> "$GITHUB_STEP_SUMMARY"
           echo "- Dotnet coverage: ${base}/coverage-dotnet/" >> "$GITHUB_STEP_SUMMARY"
           echo "- Node coverage: ${base}/coverage-node/" >> "$GITHUB_STEP_SUMMARY"
           echo "- Database docs (SchemaSpy): ${base}/database/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Project docs (Markdown): ${base}/project-docs/" >> "$GITHUB_STEP_SUMMARY"
