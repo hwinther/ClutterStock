@@ -1,8 +1,10 @@
 name: "Automatically update dotnet lockfiles in dependabot PRs"
 
 on:
-  workflow_dispatch:
   pull_request_target:
+    types:
+      - labeled
+      - synchronize
 
 env:
   SOLUTION_PATH: "backend"
@@ -14,7 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      (
+        (github.event.action == 'labeled' && github.event.label.name == 'update-dotnet-lockfiles') ||
+        (github.event.action == 'synchronize' &&
+          contains(join(github.event.pull_request.labels.*.name, ','), 'update-dotnet-lockfiles'))
+      )
     steps:
       - name: Checkout ${{ github.head_ref }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -29,8 +37,8 @@ jobs:
 
       - name: Setup git user
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Update lockfiles
         working-directory: ${{ env.SOLUTION_PATH }}
@@ -38,12 +46,10 @@ jobs:
           dotnet restore ${{ env.SOLUTION_NAME }}
           git status
           if output=$(git status --porcelain) && [ -z "$output" ]; then
-            # Working directory clean - do nothing
-            echo Working directory clean
+            echo "Working directory clean"
             exit 0
-          else 
-            # Uncommitted changes
-            echo Add and commit changes
+          else
+            echo "Add and commit changes"
             git commit -a -m "Update lockfiles"
             git push
           fi
