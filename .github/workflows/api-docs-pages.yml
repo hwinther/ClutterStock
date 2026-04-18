@@ -2,6 +2,27 @@ name: "API Docs (GitHub Pages)"
 
 on:
   workflow_dispatch:
+    inputs:
+      include_api_redoc:
+        description: Include OpenAPI / ReDoc (site root)
+        type: boolean
+        default: true
+      include_database_docs:
+        description: Include SchemaSpy database docs (/database/)
+        type: boolean
+        default: true
+      include_project_docs:
+        description: Include Markdown project docs (/project-docs/)
+        type: boolean
+        default: true
+      include_dotnet_coverage:
+        description: Include .NET coverage (/coverage-dotnet/)
+        type: boolean
+        default: true
+      include_node_coverage:
+        description: Include Node coverage (/coverage-node/)
+        type: boolean
+        default: true
   push:
     tags:
       - "v*"
@@ -32,7 +53,9 @@ env:
 jobs:
   build-api-docs:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_api_redoc)
     permissions:
       contents: read
       actions: write
@@ -70,6 +93,9 @@ jobs:
 
   dotnet-database-docs:
     runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_database_docs)
     permissions:
       contents: read
       actions: write
@@ -102,6 +128,9 @@ jobs:
 
   build-project-docs:
     runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_project_docs)
     permissions:
       contents: read
       actions: write
@@ -122,7 +151,9 @@ jobs:
 
   dotnet-test-and-coverage:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_dotnet_coverage)
     permissions:
       contents: read
       actions: write
@@ -167,7 +198,9 @@ jobs:
 
   node-test-and-coverage:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_node_coverage)
     permissions:
       contents: read
       actions: write
@@ -213,36 +246,69 @@ jobs:
       - dotnet-test-and-coverage
       - node-test-and-coverage
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: |
+      always() &&
+      !cancelled() &&
+      (
+        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+        github.event_name == 'workflow_dispatch'
+      ) &&
+      (needs.build-api-docs.result == 'success' || needs.build-api-docs.result == 'skipped') &&
+      (needs.dotnet-database-docs.result == 'success' || needs.dotnet-database-docs.result == 'skipped') &&
+      (needs.build-project-docs.result == 'success' || needs.build-project-docs.result == 'skipped') &&
+      (needs.dotnet-test-and-coverage.result == 'success' || needs.dotnet-test-and-coverage.result == 'skipped') &&
+      (needs.node-test-and-coverage.result == 'success' || needs.node-test-and-coverage.result == 'skipped') &&
+      needs.build-api-docs.result != 'failure' &&
+      needs.dotnet-database-docs.result != 'failure' &&
+      needs.build-project-docs.result != 'failure' &&
+      needs.dotnet-test-and-coverage.result != 'failure' &&
+      needs.node-test-and-coverage.result != 'failure'
     permissions:
       contents: read
       actions: write
     steps:
+      - name: Prepare site directory
+        run: mkdir -p site
+
+      - name: Require at least one segment (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          case ",${{ needs.build-api-docs.result }},${{ needs.dotnet-database-docs.result }},${{ needs.build-project-docs.result }},${{ needs.dotnet-test-and-coverage.result }},${{ needs.node-test-and-coverage.result }}," in
+            *,success,*) exit 0 ;;
+          esac
+          echo "::error::Enable at least one documentation segment (all checkboxes were off)."
+          exit 1
+
       - name: Download API docs
+        if: needs.build-api-docs.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: github-pages-api-docs
           path: site
 
       - name: Download dotnet database docs
+        if: needs.dotnet-database-docs.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: github-pages-database-docs
           path: site/database
 
       - name: Download project docs
+        if: needs.build-project-docs.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: github-pages-project-docs
           path: site/project-docs
 
       - name: Download dotnet coverage report
+        if: needs.dotnet-test-and-coverage.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: github-pages-coverage-dotnet
           path: site/coverage-dotnet
 
       - name: Download node coverage report
+        if: needs.node-test-and-coverage.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: github-pages-coverage-node
