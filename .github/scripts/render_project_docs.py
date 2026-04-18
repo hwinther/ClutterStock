@@ -8,7 +8,11 @@ Render Markdown under docs/ to static HTML for GitHub Pages.
 - Runs pandoc (Docker) on a processed copy to emit api-docs/project-docs/<slug>.html.
 - Writes api-docs/project-docs/index.html linking to each page.
 
-Environment variables (required in CI; defaults are for local testing):
+Environment variables:
+  GITHUB_WORKSPACE          Root of the repository that contains docs/ (set by Actions).
+                            Use this when the script lives in another repo (reusable workflow
+                            or composite action): paths to docs/ and api-docs/ are always
+                            resolved from here, not from the script location.
   PANDOC_DOCKER_IMAGE       e.g. pandoc/minimal:3.7
   MERMAID_CLI_DOCKER_IMAGE  e.g. minlag/mermaid-cli:11.4.2
 """
@@ -29,6 +33,10 @@ MERMAID_FENCE = re.compile(r"```mermaid[ \t]*\r?\n(.*?)```", re.DOTALL)
 
 
 def _repo_root() -> Path:
+    """Project root: caller checkout on GitHub Actions, else repo containing this script."""
+    workspace = os.environ.get("GITHUB_WORKSPACE", "").strip()
+    if workspace:
+        return Path(workspace).resolve()
     return Path(__file__).resolve().parents[2]
 
 
