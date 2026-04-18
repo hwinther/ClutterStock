@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
 
       - name: poutine - GitHub Actions SAST
-        uses: boostsecurityio/poutine-action@2bf7189397972f9eeb71ada7bd1f45b543f9e304 # v1.1.3
+        uses: boostsecurityio/poutine-action@e240ebd3eff8b2db5a8e5f6b28f58739d7db2247 # v1.1.4
 
       - name: Upload poutine SARIF file
         uses: github/codeql-action/upload-sarif@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4.35.2
