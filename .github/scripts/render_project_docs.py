@@ -127,7 +127,9 @@ def _replace_mermaid_blocks(
         mmd_rel.write_text(body + ("\n" if not body.endswith("\n") else ""), encoding="utf-8")
         diagram_paths.append((mmd_rel, png_rel))
         pieces.append(text[last : m.start()])
-        pieces.append(f"![](../diagrams/{slug}_{i}.png)\n\n")
+        # Paths must be valid from the emitted HTML (project-docs/<slug>.html):
+        # ../diagrams/ incorrectly resolves to site /diagrams/; use diagrams/ instead.
+        pieces.append(f"![](diagrams/{slug}_{i}.png)\n\n")
         last = m.end()
     pieces.append(text[last:])
     return "".join(pieces), diagram_paths
@@ -137,7 +139,6 @@ def main() -> int:
     root = _repo_root()
     docs_dir = root / "docs"
     out_root = root / "api-docs" / "project-docs"
-    build_dir = out_root / ".build"
 
     pandoc_image = os.environ.get("PANDOC_DOCKER_IMAGE", DEFAULT_PANDOC_IMAGE)
     mermaid_image = os.environ.get("MERMAID_CLI_DOCKER_IMAGE", DEFAULT_MERMAID_IMAGE)
@@ -153,7 +154,7 @@ def main() -> int:
 
     if out_root.exists():
         shutil.rmtree(out_root)
-    build_dir.mkdir(parents=True, exist_ok=True)
+    out_root.mkdir(parents=True, exist_ok=True)
     (out_root / "diagrams").mkdir(parents=True, exist_ok=True)
 
     for src in md_files:
@@ -175,15 +176,14 @@ def main() -> int:
             )
             mmd_rel.unlink(missing_ok=True)
 
-        md_build_rel = Path("api-docs") / "project-docs" / ".build" / f"{slug}.md"
+        # Source beside final HTML so diagrams/foo.png resolves to project-docs/diagrams/.
+        md_build_rel = Path("api-docs") / "project-docs" / f".render.{slug}.md"
         md_build_abs = root / md_build_rel
-        md_build_abs.parent.mkdir(parents=True, exist_ok=True)
         md_build_abs.write_text(processed, encoding="utf-8")
 
         html_rel = Path("api-docs") / "project-docs" / f"{slug}.html"
         _docker_pandoc(root, pandoc_image, md_build_rel, html_rel)
-
-    shutil.rmtree(build_dir, ignore_errors=True)
+        md_build_abs.unlink(missing_ok=True)
 
     links = []
     for src in md_files:
