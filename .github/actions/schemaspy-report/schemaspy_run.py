@@ -42,8 +42,8 @@ def parse_server_host_port(server: str) -> tuple[str, str | None]:
     return s, None
 
 
-def print_sqlite_path_for_migrator() -> None:
-    """Emit the resolved SQLite file path for the migrator pre-delete step (stdout only)."""
+def print_sqlite_path() -> None:
+    """Emit the resolved SQLite file path before EF applies migrations (stdout only)."""
     cs = os.environ["CONNECTION_STRING"].strip()
     workspace = Path(os.environ["GITHUB_WORKSPACE"]).resolve()
     working_dir = os.environ["WORKING_DIRECTORY"].strip()
@@ -250,7 +250,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "--print-sqlite-path-for-migrator":
-        print_sqlite_path_for_migrator()
+    if len(sys.argv) > 1 and sys.argv[1] == "--print-sqlite-path":
+        print_sqlite_path()
     else:
         main()

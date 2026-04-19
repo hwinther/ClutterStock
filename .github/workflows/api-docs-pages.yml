@@ -118,7 +118,8 @@ jobs:
         with:
           working_directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
           solution_file: ${{ env.DOTNET_SOLUTION_FILE }}
-          migrator_project: src/Migrator/Migrator.csproj
+          ef_migrations_project: src/Infrastructure/Infrastructure.csproj
+          ef_startup_project: src/Api/Api.csproj
           output_path: ${{ github.workspace }}/api-docs/database
           database_type: sqlite
           connection_string: Data Source=${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}/schemaspy.db

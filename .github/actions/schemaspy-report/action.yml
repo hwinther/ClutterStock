@@ -1,6 +1,6 @@
 name: SchemaSpy report
 description: >-
-  Generate an HTML database schema report with SchemaSpy. Supports SQLite (optional EF Migrator),
+  Generate an HTML database schema report with SchemaSpy. Supports SQLite (dotnet ef database update),
   Microsoft SQL Server, PostgreSQL, and MySQL using JDBC drivers in Docker.
 
 inputs:
@@ -10,20 +10,29 @@ inputs:
   solution_file:
     description: Solution file name inside working_directory
     required: true
-  migrator_project:
-    description: Path to the Migrator project (relative to working_directory); used only when database_type is sqlite
+  ef_migrations_project:
+    description: >-
+      EF Core project that contains migrations (relative to working_directory), passed to dotnet ef --project
     required: true
+  ef_startup_project:
+    description: >-
+      Startup project used to resolve configuration and build the host (relative to working_directory), e.g. Api; passed to dotnet ef --startup-project
+    required: true
+  ef_context:
+    description: DbContext class name for dotnet ef --context
+    required: false
+    default: ApplicationContext
   output_path:
     description: Absolute path where SchemaSpy writes its HTML output (directory is created)
     required: true
   database_type:
     description: >-
-      sqlite (runs Migrator then documents the file), mssql, postgres, or mysql (documents an existing server).
+      sqlite (runs dotnet ef database update then documents the file), mssql, postgres, or mysql (documents an existing server).
       For databases on the Actions runner, use host.docker.internal as the host in connection_string.
     required: true
   connection_string:
     description: >-
-      .NET-style connection string. For sqlite, include Data Source= to the database file (Migrator uses this value).
+      .NET-style connection string. For sqlite, include Data Source= to the database file (dotnet ef uses ConnectionStrings__ClutterStock).
       For mssql/postgres/mysql, include host, database, user, and password keys compatible with SqlClient/Npgsql/MySqlConnector.
     required: true
   sqlite_jdbc_version:
@@ -46,7 +55,7 @@ inputs:
 runs:
   using: composite
   steps:
-  - name: Restore backend and apply migrations (SQLite only)
+  - name: Restore backend, dotnet tools, and apply EF migrations (SQLite only)
     shell: bash
     working-directory: ${{ github.workspace }}/${{ inputs.working_directory }}
     env:
@@ -60,12 +69,16 @@ runs:
       db_t=$(echo "${DATABASE_TYPE}" | tr '[:upper:]' '[:lower:]')
       if [[ "${db_t}" == "sqlite" || "${db_t}" == "sqlite3" ]]; then
         dotnet restore --locked-mode "${{ inputs.solution_file }}"
-        sqlite_path=$(python3 "${SCHEMASPY_ACTION_PATH}/schemaspy_run.py" --print-sqlite-path-for-migrator)
+        dotnet tool restore --tool-manifest .config/dotnet-tools.json
+        sqlite_path=$(python3 "${SCHEMASPY_ACTION_PATH}/schemaspy_run.py" --print-sqlite-path)
         rm -f "${sqlite_path}"
         ConnectionStrings__ClutterStock="${CONNECTION_STRING}" \
-          dotnet run --project "${{ inputs.migrator_project }}" --no-restore
+          dotnet ef database update \
+            --project "${{ inputs.ef_migrations_project }}" \
+            --startup-project "${{ inputs.ef_startup_project }}" \
+            --context "${{ inputs.ef_context }}"
       else
-        echo "Skipping dotnet restore/migrator (database_type is not sqlite)."
+        echo "Skipping dotnet restore and EF migrations (database_type is not sqlite)."
       fi
 
   - name: Download JDBC driver for SchemaSpy
