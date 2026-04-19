@@ -1,6 +1,7 @@
 name: SchemaSpy report
 description: >-
-  Generate an HTML database schema report with SchemaSpy from SQLite built by EF migrations (Migrator), JDBC driver download, and Docker.
+  Generate an HTML database schema report with SchemaSpy. Supports SQLite (optional EF Migrator),
+  Microsoft SQL Server, PostgreSQL, and MySQL using JDBC drivers in Docker.
 
 inputs:
   working_directory:
@@ -10,74 +11,116 @@ inputs:
     description: Solution file name inside working_directory
     required: true
   migrator_project:
-    description: Path to the Migrator project (relative to working_directory)
+    description: Path to the Migrator project (relative to working_directory); used only when database_type is sqlite
     required: true
   output_path:
     description: Absolute path where SchemaSpy writes its HTML output (directory is created)
     required: true
+  database_type:
+    description: >-
+      sqlite (runs Migrator then documents the file), mssql, postgres, or mysql (documents an existing server).
+      For databases on the Actions runner, use host.docker.internal as the host in connection_string.
+    required: true
+  connection_string:
+    description: >-
+      .NET-style connection string. For sqlite, include Data Source= to the database file (Migrator uses this value).
+      For mssql/postgres/mysql, include host, database, user, and password keys compatible with SqlClient/Npgsql/MySqlConnector.
+    required: true
   sqlite_jdbc_version:
-    description: Maven coordinate version for org.xerial sqlite-jdbc used as SchemaSpy driver
+    description: Maven version for org.xerial sqlite-jdbc
     required: false
     default: "3.49.1.0"
+  mssql_jdbc_version:
+    description: Maven version for com.microsoft.sqlserver mssql-jdbc (include classifier, e.g. 12.8.1.jre11)
+    required: false
+    default: "12.8.1.jre11"
+  postgresql_jdbc_version:
+    description: Maven version for org.postgresql postgresql JDBC
+    required: false
+    default: "42.7.4"
+  mysql_jdbc_version:
+    description: Maven version for com.mysql mysql-connector-j
+    required: false
+    default: "8.4.0"
 
 runs:
   using: composite
   steps:
-  - name: Restore backend dependencies
+  - name: Restore backend and apply migrations (SQLite only)
     shell: bash
     working-directory: ${{ github.workspace }}/${{ inputs.working_directory }}
-    run: dotnet restore --locked-mode "${{ inputs.solution_file }}"
-
-  - name: Build SQLite database from migrations
-    shell: bash
     env:
-      SCHEMASPY_DB_PATH: ${{ github.workspace }}/${{ inputs.working_directory }}/schemaspy.db
-    working-directory: ${{ github.workspace }}/${{ inputs.working_directory }}
+      DATABASE_TYPE: ${{ inputs.database_type }}
+      CONNECTION_STRING: ${{ inputs.connection_string }}
+      GITHUB_WORKSPACE: ${{ github.workspace }}
+      WORKING_DIRECTORY: ${{ inputs.working_directory }}
+      SCHEMASPY_ACTION_PATH: ${{ github.action_path }}
     run: |
-      rm -f "${SCHEMASPY_DB_PATH}"
-      ConnectionStrings__ClutterStock="Data Source=${SCHEMASPY_DB_PATH}" \
-        dotnet run --project "${{ inputs.migrator_project }}" --no-restore
+      set -euo pipefail
+      db_t=$(echo "${DATABASE_TYPE}" | tr '[:upper:]' '[:lower:]')
+      if [[ "${db_t}" == "sqlite" || "${db_t}" == "sqlite3" ]]; then
+        dotnet restore --locked-mode "${{ inputs.solution_file }}"
+        sqlite_path=$(python3 "${SCHEMASPY_ACTION_PATH}/schemaspy_run.py" --print-sqlite-path-for-migrator)
+        rm -f "${sqlite_path}"
+        ConnectionStrings__ClutterStock="${CONNECTION_STRING}" \
+          dotnet run --project "${{ inputs.migrator_project }}" --no-restore
+      else
+        echo "Skipping dotnet restore/migrator (database_type is not sqlite)."
+      fi
 
-  - name: Download SQLite JDBC driver for SchemaSpy
+  - name: Download JDBC driver for SchemaSpy
     shell: bash
     env:
-      SCHEMASPY_DRIVERS_PATH: ${{ github.workspace }}/schemaspy-drivers
+      DATABASE_TYPE: ${{ inputs.database_type }}
       SQLITE_JDBC_VERSION: ${{ inputs.sqlite_jdbc_version }}
+      MSSQL_JDBC_VERSION: ${{ inputs.mssql_jdbc_version }}
+      POSTGRESQL_JDBC_VERSION: ${{ inputs.postgresql_jdbc_version }}
+      MYSQL_JDBC_VERSION: ${{ inputs.mysql_jdbc_version }}
+      SCHEMASPY_DRIVERS_PATH: ${{ github.workspace }}/schemaspy-drivers
     run: |
+      set -euo pipefail
       mkdir -p "${SCHEMASPY_DRIVERS_PATH}"
-      curl -fsSL \
-        "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/${SQLITE_JDBC_VERSION}/sqlite-jdbc-${SQLITE_JDBC_VERSION}.jar" \
-        -o "${SCHEMASPY_DRIVERS_PATH}/sqlite-jdbc.jar"
-
-  - name: Prepare writable SQLite database directory
-    shell: bash
-    env:
-      SCHEMASPY_DB_PATH: ${{ github.workspace }}/${{ inputs.working_directory }}/schemaspy.db
-      SCHEMASPY_DB_WORKDIR: ${{ github.workspace }}/schemaspy-db
-    run: |
-      rm -rf "${SCHEMASPY_DB_WORKDIR}"
-      mkdir -p "${SCHEMASPY_DB_WORKDIR}"
-      cp "${SCHEMASPY_DB_PATH}" "${SCHEMASPY_DB_WORKDIR}/schemaspy.db"
-      chmod 777 "${SCHEMASPY_DB_WORKDIR}"
-      chmod 666 "${SCHEMASPY_DB_WORKDIR}/schemaspy.db"
+      db_t=$(echo "${DATABASE_TYPE}" | tr '[:upper:]' '[:lower:]')
+      case "${db_t}" in
+        sqlite|sqlite3)
+          curl -fsSL \
+            "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/${SQLITE_JDBC_VERSION}/sqlite-jdbc-${SQLITE_JDBC_VERSION}.jar" \
+            -o "${SCHEMASPY_DRIVERS_PATH}/jdbc.jar"
+          ;;
+        mssql|sqlserver)
+          curl -fsSL \
+            "https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${MSSQL_JDBC_VERSION}/mssql-jdbc-${MSSQL_JDBC_VERSION}.jar" \
+            -o "${SCHEMASPY_DRIVERS_PATH}/jdbc.jar"
+          ;;
+        postgres|postgresql|pgsql)
+          curl -fsSL \
+            "https://repo1.maven.org/maven2/org/postgresql/postgresql/${POSTGRESQL_JDBC_VERSION}/postgresql-${POSTGRESQL_JDBC_VERSION}.jar" \
+            -o "${SCHEMASPY_DRIVERS_PATH}/jdbc.jar"
+          ;;
+        mysql|mariadb)
+          curl -fsSL \
+            "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/${MYSQL_JDBC_VERSION}/mysql-connector-j-${MYSQL_JDBC_VERSION}.jar" \
+            -o "${SCHEMASPY_DRIVERS_PATH}/jdbc.jar"
+          ;;
+        *)
+          echo "Unsupported database_type: ${DATABASE_TYPE}" >&2
+          exit 1
+          ;;
+      esac
 
   - name: Generate SchemaSpy report
     shell: bash
     env:
-      SCHEMASPY_DB_WORKDIR: ${{ github.workspace }}/schemaspy-db
+      DATABASE_TYPE: ${{ inputs.database_type }}
+      CONNECTION_STRING: ${{ inputs.connection_string }}
       SCHEMASPY_DRIVERS_PATH: ${{ github.workspace }}/schemaspy-drivers
       SCHEMASPY_OUTPUT_PATH: ${{ inputs.output_path }}
+      SCHEMASPY_SQLITE_WORKDIR: ${{ github.workspace }}/schemaspy-db
+      GITHUB_WORKSPACE: ${{ github.workspace }}
+      WORKING_DIRECTORY: ${{ inputs.working_directory }}
+      SCHEMASPY_ACTION_PATH: ${{ github.action_path }}
     run: |
-      mkdir -p "${SCHEMASPY_OUTPUT_PATH}"
-      chmod 777 "${SCHEMASPY_OUTPUT_PATH}"
-      docker run --rm \
-        -v "${SCHEMASPY_DB_WORKDIR}:/workspace" \
-        -v "${SCHEMASPY_DRIVERS_PATH}:/drivers" \
-        -v "${SCHEMASPY_OUTPUT_PATH}:/output" \
-        schemaspy/schemaspy:latest \
-        -t sqlite-xerial \
-        -db "/workspace/schemaspy.db" \
-        -u "schemaspy" \
-        -dp /drivers \
-        -cat "%" \
-        -s main
+      set -euo pipefail
+      rm -rf "${SCHEMASPY_SQLITE_WORKDIR}"
+      mkdir -p "${SCHEMASPY_SQLITE_WORKDIR}"
+      python3 "${SCHEMASPY_ACTION_PATH}/schemaspy_run.py"

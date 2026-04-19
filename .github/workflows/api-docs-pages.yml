@@ -120,6 +120,8 @@ jobs:
           solution_file: ${{ env.DOTNET_SOLUTION_FILE }}
           migrator_project: src/Migrator/Migrator.csproj
           output_path: ${{ github.workspace }}/api-docs/database
+          database_type: sqlite
+          connection_string: Data Source=${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}/schemaspy.db
 
       - name: Upload database docs artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
