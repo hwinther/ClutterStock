@@ -12,8 +12,8 @@ on:
         required: false
       create_release:
         description: "Opprett en GitHub Release for denne taggen"
-        required: false
-        default: "true"
+        type: boolean
+        default: true
       container_grype_fail_build:
         description: "Fail API, migrator, and frontend container workflows if Grype finds vulnerabilities (turn off for a release override)"
         type: boolean
