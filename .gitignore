@@ -436,3 +436,6 @@ CoverageReport/
 *.db
 *.db-shm
 *.db-wal
+
+# Claude code files
+.claude/
