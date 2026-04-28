@@ -4,13 +4,14 @@
     "net10.0": {
       "coverlet.MTP": {
         "type": "Direct",
-        "requested": "[8.0.1, )",
-        "resolved": "8.0.1",
-        "contentHash": "C7fAK5bFbfkER6aolYuafaqvKtH4i6Zzj5iBd/aA4iuF2axKU/39g3CY35luYfqs1ly4pIIrTOlRKX6x0uT4Gw==",
+        "requested": "[10.0.0, )",
+        "resolved": "10.0.0",
+        "contentHash": "uO9xEV6LCPN3r851ASGW4dNs3T+6ZS2HgUUAM9qTxcG76OkndVGBaFIoVELlb5eF3hVzw+PnByI6YCmpbf7VJg==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration": "10.0.1",
-          "Microsoft.Extensions.DependencyInjection": "8.0.1",
-          "Microsoft.Testing.Platform": "2.0.2"
+          "Microsoft.Extensions.Configuration": "10.0.6",
+          "Microsoft.Extensions.Configuration.Json": "10.0.6",
+          "Microsoft.Extensions.DependencyInjection": "10.0.6",
+          "Microsoft.Testing.Platform": "2.2.1"
         }
       },
       "Microsoft.AspNetCore.Mvc.Testing": {
