@@ -5,23 +5,24 @@ export function SiteFooter() {
   if (version) parts.push(version);
   if (sha) parts.push(sha.slice(0, 7));
 
-  let line = "";
-  if (parts.length > 0) {
-    line = parts.join(" · ");
-  } else if (import.meta.env.DEV) {
-    line = "dev build";
-  }
-
+  const line = parts.length > 0 ? parts.join(" · ") : import.meta.env.DEV ? "dev" : "";
   if (!line) return null;
 
   return (
-    <footer className="border-t border-neutral-200 bg-neutral-50/80 py-3 text-center text-xs text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950/40 dark:text-neutral-400">
-      <p
-        className="font-mono tabular-nums"
-        title={sha.length > 0 ? sha : undefined}
-      >
-        {line}
-      </p>
+    <footer style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      padding: "0 16px",
+      height: 26,
+      borderTop: "1px solid var(--c-border)",
+      background: "var(--c-bg-2)",
+      fontSize: 11,
+      color: "var(--c-fg-3)",
+      fontFamily: "ui-monospace, monospace",
+      flexShrink: 0,
+    }}>
+      <span title={sha.length > 0 ? sha : undefined}>{line}</span>
     </footer>
   );
 }

@@ -45,10 +45,10 @@ export default function LocationsRoomsIndex({ loaderData }: Route.ComponentProps
           { label: "Rooms" },
         ]}
       />
-      <div className="mb-6 flex items-center justify-between">
+      <div className="page-header">
         <h2 className="page-title">Rooms</h2>
         <Link to={`/locations/${locationId}/rooms/new`} className="btn-primary">
-          Add room
+          + Add room
         </Link>
       </div>
       <RoomsList

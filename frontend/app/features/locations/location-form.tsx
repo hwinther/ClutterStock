@@ -19,7 +19,7 @@ export function LocationForm({
     return (
       <div className="card-padded">
         <p className="text-muted">Location not found.</p>
-        <Link to={routes.locations.list()} className="link-text mt-2 inline-block">
+        <Link to={routes.locations.list()} className="link-text" style={{ display: "inline-block", marginTop: 8 }}>
           Back to locations
         </Link>
       </div>
@@ -71,7 +71,7 @@ export function LocationForm({
       {location?.id != null && (
         <Form
           method="post"
-          className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700"
+          style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--c-border)" }}
           onSubmit={(e) => {
             if (!confirm("Delete this location and all its rooms and items?")) {
               e.preventDefault();
@@ -79,9 +79,7 @@ export function LocationForm({
           }}
         >
           <input type="hidden" name="_action" value="delete" />
-          <button type="submit" className="btn-danger">
-            Delete location
-          </button>
+          <button type="submit" className="btn-danger">Delete location</button>
         </Form>
       )}
     </div>

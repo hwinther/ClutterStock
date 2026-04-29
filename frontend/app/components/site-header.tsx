@@ -44,42 +44,94 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-950/95">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+      <header style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 20px",
+        borderBottom: "1px solid var(--c-border)",
+        background: "var(--c-bg-2)",
+        height: 48,
+        flexShrink: 0,
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link
-            to="/"
-            className="text-base font-semibold text-gray-900 hover:text-blue-600 dark:text-gray-100 dark:hover:text-blue-400"
+            to="/locations"
+            style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
           >
-            ClutterStock
+            <div style={{
+              width: 22,
+              height: 22,
+              borderRadius: 6,
+              background: "var(--c-accent)",
+              display: "grid",
+              placeItems: "center",
+              color: "white",
+              fontSize: 11,
+              fontWeight: 700,
+              flexShrink: 0,
+            }}>
+              ▦
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-fg)" }}>
+              ClutterStock
+            </span>
           </Link>
+        </div>
 
-          <div className="h-8 w-32">
-            {mounted && (
-              user ? (
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(true)}
-                  className="flex items-center gap-2 rounded-full pl-1 pr-3 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  aria-label="Account"
-                >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white dark:bg-blue-500">
-                    {initial}
-                  </span>
-                  <span className="max-w-24 truncate text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {displayName}
-                  </span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSignIn}
-                  className="btn-primary py-1.5"
-                >
-                  Sign in
-                </button>
-              )
-            )}
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, height: 32 }}>
+          {mounted && (
+            user ? (
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  padding: "4px 10px 4px 4px",
+                  borderRadius: 999,
+                  border: "1px solid var(--c-border)",
+                  background: "var(--c-bg-3)",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  color: "var(--c-fg-2)",
+                  fontWeight: 500,
+                }}
+                aria-label="Account"
+              >
+                <span style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 22,
+                  height: 22,
+                  borderRadius: 999,
+                  background: "var(--c-accent)",
+                  color: "white",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}>
+                  {initial}
+                </span>
+                <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {displayName}
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSignIn}
+                className="btn-primary"
+              >
+                Sign in
+              </button>
+            )
+          )}
         </div>
       </header>
 

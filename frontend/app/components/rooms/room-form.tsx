@@ -22,7 +22,7 @@ export function RoomForm({
     return (
       <div className="card-padded">
         <p className="text-muted">Room not found.</p>
-        <Link to={cancelTo} className="link-text mt-2 inline-block">
+        <Link to={cancelTo} className="link-text" style={{ display: "inline-block", marginTop: 8 }}>
           Back to rooms
         </Link>
       </div>
@@ -74,7 +74,7 @@ export function RoomForm({
       {room?.id != null && (
         <Form
           method="post"
-          className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700"
+          style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--c-border)" }}
           onSubmit={(e) => {
             if (!confirm("Delete this room and all its items?")) {
               e.preventDefault();
@@ -82,9 +82,7 @@ export function RoomForm({
           }}
         >
           <input type="hidden" name="_action" value="delete" />
-          <button type="submit" className="btn-danger">
-            Delete room
-          </button>
+          <button type="submit" className="btn-danger">Delete room</button>
         </Form>
       )}
     </div>

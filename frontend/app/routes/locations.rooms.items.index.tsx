@@ -59,13 +59,10 @@ export default function LocationsRoomsItemsIndex({
           { label: "Items" },
         ]}
       />
-      <div className="mb-6 flex items-center justify-between">
+      <div className="page-header">
         <h2 className="page-title">Items</h2>
-        <Link
-          to={`/locations/${locationId}/rooms/${roomId}/items/new`}
-          className="btn-primary"
-        >
-          Add item
+        <Link to={`/locations/${locationId}/rooms/${roomId}/items/new`} className="btn-primary">
+          + Add item
         </Link>
       </div>
       <ItemsList

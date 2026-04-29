@@ -6,7 +6,7 @@ export function LocationsLayout() {
       <div className="page-header">
         <h1 className="page-title">Locations</h1>
         <Link to="/locations/new" className="btn-primary">
-          Add location
+          + Add location
         </Link>
       </div>
       <Outlet />

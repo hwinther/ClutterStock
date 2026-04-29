@@ -5,23 +5,62 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
+/* ── Design tokens ───────────────────────────────────────────────── */
+:root {
+  --c-bg:         #fafafa;
+  --c-bg-2:       #ffffff;
+  --c-bg-3:       #f4f4f5;
+  --c-fg:         #0a0a0a;
+  --c-fg-2:       #52525b;
+  --c-fg-3:       #a1a1aa;
+  --c-border:     #e4e4e7;
+  --c-border-2:   #ededf0;
+  --c-accent:     #5b5bf5;
+  --c-accent-bg:  rgba(91, 91, 245, 0.08);
+  --c-accent-bg-2:rgba(91, 91, 245, 0.14);
+  --c-danger:     #dc2626;
+  --c-danger-bg:  rgba(220, 38, 38, 0.08);
+  --c-good:       #16a34a;
+}
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg:         #0b0b0f;
+    --c-bg-2:       #101015;
+    --c-bg-3:       #15151c;
+    --c-fg:         #e6e6ea;
+    --c-fg-2:       #a1a1aa;
+    --c-fg-3:       #6b6b78;
+    --c-border:     #22222b;
+    --c-border-2:   #1a1a22;
+    --c-accent:     #7c7cff;
+    --c-accent-bg:  rgba(124, 124, 255, 0.12);
+    --c-accent-bg-2:rgba(124, 124, 255, 0.20);
+    --c-danger:     #f87171;
+    --c-danger-bg:  rgba(248, 113, 113, 0.10);
+    --c-good:       #4ade80;
   }
 }
 
-/* Dialog backdrop */
-dialog::backdrop {
-  background: rgb(0 0 0 / 0.5);
+/* ── Base ────────────────────────────────────────────────────────── */
+html, body {
+  background: var(--c-bg);
+  color: var(--c-fg);
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01", "ss03";
+  letter-spacing: -0.005em;
+  @media (prefers-color-scheme: dark) { color-scheme: dark; }
 }
 
-/* Layout */
+/* ── Dialog backdrop ─────────────────────────────────────────────── */
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(4px);
+}
+
+/* ── Layout ──────────────────────────────────────────────────────── */
 .page-main {
-  @apply mx-auto max-w-4xl px-4 py-8;
+  @apply mx-auto max-w-5xl px-6 py-8;
 }
 
 .page-header {
@@ -29,85 +68,201 @@ dialog::backdrop {
 }
 
 .page-title {
-  @apply text-2xl font-semibold text-gray-900 dark:text-gray-100;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-fg);
+  letter-spacing: -0.01em;
 }
 
-/* Cards & surfaces */
+/* ── Table ───────────────────────────────────────────────────────── */
+.console-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.console-table thead tr {
+  background: var(--c-bg-2);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.console-table th {
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-fg-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.console-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--c-border-2);
+  color: var(--c-fg);
+  vertical-align: middle;
+}
+
+.console-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.console-table tbody tr:hover td {
+  background: var(--c-accent-bg);
+}
+
+/* ── Cards & surfaces ────────────────────────────────────────────── */
 .card {
-  @apply rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900;
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
 }
 
 .card-padded {
-  @apply rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900;
-}
-
-.card-row {
-  @apply flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900;
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 24px;
 }
 
 .card-empty {
-  @apply rounded-xl border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-900;
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 48px 24px;
+  text-align: center;
 }
 
 .card-title {
-  @apply mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-fg);
+  letter-spacing: -0.01em;
+  margin-bottom: 16px;
 }
 
-/* Buttons & links */
+/* ── Buttons ─────────────────────────────────────────────────────── */
 .btn-primary {
-  @apply rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background: var(--c-accent);
+  color: white;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.12s;
+  &:hover { opacity: 0.88; }
 }
 
 .btn-secondary {
-  @apply rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-3);
+  color: var(--c-fg-2);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s;
+  &:hover { background: var(--c-bg-2); }
 }
 
 .btn-danger {
-  @apply rounded-lg border border-red-300 bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 dark:border-red-600 dark:bg-red-600 dark:hover:bg-red-700;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  background: transparent;
+  color: var(--c-danger);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s;
+  &:hover { background: var(--c-danger-bg); }
+}
+
+/* ── Row actions ─────────────────────────────────────────────────── */
+.link-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--c-accent);
+  border: 1px solid var(--c-border);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s;
+  &:hover { background: var(--c-accent-bg); }
 }
 
 .link-text {
-  @apply text-blue-600 hover:underline dark:text-blue-400;
+  color: var(--c-accent);
+  text-decoration: none;
+  font-size: 13px;
+  &:hover { text-decoration: underline; }
 }
 
-.link-chip {
-  @apply rounded px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950;
-}
-
-/* Form */
+/* ── Form ────────────────────────────────────────────────────────── */
 .form-group {
-  @apply flex flex-col gap-4;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .form-field {
-  @apply block;
+  display: block;
 }
 
 .form-label {
-  @apply mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300;
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-fg-2);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .form-input {
-  @apply w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100;
+  width: 100%;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-3);
+  color: var(--c-fg);
+  font-family: inherit;
+  transition: border-color 0.12s;
+  &:focus { outline: none; border-color: var(--c-accent); }
 }
 
 .form-actions {
-  @apply flex gap-2;
+  display: flex;
+  gap: 8px;
 }
 
-/* Text */
-.text-muted {
-  @apply text-gray-600 dark:text-gray-400;
-}
-
-.text-muted-sm {
-  @apply text-sm text-gray-500 dark:text-gray-400;
-}
-
-.text-error {
-  @apply text-sm text-red-600 dark:text-red-400;
-}
-
-.text-body {
-  @apply font-medium text-gray-900 dark:text-gray-100;
-}
+/* ── Text utilities ──────────────────────────────────────────────── */
+.text-muted     { color: var(--c-fg-2); font-size: 13px; }
+.text-muted-sm  { font-size: 12px; color: var(--c-fg-3); }
+.text-error     { font-size: 12px; color: var(--c-danger); }
+.text-body      { font-size: 13px; font-weight: 500; color: var(--c-fg); }

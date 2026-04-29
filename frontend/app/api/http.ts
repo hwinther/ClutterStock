@@ -6,8 +6,14 @@ export type ApiHeaderProvider = () =>
   | Promise<HeadersInit | undefined>;
 
 let headerProvider: ApiHeaderProvider | undefined;
+let handler401: (() => void) | undefined;
 
 const AUTH_COOKIE_RE = /(?:^|;\s*)clutterstock_auth=([^;]*)/;
+
+/** Called from entry.client.tsx to trigger sign-in when a 401 is received. */
+export function setApi401Handler(handler: () => void): void {
+  handler401 = handler;
+}
 
 /**
  * Merge headers into every API request (e.g. Authorization).
@@ -108,6 +114,20 @@ export async function apiFetch(
         `[api] ${method} ${url} → ${response.status} (${durationMs.toFixed(0)}ms)`,
       );
     }
+
+    if (response.status === 401) {
+      if (typeof window !== "undefined") {
+        // Browser: fire the registered 401 handler (triggers signinRedirect)
+        handler401?.();
+      } else {
+        // SSR: throw a redirect so React Router sends the browser to sign-in
+        throw new Response(null, {
+          status: 302,
+          headers: { Location: "/auth/signin" },
+        });
+      }
+    }
+
     return response;
   } catch (error) {
     logListener?.({ kind: "error", method, url, error });
