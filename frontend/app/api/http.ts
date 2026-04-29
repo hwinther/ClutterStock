@@ -7,6 +7,8 @@ export type ApiHeaderProvider = () =>
 
 let headerProvider: ApiHeaderProvider | undefined;
 
+const AUTH_COOKIE_RE = /(?:^|;\s*)clutterstock_auth=([^;]*)/;
+
 /**
  * Merge headers into every API request (e.g. Authorization).
  * Call from app bootstrap when you have auth (e.g. entry.client.tsx).
@@ -47,22 +49,34 @@ function resolveUrl(path: string): string {
 /**
  * Single entry point for backend HTTP. Use this (via ~/api/client helpers)
  * so auth, logging, and tracing stay in one place.
+ *
+ * Pass `ssrRequest` in server-side loaders/actions so the auth cookie from
+ * the incoming browser request is forwarded to the backend as a Bearer token.
  */
 export async function apiFetch(
   path: string,
   init: RequestInit = {},
+  ssrRequest?: Request,
 ): Promise<Response> {
   const url = resolveUrl(path);
   const method = (init.method ?? "GET").toUpperCase();
 
   const headers = new Headers(init.headers);
-  if (headerProvider) {
-    const extra = await headerProvider();
-    if (extra) {
-      new Headers(extra).forEach((value, key) => {
-        headers.set(key, value);
-      });
+  if (typeof window !== "undefined") {
+    // Browser: use the registered header provider (set in entry.client.tsx)
+    if (headerProvider) {
+      const extra = await headerProvider();
+      if (extra) {
+        new Headers(extra).forEach((value, key) => {
+          headers.set(key, value);
+        });
+      }
     }
+  } else if (ssrRequest) {
+    // SSR: extract auth cookie forwarded by the browser and add it as Bearer
+    const cookie = ssrRequest.headers.get("cookie") ?? "";
+    const match = AUTH_COOKIE_RE.exec(cookie);
+    if (match?.[1]) headers.set("Authorization", `Bearer ${decodeURIComponent(match[1])}`);
   }
 
   logListener?.({ kind: "request", method, url });

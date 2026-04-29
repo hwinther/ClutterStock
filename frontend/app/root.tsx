@@ -10,6 +10,7 @@ import {
 
 import type { Route } from "./+types/root";
 import { SiteFooter } from "~/components/site-footer";
+import { SiteHeader } from "~/components/site-header";
 import type { PublicRuntimeConfig } from "~/public-runtime-config";
 import "./app.css";
 
@@ -82,6 +83,7 @@ export function Layout({
         <Links />
       </head>
       <body className="min-h-screen flex flex-col">
+        <SiteHeader />
         <div className="flex-1 flex flex-col">{children}</div>
         <SiteFooter />
         <PublicRuntimeConfigScript />

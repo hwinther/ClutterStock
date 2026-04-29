@@ -4,7 +4,7 @@ import { deleteItem, getLocation, getRoom, getItem, updateItem } from "~/api/cli
 import { Breadcrumb } from "~/components/breadcrumb";
 import { ItemForm } from "~/components/items";
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const locationId = Number(params.id);
   const roomId = Number(params.roomId);
   const itemId = Number(params.itemId);
@@ -16,9 +16,9 @@ export async function loader({ params }: Route.LoaderArgs) {
     throw new Response("Not found", { status: 404 });
   }
   const [location, room, item] = await Promise.all([
-    getLocation(locationId),
-    getRoom(roomId),
-    getItem(itemId),
+    getLocation(locationId, request),
+    getRoom(roomId, request),
+    getItem(itemId, request),
   ]);
   if (
     !location ||
@@ -41,7 +41,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
   const formData = await request.formData();
   if (formData.get("_action") === "delete") {
-    await deleteItem(itemId);
+    await deleteItem(itemId, request);
     return redirect(
       `/locations/${locationId}/rooms/${roomId}/items`
     );
@@ -66,7 +66,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         : undefined,
     notes:
       typeof notes === "string" && notes.trim() ? notes.trim() : undefined,
-  });
+  }, request);
   return redirect(
     `/locations/${locationId}/rooms/${roomId}/items`
   );

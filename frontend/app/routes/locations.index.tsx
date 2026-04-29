@@ -4,8 +4,8 @@ import { routes } from "~/constants/routes";
 import { deleteLocation, getLocations } from "~/api/client";
 import { LocationsList } from "~/features/locations";
 
-export function loader(_args: Route.LoaderArgs) {
-  return getLocations();
+export function loader({ request }: Route.LoaderArgs) {
+  return getLocations(request);
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -13,7 +13,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (formData.get("_action") !== "delete") return null;
   const id = Number(formData.get("id"));
   if (Number.isNaN(id)) return null;
-  await deleteLocation(id);
+  await deleteLocation(id, request);
   return redirect(routes.locations.list());
 }
 

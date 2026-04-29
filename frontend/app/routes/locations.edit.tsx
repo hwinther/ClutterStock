@@ -4,10 +4,10 @@ import { routes } from "~/constants/routes";
 import { deleteLocation, getLocation, updateLocation } from "~/api/client";
 import { LocationForm } from "~/features/locations";
 
-export function loader({ params }: Route.LoaderArgs) {
+export function loader({ params, request }: Route.LoaderArgs) {
   const id = Number(params.id);
   if (Number.isNaN(id)) throw new Response("Not found", { status: 404 });
-  return getLocation(id);
+  return getLocation(id, request);
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -15,7 +15,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   if (Number.isNaN(id)) throw new Response("Not found", { status: 404 });
   const formData = await request.formData();
   if (formData.get("_action") === "delete") {
-    await deleteLocation(id);
+    await deleteLocation(id, request);
     return redirect(routes.locations.list());
   }
   const name = formData.get("name");
@@ -29,7 +29,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       typeof description === "string" && description.trim()
         ? description.trim()
         : undefined,
-  });
+  }, request);
   return redirect(routes.locations.list());
 }
 
