@@ -5,15 +5,15 @@ import { deleteRoom, getLocation, getRoom, updateRoom } from "~/api/client";
 import { Breadcrumb } from "~/components/breadcrumb";
 import { RoomForm } from "~/features/rooms";
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const locationId = Number(params.id);
   const roomId = Number(params.roomId);
   if (Number.isNaN(locationId) || Number.isNaN(roomId)) {
     throw new Response("Not found", { status: 404 });
   }
   const [location, room] = await Promise.all([
-    getLocation(locationId),
-    getRoom(roomId),
+    getLocation(locationId, request),
+    getRoom(roomId, request),
   ]);
   if (!location || !room || room?.locationId !== locationId) {
     throw new Response("Not found", { status: 404 });
@@ -29,7 +29,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
   const formData = await request.formData();
   if (formData.get("_action") === "delete") {
-    await deleteRoom(roomId);
+    await deleteRoom(roomId, request);
     return redirect(routes.locations.rooms(locationId));
   }
   const name = formData.get("name");
@@ -44,7 +44,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       typeof description === "string" && description.trim()
         ? description.trim()
         : undefined,
-  });
+  }, request);
   return redirect(routes.locations.rooms(locationId));
 }
 

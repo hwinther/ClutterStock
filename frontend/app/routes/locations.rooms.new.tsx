@@ -4,10 +4,10 @@ import { getLocation, createRoom } from "~/api/client";
 import { Breadcrumb } from "~/components/breadcrumb";
 import { RoomForm } from "~/components/rooms";
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const locationId = Number(params.id);
   if (Number.isNaN(locationId)) throw new Response("Not found", { status: 404 });
-  const location = await getLocation(locationId);
+  const location = await getLocation(locationId, request);
   if (!location) throw new Response("Not found", { status: 404 });
   return { location };
 }
@@ -28,7 +28,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       typeof description === "string" && description.trim()
         ? description.trim()
         : undefined,
-  });
+  }, request);
   return redirect(`/locations/${locationId}/rooms`);
 }
 

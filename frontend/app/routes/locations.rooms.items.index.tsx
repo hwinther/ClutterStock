@@ -4,16 +4,16 @@ import { deleteItem, getLocation, getRoom, getItems } from "~/api/client";
 import { Breadcrumb } from "~/components/breadcrumb";
 import { ItemsList } from "~/components/items";
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const locationId = Number(params.id);
   const roomId = Number(params.roomId);
   if (Number.isNaN(locationId) || Number.isNaN(roomId)) {
     throw new Response("Not found", { status: 404 });
   }
   const [location, room, allItems] = await Promise.all([
-    getLocation(locationId),
-    getRoom(roomId),
-    getItems(),
+    getLocation(locationId, request),
+    getRoom(roomId, request),
+    getItems(request),
   ]);
   if (!location || !room || room.locationId !== locationId) {
     throw new Response("Not found", { status: 404 });
@@ -32,7 +32,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   if (formData.get("_action") !== "delete") return null;
   const itemId = Number(formData.get("id"));
   if (Number.isNaN(itemId)) return null;
-  await deleteItem(itemId);
+  await deleteItem(itemId, request);
   return redirect(`/locations/${locationId}/rooms/${roomId}/items`);
 }
 

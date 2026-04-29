@@ -8,6 +8,10 @@ interface ImportMetaEnv {
   /** Build-time fallback; at runtime in Docker/K8s prefer PUBLIC_* via root loader + process.env on SSR. */
   readonly VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT?: string;
   readonly VITE_OTEL_SERVICE_NAME?: string;
+  /** OIDC provider URL (e.g. https://auth.wsh.no). */
+  readonly VITE_OIDC_AUTHORITY?: string;
+  /** OIDC client_id registered in Authelia. */
+  readonly VITE_OIDC_CLIENT_ID?: string;
 }
 
 interface ImportMeta {

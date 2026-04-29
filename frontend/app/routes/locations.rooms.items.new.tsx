@@ -4,15 +4,15 @@ import { getLocation, getRoom, createItem } from "~/api/client";
 import { Breadcrumb } from "~/components/breadcrumb";
 import { ItemForm } from "~/components/items";
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const locationId = Number(params.id);
   const roomId = Number(params.roomId);
   if (Number.isNaN(locationId) || Number.isNaN(roomId)) {
     throw new Response("Not found", { status: 404 });
   }
   const [location, room] = await Promise.all([
-    getLocation(locationId),
-    getRoom(roomId),
+    getLocation(locationId, request),
+    getRoom(roomId, request),
   ]);
   if (!location || !room || room.locationId !== locationId) {
     throw new Response("Not found", { status: 404 });
@@ -47,7 +47,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         : undefined,
     notes:
       typeof notes === "string" && notes.trim() ? notes.trim() : undefined,
-  });
+  }, request);
   return redirect(
     `/locations/${locationId}/rooms/${roomId}/items`
   );

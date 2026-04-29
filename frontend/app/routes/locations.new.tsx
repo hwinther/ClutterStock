@@ -18,7 +18,7 @@ export function action({ request }: Route.ActionArgs) {
         typeof description === "string" && description.trim()
           ? description.trim()
           : undefined,
-    });
+    }, request);
     return redirect(routes.locations.list());
   })();
 }

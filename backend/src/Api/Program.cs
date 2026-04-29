@@ -3,12 +3,35 @@ using ClutterStock.Api.Generated;
 using ClutterStock.Api.Options;
 using ClutterStock.Infrastructure.Database;
 using ClutterStock.Infrastructure.Extensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenTelemetryObservability(builder.Environment);
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy =>
+    {
+        if (allowedOrigins.Length > 0)
+            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+    }));
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = builder.Configuration["Authentication:Authority"];
+        options.Audience = builder.Configuration["Authentication:Audience"];
+    });
+
+builder.Services.AddAuthorization(options =>
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build());
 
 builder.Services.AddInfrastructure(
     PostgresUrlParser.Parse(
@@ -26,6 +49,10 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+app.UseCors();
+app.UseOpenApiDocumentation();
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -33,8 +60,6 @@ if (app.Environment.IsDevelopment())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
     await db.Database.MigrateAsync();
 }
-
-app.UseOpenApiDocumentation();
 
 app.UseHttpsRedirection();
 
@@ -49,13 +74,16 @@ var readiness = new HealthCheckOptions
 };
 
 app.MapHealthChecks("/healthz", liveness)
-   .WithTags("Health");
+   .WithTags("Health")
+   .AllowAnonymous();
 
 app.MapHealthChecks("/healthz/live", liveness)
-   .WithTags("Health");
+   .WithTags("Health")
+   .AllowAnonymous();
 
 app.MapHealthChecks("/healthz/ready", readiness)
-   .WithTags("Health");
+   .WithTags("Health")
+   .AllowAnonymous();
 
 app.MapDiscoveredEndpoints();
 app.MapControllers();
