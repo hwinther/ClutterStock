@@ -79,6 +79,10 @@ export function Layout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Set theme before first paint to avoid flash */}
+        <script dangerouslySetInnerHTML={{ __html:
+          `(function(){try{var t=localStorage.getItem('cs-theme');if(t&&['tui','win98','cde'].includes(t))document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`
+        }} />
         <Meta />
         <Links />
       </head>

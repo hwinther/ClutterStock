@@ -266,3 +266,709 @@ dialog::backdrop {
 .text-muted-sm  { font-size: 12px; color: var(--c-fg-3); }
 .text-error     { font-size: 12px; color: var(--c-danger); }
 .text-body      { font-size: 13px; font-weight: 500; color: var(--c-fg); }
+
+/* ══════════════════════════════════════════════════════════════════
+   TUI / Terminal theme
+   ══════════════════════════════════════════════════════════════════ */
+:root[data-theme="tui"] {
+  --c-bg:          #0a0f0a;
+  --c-bg-2:        #0d1610;
+  --c-bg-3:        #111c11;
+  --c-fg:          #33ff66;
+  --c-fg-2:        #1f8a3a;
+  --c-fg-3:        #0f4d22;
+  --c-border:      #1a5c2a;
+  --c-border-2:    #122a18;
+  --c-accent:      #33ff66;
+  --c-accent-bg:   rgba(51, 255, 102, 0.08);
+  --c-accent-bg-2: rgba(51, 255, 102, 0.16);
+  --c-danger:      #ff5577;
+  --c-danger-bg:   rgba(255, 85, 119, 0.10);
+  --c-good:        #aaffaa;
+}
+
+/* Monospace font for the whole app */
+html[data-theme="tui"],
+html[data-theme="tui"] body {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+  letter-spacing: 0;
+  font-feature-settings: normal;
+}
+
+/* Phosphor glow on body so it inherits to all text */
+html[data-theme="tui"] body {
+  text-shadow: 0 0 8px rgba(51, 255, 102, 0.30);
+}
+
+/* No rounded corners — terminals are square */
+html[data-theme="tui"] * {
+  border-radius: 0 !important;
+}
+
+/* Primary button → outlined terminal style */
+html[data-theme="tui"] .btn-primary {
+  background: transparent;
+  border: 1px solid var(--c-accent);
+  color: var(--c-accent);
+}
+html[data-theme="tui"] .btn-primary:hover {
+  background: var(--c-accent-bg);
+  opacity: 1;
+}
+
+/* Secondary button → dimmer outline */
+html[data-theme="tui"] .btn-secondary {
+  background: transparent;
+  border-color: var(--c-fg-3);
+  color: var(--c-fg-2);
+}
+
+/* Input focus ring in green */
+html[data-theme="tui"] .form-input:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 2px rgba(51, 255, 102, 0.15);
+}
+
+/* Scanline overlay — subtle phosphor texture */
+html[data-theme="tui"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+  z-index: 9999;
+}
+
+/* Blinking cursor used in header/footer */
+@keyframes tui-blink { 50% { opacity: 0; } }
+.tui-cursor {
+  display: none;
+}
+html[data-theme="tui"] .tui-cursor {
+  display: inline;
+  animation: tui-blink 1s step-end infinite;
+}
+
+/* TUI warn colour */
+:root[data-theme="tui"] { --c-warn: #ffd24d; }
+
+/* Panel boxes with dashed border */
+.tui-panel { position: relative; }
+html[data-theme="tui"] .tui-panel {
+  border: 1px dashed var(--c-border) !important;
+  margin-top: 14px;
+}
+
+/* Floating panel title */
+.tui-panel-title { display: none; }
+html[data-theme="tui"] .tui-panel-title {
+  display: block;
+  position: absolute;
+  top: -10px; left: 8px;
+  background: var(--c-bg);
+  color: var(--c-fg-2);
+  padding: 0 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+/* Row selection — full inverse highlight */
+html[data-theme="tui"] tr[data-selected="true"] {
+  background: var(--c-accent) !important;
+}
+html[data-theme="tui"] tr[data-selected="true"] td {
+  color: var(--c-bg) !important;
+  border-left-color: transparent !important;
+  text-shadow: none !important;
+}
+html[data-theme="tui"] tr[data-selected="true"] td:first-child::before {
+  content: "▶ ";
+}
+
+/* Table header — terminal style */
+html[data-theme="tui"] th {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 400 !important;
+  border-bottom: 1px dashed var(--c-border) !important;
+}
+
+/* Status bar */
+.tui-statusbar { display: none; }
+html[data-theme="tui"] .tui-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 6px 14px;
+  border-top: 1px dashed var(--c-border);
+  font-size: 12px;
+  color: var(--c-fg-2);
+  flex-shrink: 0;
+}
+html[data-theme="tui"] .tui-statusbar-key {
+  background: var(--c-fg-2);
+  color: var(--c-bg);
+  padding: 0 4px;
+  font-weight: 700;
+}
+html[data-theme="tui"] .tui-statusbar-prompt {
+  margin-left: auto;
+  color: var(--c-fg);
+}
+
+/* Logo variants */
+.tui-brand  { display: none; }
+.modern-logo { display: inherit; }
+html[data-theme="tui"] .tui-brand   { display: inline; }
+html[data-theme="tui"] .modern-logo { display: none; }
+
+/* ══════════════════════════════════════════════════════════════════
+   Win98 theme
+   ══════════════════════════════════════════════════════════════════ */
+:root[data-theme="win98"] {
+  --c-bg:          #c0c0c0;
+  --c-bg-2:        #c0c0c0;
+  --c-bg-3:        #ffffff;
+  --c-fg:          #000000;
+  --c-fg-2:        #404040;
+  --c-fg-3:        #808080;
+  --c-border:      #808080;
+  --c-border-2:    #dfdfdf;
+  --c-accent:      #000080;
+  --c-accent-bg:   rgba(0, 0, 128, 0.10);
+  --c-accent-bg-2: rgba(0, 0, 128, 0.20);
+  --c-danger:      #800000;
+  --c-danger-bg:   rgba(128, 0, 0, 0.10);
+  --c-good:        #008000;
+}
+
+html[data-theme="win98"],
+html[data-theme="win98"] body {
+  font-family: 'MS Sans Serif', 'Pixelated MS Sans Serif', Tahoma, Geneva, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0;
+  font-feature-settings: normal;
+}
+
+html[data-theme="win98"] * {
+  border-radius: 0 !important;
+}
+
+/* Raised bevel — the classic 3-D button look */
+html[data-theme="win98"] .btn-primary,
+html[data-theme="win98"] .btn-secondary,
+html[data-theme="win98"] .btn-danger {
+  background: #c0c0c0 !important;
+  color: #000000 !important;
+  border: none !important;
+  opacity: 1 !important;
+  box-shadow:
+    inset  1px  1px 0 #ffffff,
+    inset  2px  2px 0 #dfdfdf,
+    inset -1px -1px 0 #808080,
+    inset -2px -2px 0 #000000;
+  padding: 4px 12px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+html[data-theme="win98"] .btn-primary:hover,
+html[data-theme="win98"] .btn-secondary:hover,
+html[data-theme="win98"] .btn-danger:hover {
+  background: #c0c0c0 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="win98"] .btn-primary:active,
+html[data-theme="win98"] .btn-secondary:active,
+html[data-theme="win98"] .btn-danger:active {
+  box-shadow:
+    inset -1px -1px 0 #ffffff,
+    inset -2px -2px 0 #dfdfdf,
+    inset  1px  1px 0 #808080,
+    inset  2px  2px 0 #000000;
+  padding: 5px 11px 3px 13px;
+}
+
+/* Sunken bevel for inputs */
+html[data-theme="win98"] .form-input,
+html[data-theme="win98"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="win98"] textarea,
+html[data-theme="win98"] select {
+  border: none !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  box-shadow:
+    inset -1px -1px 0 #ffffff,
+    inset -2px -2px 0 #dfdfdf,
+    inset  1px  1px 0 #808080,
+    inset  2px  2px 0 #000000;
+}
+
+html[data-theme="win98"] .form-input:focus,
+html[data-theme="win98"] input:not([type="checkbox"]):not([type="radio"]):focus,
+html[data-theme="win98"] textarea:focus,
+html[data-theme="win98"] select:focus {
+  outline: 1px dotted #000000;
+  outline-offset: -4px;
+}
+
+/* Raised bevel for cards */
+html[data-theme="win98"] .card,
+html[data-theme="win98"] .card-padded,
+html[data-theme="win98"] .card-empty {
+  border: none !important;
+  box-shadow:
+    inset  1px  1px 0 #ffffff,
+    inset  2px  2px 0 #dfdfdf,
+    inset -1px -1px 0 #808080,
+    inset -2px -2px 0 #000000;
+}
+
+/* Header: title bar gradient */
+html[data-theme="win98"] header {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%) !important;
+  border-bottom: 2px solid #000080 !important;
+  height: 24px !important;
+}
+
+html[data-theme="win98"] header a,
+html[data-theme="win98"] header span,
+html[data-theme="win98"] header button:not(.theme-toggle) {
+  color: #ffffff !important;
+}
+
+html[data-theme="win98"] header .theme-toggle {
+  box-shadow:
+    inset  1px  1px 0 #ffffff,
+    inset  2px  2px 0 #dfdfdf,
+    inset -1px -1px 0 #808080,
+    inset -2px -2px 0 #000000;
+  background: #c0c0c0 !important;
+  color: #000000 !important;
+  border: none !important;
+  font-size: 10px;
+}
+
+/* Teal desktop background */
+html[data-theme="win98"] body {
+  background: #008080 !important;
+}
+
+/* ── Menu bar ── */
+.win98-menubar { display: none; }
+html[data-theme="win98"] .win98-menubar {
+  display: flex;
+  padding: 2px 0;
+  flex-shrink: 0;
+  background: var(--c-bg);
+  border-bottom: 1px solid var(--c-border);
+}
+html[data-theme="win98"] .win98-menubar-item {
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+html[data-theme="win98"] .win98-menubar-item:hover {
+  background: #000080;
+  color: #ffffff;
+}
+
+/* ── Address bar ── */
+.win98-addressbar { display: none; }
+html[data-theme="win98"] .win98-addressbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+  font-size: 11px;
+  background: var(--c-bg);
+  border-bottom: 1px solid var(--c-border-2);
+}
+html[data-theme="win98"] .win98-addressbar-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  padding: 2px 4px;
+  box-shadow:
+    inset -1px -1px 0 #ffffff,
+    inset -2px -2px 0 #dfdfdf,
+    inset  1px  1px 0 #808080,
+    inset  2px  2px 0 #000000;
+}
+html[data-theme="win98"] .win98-addressbar-go {
+  padding: 1px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  background: #c0c0c0;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  box-shadow:
+    inset  1px  1px 0 #ffffff,
+    inset  2px  2px 0 #dfdfdf,
+    inset -1px -1px 0 #808080,
+    inset -2px -2px 0 #000000;
+}
+
+/* ── Sunken bevel on sidebar + table panels ── */
+html[data-theme="win98"] .tui-panel {
+  background: #ffffff !important;
+  box-shadow:
+    inset -1px -1px 0 #ffffff,
+    inset -2px -2px 0 #dfdfdf,
+    inset  1px  1px 0 #808080,
+    inset  2px  2px 0 #000000 !important;
+  border: none !important;
+}
+html[data-theme="win98"] aside.tui-panel {
+  background: var(--c-bg) !important;
+}
+
+/* ── Per-column raised-bevel th ── */
+html[data-theme="win98"] th {
+  background: #c0c0c0 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  padding: 2px 6px !important;
+  border: none !important;
+  box-shadow:
+    inset  1px  1px 0 #ffffff,
+    inset  2px  2px 0 #dfdfdf,
+    inset -1px -1px 0 #808080,
+    inset -2px -2px 0 #000000;
+}
+
+/* ── Alternating row stripe ── */
+html[data-theme="win98"] tbody tr:nth-child(even) {
+  background: #efefef;
+}
+
+/* ── Row selection → navy + white ── */
+html[data-theme="win98"] tr[data-selected="true"] {
+  background: #000080 !important;
+}
+html[data-theme="win98"] tr[data-selected="true"] td {
+  color: #ffffff !important;
+  border-left-color: transparent !important;
+}
+
+/* ── Status bar ── */
+.win98-statusbar { display: none; }
+html[data-theme="win98"] .win98-statusbar {
+  display: flex;
+  gap: 3px;
+  padding: 3px 4px;
+  flex-shrink: 0;
+  background: var(--c-bg);
+  border-top: 1px solid var(--c-border-2);
+}
+html[data-theme="win98"] .win98-statusbar-seg {
+  flex: 1;
+  font-size: 11px;
+  padding: 2px 6px;
+  box-shadow:
+    inset -1px -1px 0 #ffffff,
+    inset -2px -2px 0 #dfdfdf,
+    inset  1px  1px 0 #808080,
+    inset  2px  2px 0 #000000;
+}
+html[data-theme="win98"] .win98-statusbar-seg--narrow {
+  flex: none;
+  min-width: 100px;
+}
+
+/* ── Window controls ── */
+.win98-wincontrols { display: none; }
+html[data-theme="win98"] .win98-wincontrols {
+  display: flex;
+  gap: 2px;
+  margin-left: 6px;
+}
+html[data-theme="win98"] .win98-wincontrol {
+  width: 16px;
+  height: 14px;
+  background: #c0c0c0;
+  color: #000;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+  border: none;
+  box-shadow:
+    inset  1px  1px 0 #ffffff,
+    inset  2px  2px 0 #dfdfdf,
+    inset -1px -1px 0 #808080,
+    inset -2px -2px 0 #000000;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CDE / Motif theme
+   ══════════════════════════════════════════════════════════════════ */
+:root[data-theme="cde"] {
+  --c-bg:          #7e8e9e;
+  --c-bg-2:        #a3a8b3;
+  --c-bg-3:        #dcdad5;
+  --c-fg:          #000000;
+  --c-fg-2:        #2a2a2a;
+  --c-fg-3:        #5b6878;
+  --c-border:      #5b6878;
+  --c-border-2:    #cbd1dc;
+  --c-accent:      #5e8c8e;
+  --c-accent-bg:   rgba(94, 140, 142, 0.20);
+  --c-accent-bg-2: rgba(94, 140, 142, 0.35);
+  --c-danger:      #8b0000;
+  --c-danger-bg:   rgba(139, 0, 0, 0.10);
+  --c-good:        #2d6a4f;
+}
+
+html[data-theme="cde"],
+html[data-theme="cde"] body {
+  font-family: 'Bitstream Vera Sans', 'DejaVu Sans', 'Liberation Sans', Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0;
+  font-feature-settings: normal;
+}
+
+html[data-theme="cde"] * {
+  border-radius: 0 !important;
+}
+
+/* CDE raised bevel (Motif style — thinner than Win98) */
+html[data-theme="cde"] .btn-primary {
+  background: #5e8c8e !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 700;
+  opacity: 1 !important;
+  box-shadow:
+    inset  1px  1px 0 #8bbcbe,
+    inset -1px -1px 0 #3d6062;
+}
+
+html[data-theme="cde"] .btn-primary:hover {
+  background: #4d7b7d !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="cde"] .btn-secondary,
+html[data-theme="cde"] .btn-danger {
+  background: #a3a8b3 !important;
+  color: #000000 !important;
+  border: none !important;
+  font-weight: 700;
+  opacity: 1 !important;
+  box-shadow:
+    inset  1px  1px 0 #cbd1dc,
+    inset -1px -1px 0 #5b6878;
+}
+
+html[data-theme="cde"] .btn-primary:active,
+html[data-theme="cde"] .btn-secondary:active {
+  box-shadow:
+    inset -1px -1px 0 #8bbcbe,
+    inset  1px  1px 0 #3d6062;
+}
+
+/* CDE sunken inputs */
+html[data-theme="cde"] .form-input,
+html[data-theme="cde"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="cde"] textarea,
+html[data-theme="cde"] select {
+  border: none !important;
+  background: #dcdad5 !important;
+  color: #000000 !important;
+  box-shadow:
+    inset -1px -1px 0 #cbd1dc,
+    inset  1px  1px 0 #5b6878;
+}
+
+html[data-theme="cde"] .form-input:focus,
+html[data-theme="cde"] input:not([type="checkbox"]):not([type="radio"]):focus,
+html[data-theme="cde"] textarea:focus {
+  outline: 1px solid #5e8c8e;
+  outline-offset: -3px;
+}
+
+/* CDE raised panels */
+html[data-theme="cde"] .card,
+html[data-theme="cde"] .card-padded,
+html[data-theme="cde"] .card-empty {
+  border: none !important;
+  background: #a3a8b3 !important;
+  box-shadow:
+    inset  1px  1px 0 #cbd1dc,
+    inset -1px -1px 0 #5b6878;
+}
+
+/* CDE header: teal-ish title bar */
+html[data-theme="cde"] header {
+  background: #a3a8b3 !important;
+  border-bottom: 2px solid #5b6878 !important;
+  box-shadow: 0 2px 0 #cbd1dc !important;
+}
+
+html[data-theme="cde"] header .theme-toggle {
+  background: #a3a8b3 !important;
+  color: #000000 !important;
+  border: none !important;
+  box-shadow:
+    inset  1px  1px 0 #cbd1dc,
+    inset -1px -1px 0 #5b6878;
+}
+
+/* Slate gray desktop background */
+html[data-theme="cde"] body {
+  background: #7e8e9e !important;
+}
+
+/* ── Menu bar ── */
+.cde-menubar { display: none; }
+html[data-theme="cde"] .cde-menubar {
+  display: flex;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  background: var(--c-bg-2);
+  box-shadow: inset 1px 1px 0 #cbd1dc, inset -1px -1px 0 #5b6878;
+}
+html[data-theme="cde"] .cde-menubar-item {
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+html[data-theme="cde"] .cde-menubar-item:hover {
+  background: #3b6ea5;
+  color: #ffffff;
+}
+
+/* ── Sidebar + table panels: inset bevel (field areas) ── */
+html[data-theme="cde"] .tui-panel {
+  background: #dcdad5 !important;
+  border: none !important;
+  box-shadow:
+    inset  2px  2px 0 #5b6878,
+    inset -2px -2px 0 #cbd1dc !important;
+}
+html[data-theme="cde"] aside.tui-panel {
+  background: var(--c-bg-2) !important;
+  box-shadow:
+    inset -2px -2px 0 #5b6878,
+    inset  2px  2px 0 #cbd1dc !important;
+}
+
+/* ── Per-column raised-bevel th ── */
+html[data-theme="cde"] th {
+  background: var(--c-bg-2) !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  padding: 3px 8px !important;
+  border: none !important;
+  box-shadow:
+    inset -1px -1px 0 #5b6878,
+    inset  1px  1px 0 #cbd1dc;
+}
+
+/* ── Row dotted separators ── */
+html[data-theme="cde"] tbody tr {
+  border-bottom: 1px dotted #5b6878 !important;
+}
+
+/* ── Row selection → dark blue + white ── */
+html[data-theme="cde"] tr[data-selected="true"] {
+  background: #3b6ea5 !important;
+}
+html[data-theme="cde"] tr[data-selected="true"] td {
+  color: #ffffff !important;
+  border-left-color: transparent !important;
+}
+
+/* ── Sidebar section group headers (teal strip) ── */
+html[data-theme="cde"] .sidebar-group-title {
+  display: block;
+  background: #5e8c8e !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 10px !important;
+  letter-spacing: 0.06em !important;
+  padding: 2px 6px !important;
+  margin: 8px -14px 0 !important;
+  box-shadow: inset -1px -1px 0 #3d6062, inset 1px 1px 0 #8bbcbe;
+}
+
+/* ── Sidebar active row → dark blue ── */
+html[data-theme="cde"] .sidebar-row-active {
+  background: #3b6ea5 !important;
+  color: #ffffff !important;
+  border-left-color: transparent !important;
+}
+
+/* ── Front panel ── */
+.cde-footrow { display: none; }
+html[data-theme="cde"] .cde-footrow {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  flex-shrink: 0;
+  background: var(--c-bg-2);
+  box-shadow: inset 1px 1px 0 #cbd1dc, inset -1px -1px 0 #5b6878;
+}
+html[data-theme="cde"] .cde-footrow-btn {
+  background: var(--c-bg-2);
+  color: #000000;
+  border: none;
+  padding: 4px 14px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 60px;
+  box-shadow: inset -1px -1px 0 #5b6878, inset 1px 1px 0 #cbd1dc;
+}
+html[data-theme="cde"] .cde-footrow-btn:active {
+  box-shadow: inset 1px 1px 0 #5b6878, inset -1px -1px 0 #cbd1dc;
+}
+html[data-theme="cde"] .cde-footrow-btn--primary {
+  background: #5e8c8e;
+  color: #ffffff;
+  box-shadow: inset -1px -1px 0 #3d6062, inset 1px 1px 0 #8bbcbe;
+}
+
+/* ── CDE logo and window controls ── */
+.cde-brand { display: none; }
+html[data-theme="cde"] .cde-brand   { display: inline; }
+html[data-theme="cde"] .modern-logo { display: none; }
+
+.cde-wincontrols { display: none; }
+html[data-theme="cde"] .cde-wincontrols {
+  display: flex;
+  gap: 4px;
+  margin-left: 6px;
+}
+html[data-theme="cde"] .cde-wincontrol {
+  width: 16px;
+  height: 14px;
+  background: var(--c-bg-2);
+  color: #000;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+  border: none;
+  box-shadow: inset -1px -1px 0 #5b6878, inset 1px 1px 0 #cbd1dc;
+}

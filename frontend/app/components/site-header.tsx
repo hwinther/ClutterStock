@@ -3,10 +3,44 @@ import { Link } from "react-router";
 import type { User } from "oidc-client-ts";
 import { UserModal } from "./user-modal";
 
+type ThemeId = "system" | "tui" | "win98" | "cde";
+const THEMES: ThemeId[] = ["system", "tui", "win98", "cde"];
+const THEME_LABELS: Record<ThemeId, string> = {
+  system: "SYS",
+  tui:    "TUI",
+  win98:  "W98",
+  cde:    "CDE",
+};
+const STORAGE_KEY = "cs-theme";
+
+function applyTheme(t: ThemeId) {
+  if (t === "system") {
+    document.documentElement.removeAttribute("data-theme");
+    localStorage.removeItem(STORAGE_KEY);
+  } else {
+    document.documentElement.setAttribute("data-theme", t);
+    localStorage.setItem(STORAGE_KEY, t);
+  }
+}
+
 export function SiteHeader() {
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [theme, setThemeState] = useState<ThemeId>("system");
+
+  function cycleTheme() {
+    const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length] ?? "system";
+    setThemeState(next);
+    applyTheme(next);
+  }
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
+      if (stored && THEMES.includes(stored)) setThemeState(stored);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -62,7 +96,7 @@ export function SiteHeader() {
             to="/locations"
             style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
           >
-            <div style={{
+            <div className="modern-logo" style={{
               width: 22,
               height: 22,
               borderRadius: 6,
@@ -76,13 +110,44 @@ export function SiteHeader() {
             }}>
               ▦
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-fg)" }}>
+            <span className="modern-logo" style={{ fontSize: 13, fontWeight: 600, color: "var(--c-fg)" }}>
               ClutterStock
+            </span>
+            <span className="tui-brand" style={{ fontSize: 13, color: "var(--c-fg)", fontFamily: "inherit" }}>
+              ╭─[ <strong>clutterstock</strong> ]─
+            </span>
+            <span className="cde-brand" style={{ fontWeight: 700, fontSize: 12, color: "var(--c-fg)" }}>
+              ClutterStock — Home
             </span>
           </Link>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, height: 32 }}>
+          {/* TUI clock — only visible in TUI theme via CSS */}
+          {mounted && (
+            <span className="tui-brand" style={{ fontSize: 11, color: "var(--c-fg-2)", fontFamily: "inherit" }}>
+              {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+          {/* Theme toggle */}
+          <button
+            onClick={cycleTheme}
+            title={`Theme: ${theme} — click to cycle`}
+            className="theme-toggle"
+            style={{
+              fontFamily: "ui-monospace, monospace",
+              fontSize: 11,
+              padding: "3px 8px",
+              border: "1px solid var(--c-border)",
+              background: "transparent",
+              color: "var(--c-fg-3)",
+              cursor: "pointer",
+              letterSpacing: "0.04em",
+            }}
+          >
+            [{THEME_LABELS[theme]}]<span className="tui-cursor">▌</span>
+          </button>
+
           {mounted && (
             user ? (
               <button
@@ -132,6 +197,16 @@ export function SiteHeader() {
               </button>
             )
           )}
+          <div className="win98-wincontrols">
+            {["_", "□", "✕"].map(c => (
+              <button key={c} className="win98-wincontrol">{c}</button>
+            ))}
+          </div>
+          <div className="cde-wincontrols">
+            {["_", "□"].map(c => (
+              <button key={c} className="cde-wincontrol" type="button">{c}</button>
+            ))}
+          </div>
         </div>
       </header>
 
