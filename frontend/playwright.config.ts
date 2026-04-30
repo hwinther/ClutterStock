@@ -1,4 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+dotenv.config({
+  path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".env.test"),
+});
 
 export default defineConfig({
   testDir: "./e2e",
@@ -11,7 +18,17 @@ export default defineConfig({
     baseURL: "http://localhost:5173",
     trace: "on-first-retry",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/user.json",
+      },
+      dependencies: ["setup"],
+    },
+  ],
   webServer: {
     command: "npm run dev",
     url: "http://localhost:5173",

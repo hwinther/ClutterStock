@@ -16,3 +16,7 @@ reports/
 # Playwright
 playwright-report/
 test-results/
+playwright/.auth/
+
+.env.*
+!.env.*.sample

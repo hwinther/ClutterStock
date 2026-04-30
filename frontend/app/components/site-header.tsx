@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router";
-import type { User } from "oidc-client-ts";
+import { useState, useSyncExternalStore } from "react";
+import { Link, useNavigate, useRouteLoaderData } from "react-router";
+import type { SessionUser } from "~/lib/session.server";
 import { UserModal } from "./user-modal";
 
 type ThemeId = "system" | "tui" | "win98" | "cde";
@@ -24,10 +24,21 @@ function applyTheme(t: ThemeId) {
 }
 
 export function SiteHeader() {
-  const [mounted, setMounted] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const rootData = useRouteLoaderData("root") as { user: SessionUser | null } | undefined;
+  const user = rootData?.user ?? null;
+
+  // useSyncExternalStore returns false on server, true on client — no effect needed
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [theme, setThemeState] = useState<ThemeId>("system");
+  const [theme, setThemeState] = useState<ThemeId>(() => {
+    if (typeof window === "undefined") return "system";
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
+      if (stored && THEMES.includes(stored)) return stored;
+    } catch { /* ignore */ }
+    return "system";
+  });
+  const navigate = useNavigate();
 
   function cycleTheme() {
     const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length] ?? "system";
@@ -35,45 +46,16 @@ export function SiteHeader() {
     applyTheme(next);
   }
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
-      if (stored && THEMES.includes(stored)) setThemeState(stored);
-    } catch { /* ignore localStorage errors */ }
-  }, []);
-
-  useEffect(() => {
-    setMounted(true);
-    let cancelled = false;
-
-    async function init() {
-      const { getUserManager } = await import("~/auth/oidcClient");
-      const mgr = getUserManager();
-
-      const current = await mgr.getUser();
-      if (!cancelled) setUser(current && !current.expired ? current : null);
-
-      mgr.events.addUserLoaded((u) => { if (!cancelled) setUser(u); });
-      mgr.events.addUserUnloaded(() => { if (!cancelled) setUser(null); });
-      mgr.events.addUserSignedOut(() => { if (!cancelled) setUser(null); });
-    }
-
-    init();
-    return () => { cancelled = true; };
-  }, []);
-
-  async function handleSignIn() {
-    const { getUserManager } = await import("~/auth/oidcClient");
-    await getUserManager().signinRedirect({ state: window.location.pathname + window.location.search });
+  function handleSignIn() {
+    navigate("/auth/signin");
   }
 
-  async function handleSignOut() {
-    const { getUserManager } = await import("~/auth/oidcClient");
+  function handleSignOut() {
     setModalOpen(false);
-    await getUserManager().signoutRedirect();
+    navigate("/auth/signout");
   }
 
-  const displayName = user?.profile.name ?? user?.profile.preferred_username;
+  const displayName = user?.name ?? user?.preferred_username;
   const initial = (displayName ?? "?")[0]?.toUpperCase() ?? "?";
 
   return (
@@ -123,13 +105,11 @@ export function SiteHeader() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, height: 32 }}>
-          {/* TUI clock — only visible in TUI theme via CSS */}
           {mounted && (
             <span className="tui-brand" style={{ fontSize: 11, color: "var(--c-fg-2)", fontFamily: "inherit" }}>
               {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
-          {/* Theme toggle */}
           <button
             onClick={cycleTheme}
             title={`Theme: ${theme} — click to cycle`}

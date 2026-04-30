@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import type { User } from "oidc-client-ts";
+import type { SessionUser } from "~/lib/session.server";
 
 interface Props {
-  user: User;
+  user: SessionUser;
   open: boolean;
   onClose: () => void;
   onSignOut: () => void;
@@ -16,14 +16,10 @@ export function UserModal({ user, open, onClose, onSignOut }: Props) {
     else ref.current?.close();
   }, [open]);
 
-  const { profile } = user;
-  const groups = Array.isArray((profile as Record<string, unknown>).groups)
-    ? ((profile as Record<string, unknown>).groups as string[])
-    : [];
-
-  const displayName = profile.name ?? profile.preferred_username ?? profile.sub;
-  const username = profile.preferred_username;
-  const email = profile.email;
+  const groups = user.groups ?? [];
+  const displayName = user.name ?? user.preferred_username ?? user.sub;
+  const username = user.preferred_username;
+  const email = user.email;
   const initial = (displayName ?? "?")[0]?.toUpperCase() ?? "?";
 
   return (
@@ -44,21 +40,12 @@ export function UserModal({ user, open, onClose, onSignOut }: Props) {
       }}
     >
       <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-        {/* Header */}
         <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--c-border-2)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{
-              width: 42,
-              height: 42,
-              borderRadius: 999,
-              background: "var(--c-accent)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 16,
-              fontWeight: 700,
-              color: "white",
-              flexShrink: 0,
+              width: 42, height: 42, borderRadius: 999, background: "var(--c-accent)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, fontWeight: 700, color: "white", flexShrink: 0,
             }}>
               {initial}
             </div>
@@ -73,7 +60,6 @@ export function UserModal({ user, open, onClose, onSignOut }: Props) {
           </div>
         </div>
 
-        {/* Details */}
         <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 0 }}>
           {email && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid var(--c-border-2)", fontSize: 13 }}>
@@ -87,12 +73,8 @@ export function UserModal({ user, open, onClose, onSignOut }: Props) {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "flex-end", maxWidth: 200 }}>
                 {groups.map((g) => (
                   <span key={g} style={{
-                    fontSize: 11,
-                    padding: "2px 8px",
-                    borderRadius: 4,
-                    background: "var(--c-accent-bg)",
-                    color: "var(--c-accent)",
-                    fontWeight: 500,
+                    fontSize: 11, padding: "2px 8px", borderRadius: 4,
+                    background: "var(--c-accent-bg)", color: "var(--c-accent)", fontWeight: 500,
                   }}>
                     {g}
                   </span>
@@ -102,7 +84,6 @@ export function UserModal({ user, open, onClose, onSignOut }: Props) {
           )}
         </div>
 
-        {/* Actions */}
         <div style={{ padding: "12px 20px 16px", borderTop: "1px solid var(--c-border-2)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <button type="button" onClick={onClose} className="btn-secondary">Close</button>
           <button type="button" onClick={onSignOut} className="btn-danger">Sign out</button>

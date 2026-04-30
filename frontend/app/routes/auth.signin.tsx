@@ -1,27 +1,14 @@
-import { useEffect } from "react";
+import { redirect } from "react-router";
+import type { Route } from "./+types/auth.signin";
+import { generateAuthUrl } from "~/lib/oidc.server";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const returnTo = url.searchParams.get("returnTo") || "/locations";
+  const authUrl = await generateAuthUrl(request, returnTo);
+  return redirect(authUrl);
+}
 
 export default function AuthSignIn() {
-  useEffect(() => {
-    async function signIn() {
-      const { getUserManager } = await import("~/auth/oidcClient");
-      const returnTo = new URLSearchParams(window.location.search).get("returnTo")
-        ?? document.referrer
-        ?? "/locations";
-      await getUserManager().signinRedirect({ state: returnTo });
-    }
-    signIn();
-  }, []);
-
-  return (
-    <main style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "60vh",
-      color: "var(--c-fg-3)",
-      fontSize: 13,
-    }}>
-      Redirecting to sign in…
-    </main>
-  );
+  return null;
 }

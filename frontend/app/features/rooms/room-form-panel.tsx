@@ -1,8 +1,12 @@
-import { useState } from "react";
-import { createRoom } from "~/api/client";
+import { useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 import type { LocationResponse, RoomResponse } from "~/api/client";
 import { FormField, PanelHeader } from "~/components/panel-ui";
 import { inputStyle } from "~/lib/styles";
+
+type ActionData =
+  | { ok: true; intent: "create-room"; room: RoomResponse }
+  | { ok: false; error: string };
 
 export function RoomFormPanel({ locations, defaultLocationId, onClose, onCreated }: {
   locations: LocationResponse[];
@@ -10,29 +14,36 @@ export function RoomFormPanel({ locations, defaultLocationId, onClose, onCreated
   onClose: () => void;
   onCreated: (room: RoomResponse) => void;
 }) {
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const fetcher = useFetcher<ActionData>();
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const submitting = fetcher.state !== "idle";
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const actionError = fetcher.state === "idle" && fetcher.data && !fetcher.data.ok
+    ? fetcher.data.error : null;
+  const error = validationError ?? actionError;
+
+  const onCreatedRef = useRef(onCreated);
+  useEffect(() => { onCreatedRef.current = onCreated; });
+
+  const fetchedRef = useRef(false);
+  useEffect(() => {
+    if (fetcher.state === "submitting") { fetchedRef.current = true; return; }
+    if (!fetchedRef.current || fetcher.state !== "idle" || !fetcher.data) return;
+    fetchedRef.current = false;
+    const data = fetcher.data;
+    if (!data.ok) return;
+    onCreatedRef.current(data.room);
+  }, [fetcher.state, fetcher.data]);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const name = (fd.get("name") as string ?? "").trim();
     const locationId = Number(fd.get("locationId"));
-    if (!name) { setError("Name is required."); return; }
-    if (!locationId) { setError("Select a location."); return; }
-    setSubmitting(true);
-    setError(null);
-    try {
-      const room = await createRoom({
-        locationId,
-        name,
-        description: (fd.get("description") as string ?? "").trim() || undefined,
-      });
-      onCreated(room);
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setSubmitting(false);
-    }
+    if (!name) { setValidationError("Name is required."); return; }
+    if (!locationId) { setValidationError("Select a location."); return; }
+    setValidationError(null);
+    fetcher.submit(fd, { method: "post" });
   }
 
   return (
@@ -44,6 +55,7 @@ export function RoomFormPanel({ locations, defaultLocationId, onClose, onCreated
       <span className="tui-panel-title">─[ new room ]─</span>
       <PanelHeader label="NEW ROOM" onClose={onClose} />
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14, padding: 16 }}>
+        <input type="hidden" name="_intent" value="create-room" />
         {error && <div style={{ fontSize: 12, color: "#ef4444", padding: "6px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 6 }}>{error}</div>}
         <FormField label="Location">
           <select name="locationId" defaultValue={defaultLocationId ?? locations[0]?.id ?? ""} style={inputStyle}>

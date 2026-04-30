@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
+// Mock server-only module so jsdom tests can import http.ts
+vi.mock("~/lib/oidc.server", () => ({
+  getValidToken: vi.fn().mockResolvedValue(null),
+}));
+
 const { getApiBaseMock } = vi.hoisted(() => ({
   getApiBaseMock: vi.fn(() => ""),
 }));
@@ -12,12 +17,8 @@ vi.mock("~/constants/api", async (importOriginal) => {
   };
 });
 
-import { apiFetch, setApiHeaderProvider, setApiLogListener } from "./http";
-
-function resetHttpModuleState(): void {
-  setApiHeaderProvider(undefined);
-  setApiLogListener(undefined);
-}
+import { apiFetch, setApiLogListener } from "./http";
+import { getValidToken } from "~/lib/oidc.server";
 
 describe("apiFetch", () => {
   let fetchMock: Mock;
@@ -32,13 +33,14 @@ describe("apiFetch", () => {
   beforeEach(() => {
     getApiBaseMock.mockReset();
     getApiBaseMock.mockImplementation(() => "");
-    resetHttpModuleState();
+    setApiLogListener(undefined);
     fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
+    vi.mocked(getValidToken).mockResolvedValue(null);
   });
 
   afterEach(() => {
-    resetHttpModuleState();
+    setApiLogListener(undefined);
     vi.unstubAllGlobals();
   });
 
@@ -74,29 +76,26 @@ describe("apiFetch", () => {
     expect(lastFetchInit().method).toBeUndefined();
   });
 
-  it("merges sync header provider into request headers", async () => {
-    setApiHeaderProvider(() => ({ Authorization: "Bearer x" }));
-    await apiFetch("/a", {
-      headers: { "X-App": "1" },
-    });
+  it("sets Authorization header from session token when ssrRequest provided", async () => {
+    vi.mocked(getValidToken).mockResolvedValue("tok-abc");
+    const req = new Request("http://localhost/");
+    await apiFetch("/a", {}, req);
     const h = new Headers(lastFetchInit().headers);
-    expect(h.get("X-App")).toBe("1");
-    expect(h.get("Authorization")).toBe("Bearer x");
+    expect(h.get("Authorization")).toBe("Bearer tok-abc");
   });
 
-  it("merges async header provider into request headers", async () => {
-    setApiHeaderProvider(async () => ({ Authorization: "Bearer async" }));
+  it("omits Authorization header when getValidToken returns null", async () => {
+    vi.mocked(getValidToken).mockResolvedValue(null);
+    const req = new Request("http://localhost/");
+    await apiFetch("/a", {}, req);
+    const h = new Headers(lastFetchInit().headers);
+    expect(h.get("Authorization")).toBeNull();
+  });
+
+  it("omits Authorization header when no ssrRequest provided", async () => {
+    vi.mocked(getValidToken).mockResolvedValue("tok-xyz");
     await apiFetch("/a");
-    expect(new Headers(lastFetchInit().headers).get("Authorization")).toBe(
-      "Bearer async",
-    );
-  });
-
-  it("skips merge when provider returns undefined", async () => {
-    setApiHeaderProvider(() => undefined);
-    await apiFetch("/a", { headers: { "X-Only": "y" } });
     const h = new Headers(lastFetchInit().headers);
-    expect(h.get("X-Only")).toBe("y");
     expect(h.get("Authorization")).toBeNull();
   });
 

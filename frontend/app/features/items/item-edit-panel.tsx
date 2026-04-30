@@ -1,8 +1,13 @@
-import { useState } from "react";
-import { createItem, updateItem, deleteItem } from "~/api/client";
+import { useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 import type { ItemResponse, LocationResponse, RoomResponse } from "~/api/client";
 import { FormField, PanelHeader } from "~/components/panel-ui";
 import { inputStyle } from "~/lib/styles";
+
+type ActionData =
+  | { ok: true; intent: "create-item" | "update-item"; item: ItemResponse }
+  | { ok: true; intent: "delete-item" }
+  | { ok: false; error: string };
 
 export function ItemEditPanel({ item, rooms, locations, defaultRoomId, onClose, onSaved, onDeleted, onNewRoom }: {
   item?: ItemResponse;
@@ -14,46 +19,48 @@ export function ItemEditPanel({ item, rooms, locations, defaultRoomId, onClose, 
   onDeleted: () => void;
   onNewRoom?: (locationId?: number) => void;
 }) {
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const fetcher = useFetcher<ActionData>();
+  const [validationError, setValidationError] = useState<string | null>(null);
   const isNew = !item;
+  const submitting = fetcher.state !== "idle";
   const locationById = Object.fromEntries(locations.map(l => [l.id!, l]));
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  // Derive server-side error from fetcher result during render (no setState needed)
+  const actionError = fetcher.state === "idle" && fetcher.data && !fetcher.data.ok
+    ? fetcher.data.error : null;
+  const error = validationError ?? actionError;
+
+  const onSavedRef = useRef(onSaved);
+  const onDeletedRef = useRef(onDeleted);
+  useEffect(() => { onSavedRef.current = onSaved; onDeletedRef.current = onDeleted; });
+
+  // Only call success callbacks — no setState here (error is derived in render)
+  const fetchedRef = useRef(false);
+  useEffect(() => {
+    if (fetcher.state === "submitting") { fetchedRef.current = true; return; }
+    if (!fetchedRef.current || fetcher.state !== "idle" || !fetcher.data) return;
+    fetchedRef.current = false;
+    const data = fetcher.data;
+    if (!data.ok) return;
+    if (data.intent === "create-item" || data.intent === "update-item") onSavedRef.current(data.item);
+    else if (data.intent === "delete-item") onDeletedRef.current();
+  }, [fetcher.state, fetcher.data]);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const name = (fd.get("name") as string ?? "").trim();
-    if (!name) { setError("Name is required."); return; }
-    const body = {
-      roomId: isNew ? Number(fd.get("roomId")) : item.roomId!,
-      name,
-      description: (fd.get("description") as string ?? "").trim() || undefined,
-      category:    (fd.get("category")    as string ?? "").trim() || undefined,
-      notes:       (fd.get("notes")       as string ?? "").trim() || undefined,
-    };
-    setSubmitting(true);
-    setError(null);
-    try {
-      const saved = isNew
-        ? await createItem(body)
-        : await updateItem(item.id!, body);
-      onSaved(saved);
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setSubmitting(false);
-    }
+    if (!name) { setValidationError("Name is required."); return; }
+    setValidationError(null);
+    fetcher.submit(fd, { method: "post" });
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!item?.id || !confirm("Delete this item?")) return;
-    setSubmitting(true);
-    try {
-      await deleteItem(item.id);
-      onDeleted();
-    } catch {
-      setError("Failed to delete item.");
-      setSubmitting(false);
-    }
+    fetcher.submit(
+      { _intent: "delete-item", itemId: String(item.id) },
+      { method: "post" },
+    );
   }
 
   return (
@@ -69,6 +76,9 @@ export function ItemEditPanel({ item, rooms, locations, defaultRoomId, onClose, 
       />
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14, padding: "16px 16px 0", flex: 1 }}>
+        <input type="hidden" name="_intent" value={isNew ? "create-item" : "update-item"} />
+        {!isNew && <input type="hidden" name="itemId" value={item.id} />}
+
         {error && (
           <div style={{ fontSize: 12, color: "#ef4444", padding: "6px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 6 }}>
             {error}

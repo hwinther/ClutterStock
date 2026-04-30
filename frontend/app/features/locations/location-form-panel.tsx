@@ -1,33 +1,45 @@
-import { useState } from "react";
-import { createLocation } from "~/api/client";
+import { useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 import type { LocationResponse } from "~/api/client";
 import { FormField, PanelHeader } from "~/components/panel-ui";
 import { inputStyle } from "~/lib/styles";
+
+type ActionData =
+  | { ok: true; intent: "create-location"; location: LocationResponse }
+  | { ok: false; error: string };
 
 export function LocationFormPanel({ onClose, onCreated }: {
   onClose: () => void;
   onCreated: (loc: LocationResponse) => void;
 }) {
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const fetcher = useFetcher<ActionData>();
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const submitting = fetcher.state !== "idle";
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const actionError = fetcher.state === "idle" && fetcher.data && !fetcher.data.ok
+    ? fetcher.data.error : null;
+  const error = validationError ?? actionError;
+
+  const onCreatedRef = useRef(onCreated);
+  useEffect(() => { onCreatedRef.current = onCreated; });
+
+  const fetchedRef = useRef(false);
+  useEffect(() => {
+    if (fetcher.state === "submitting") { fetchedRef.current = true; return; }
+    if (!fetchedRef.current || fetcher.state !== "idle" || !fetcher.data) return;
+    fetchedRef.current = false;
+    const data = fetcher.data;
+    if (!data.ok) return;
+    onCreatedRef.current(data.location);
+  }, [fetcher.state, fetcher.data]);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const name = (fd.get("name") as string ?? "").trim();
-    if (!name) { setError("Name is required."); return; }
-    setSubmitting(true);
-    setError(null);
-    try {
-      const loc = await createLocation({
-        name,
-        description: (fd.get("description") as string ?? "").trim() || undefined,
-      });
-      onCreated(loc);
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setSubmitting(false);
-    }
+    if (!name) { setValidationError("Name is required."); return; }
+    setValidationError(null);
+    fetcher.submit(fd, { method: "post" });
   }
 
   return (
@@ -39,6 +51,7 @@ export function LocationFormPanel({ onClose, onCreated }: {
       <span className="tui-panel-title">─[ new location ]─</span>
       <PanelHeader label="NEW LOCATION" onClose={onClose} />
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14, padding: 16 }}>
+        <input type="hidden" name="_intent" value="create-location" />
         {error && <div style={{ fontSize: 12, color: "#ef4444", padding: "6px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 6 }}>{error}</div>}
         <FormField label="Name *">
           <input name="name" type="text" required autoFocus placeholder="e.g. Home, Storage Unit" style={inputStyle} />

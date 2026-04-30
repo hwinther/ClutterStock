@@ -4,6 +4,7 @@ export default [
   index("routes/home.tsx"),
   route("auth/callback", "routes/auth.callback.tsx"),
   route("auth/signin", "routes/auth.signin.tsx"),
+  route("auth/signout", "routes/auth.signout.tsx"),
   route("healthz", "routes/healthz.tsx", [
     index("routes/healthz._index.tsx"),
     route("live", "routes/healthz.live.tsx"),

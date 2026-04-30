@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { useRevalidator } from "react-router";
+import { useFetcher } from "react-router";
 import type { Route } from "./+types/home";
-import { getLocations, getRooms, getItems, deleteItem } from "~/api/client";
+import {
+  getLocations, getRooms, getItems,
+  createItem, updateItem, deleteItem, createRoom, createLocation,
+} from "~/api/client";
 import type { LocationResponse, RoomResponse, ItemResponse } from "~/api/client";
 import { CategoryTag } from "~/components/category-tag";
 import { ItemThumb } from "~/components/item-thumb";
@@ -26,6 +29,39 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { locations, rooms, items };
 }
 
+export async function action({ request }: Route.ActionArgs) {
+  const fd = await request.formData();
+  const intent = (fd.get("_intent") as string) ?? "";
+  const str = (k: string) => ((fd.get(k) as string) ?? "").trim();
+  const opt = (k: string) => str(k) || undefined;
+  try {
+    if (intent === "create-item") {
+      const item = await createItem({ roomId: Number(str("roomId")), name: str("name"), description: opt("description"), category: opt("category"), notes: opt("notes") }, request);
+      return { intent, ok: true as const, item };
+    }
+    if (intent === "update-item") {
+      const item = await updateItem(Number(str("itemId")), { name: str("name"), description: opt("description"), category: opt("category"), notes: opt("notes") }, request);
+      return { intent, ok: true as const, item };
+    }
+    if (intent === "delete-item") {
+      await deleteItem(Number(str("itemId")), request);
+      return { intent, ok: true as const };
+    }
+    if (intent === "create-room") {
+      const room = await createRoom({ locationId: Number(str("locationId")), name: str("name"), description: opt("description") }, request);
+      return { intent, ok: true as const, room };
+    }
+    if (intent === "create-location") {
+      const location = await createLocation({ name: str("name"), description: opt("description") }, request);
+      return { intent, ok: true as const, location };
+    }
+    return { intent, ok: false as const, error: "Unknown intent" };
+  } catch (err) {
+    if (err instanceof Response) throw err;
+    return { intent, ok: false as const, error: "Something went wrong." };
+  }
+}
+
 export function meta() {
   return [{ title: "ClutterStock" }];
 }
@@ -44,7 +80,7 @@ type Panel =
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { locations, rooms, items } = loaderData;
-  const { revalidate } = useRevalidator();
+  const deleteFetcher = useFetcher<typeof action>();
 
   const [panel, setPanel]                   = useState<Panel>(null);
   const [filterRoomId, setFilterRoomId]     = useState<number | null>(null);
@@ -80,25 +116,21 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     }
   }, [rooms, locations, defaultNewRoomId]);
 
-  function handleItemSaved(saved: ItemResponse) {
-    revalidate();
+  const handleItemSaved = useCallback((saved: ItemResponse) => {
     setPanel({ mode: "view", item: saved });
-  }
+  }, []);
 
-  function handleItemDeleted() {
-    revalidate();
+  const handleItemDeleted = useCallback(() => {
     setPanel(null);
-  }
+  }, []);
 
-  function handleLocationCreated(loc: LocationResponse) {
-    revalidate();
+  const handleLocationCreated = useCallback((loc: LocationResponse) => {
     setPanel({ mode: "new-room", locationId: loc.id });
-  }
+  }, []);
 
-  function handleRoomCreated(room: RoomResponse) {
-    revalidate();
+  const handleRoomCreated = useCallback((room: RoomResponse) => {
     setPanel({ mode: "new-item", roomId: room.id! });
-  }
+  }, []);
 
   const stats = [
     { label: "Total items", value: items.length },
@@ -141,7 +173,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           if (panel?.mode === "view") {
             const item = panel.item;
             if (confirm(`Delete "${item.name}"?`)) {
-              deleteItem(item.id!).then(() => { revalidate(); setPanel(null); });
+              setPanel(null);
+              deleteFetcher.submit(
+                { _intent: "delete-item", itemId: String(item.id) },
+                { method: "post" },
+              );
             }
           }
           break;
@@ -159,7 +195,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [panel, visibleItems, openNewItem, revalidate]);
+  }, [panel, visibleItems, openNewItem, deleteFetcher]);
 
   return (
     <div style={{
@@ -433,10 +469,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             onClose={() => setPanel(null)}
             onEdit={() => setPanel({ mode: "edit", item: panel.item })}
             onDelete={() => {
-              deleteItem(panel.item.id!).then(() => {
-                revalidate();
-                setPanel(null);
-              });
+              setPanel(null);
+              deleteFetcher.submit(
+                { _intent: "delete-item", itemId: String(panel.item.id) },
+                { method: "post" },
+              );
             }}
           />
         )}
