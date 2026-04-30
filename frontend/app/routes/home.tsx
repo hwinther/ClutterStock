@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, useRevalidator } from "react-router";
+import { useState, useEffect, useCallback } from "react";
+import { useRevalidator } from "react-router";
 import type { Route } from "./+types/home";
 import { getLocations, getRooms, getItems, createItem, updateItem, deleteItem, createRoom, createLocation } from "~/api/client";
 import type { LocationResponse, RoomResponse, ItemResponse } from "~/api/client";
@@ -178,12 +178,13 @@ function TuiStatusBar() {
 
 function Sparkline({ seed }: { seed: number }) {
   const w = 56, h = 20, n = 7;
-  let v = Math.max(1, seed * 0.5);
-  const pts = Array.from({ length: n }, (_, i) => {
+  const pts = Array.from({ length: n }, (_, i) => i).reduce<number[]>((acc, i) => {
+    const prev = acc.length > 0 ? acc[acc.length - 1]! : Math.max(1, seed * 0.5);
     const noise = ((seed * (i * 13 + 7)) % 7) - 3;
-    v = Math.max(1, v + (seed - v) * 0.35 + noise);
-    return i === n - 1 ? seed : Math.round(v);
-  });
+    const next = Math.max(1, prev + (seed - prev) * 0.35 + noise);
+    acc.push(i === n - 1 ? seed : Math.round(next));
+    return acc;
+  }, []);
   const max = Math.max(...pts, 1);
   const coords = pts
     .map((p, i) => `${((i / (n - 1)) * w).toFixed(1)},${(h - (p / max) * h).toFixed(1)}`)
@@ -659,7 +660,7 @@ function LocationFormPanel({ onClose, onCreated }: {
           }}>Cancel</button>
         </div>
         <p style={{ fontSize: 11, color: "var(--c-fg-3)", margin: 0 }}>
-          After creating the location you'll be able to add a room.
+          After creating the location you&apos;ll be able to add a room.
         </p>
       </form>
     </aside>
@@ -736,7 +737,7 @@ function RoomFormPanel({ locations, defaultLocationId, onClose, onCreated }: {
           }}>Cancel</button>
         </div>
         <p style={{ fontSize: 11, color: "var(--c-fg-3)", margin: 0 }}>
-          After creating the room you'll be able to add items to it.
+          After creating the room you&apos;ll be able to add items to it.
         </p>
       </form>
     </aside>
@@ -865,13 +866,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const viewRoom     = viewItem?.roomId != null ? roomById[viewItem.roomId] : null;
   const viewLocation = viewRoom?.locationId != null ? locationById[viewRoom.locationId] : null;
 
-  function openNewItem() {
+  const openNewItem = useCallback(() => {
     if (rooms.length === 0) {
       setPanel(locations.length === 0 ? { mode: "new-location" } : { mode: "new-room" });
     } else {
       setPanel({ mode: "new-item", roomId: defaultNewRoomId ?? rooms[0]!.id! });
     }
-  }
+  }, [rooms, locations, defaultNewRoomId]);
 
   function handleItemSaved(saved: ItemResponse) {
     revalidate();

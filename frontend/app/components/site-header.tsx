@@ -39,7 +39,7 @@ export function SiteHeader() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
       if (stored && THEMES.includes(stored)) setThemeState(stored);
-    } catch {}
+    } catch { /* ignore localStorage errors */ }
   }, []);
 
   useEffect(() => {
