@@ -37,7 +37,7 @@ internal static class OpenApiServiceExtensions
             options.OperationFilter<GlobalResponsesOperationFilter>();
             options.SwaggerGeneratorOptions.XmlCommentEndOfLine = "\n";
 
-            options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+            options.AddSecurityDefinition("oidc", new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.OAuth2,
                 Flows = new OpenApiOAuthFlows
@@ -48,17 +48,19 @@ internal static class OpenApiServiceExtensions
                         TokenUrl = new Uri("https://auth.wsh.no/api/oidc/token"),
                         Scopes = new Dictionary<string, string>
                         {
-                            ["openid"] = "OpenID Connect",
+                            ["openid"] = "OpenID",
                             ["profile"] = "Profile",
                             ["email"] = "Email",
+                            ["groups"] = "Groups",
+                            ["offline_access"] = "Offline access",
                         }
                     }
                 }
             });
 
-            options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+            options.AddSecurityRequirement(static doc => new OpenApiSecurityRequirement
             {
-                { new OpenApiSecuritySchemeReference("oauth2"), ["openid", "profile", "email"] }
+                { new OpenApiSecuritySchemeReference("oidc", doc), [] }
             });
         });
 

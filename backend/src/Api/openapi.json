@@ -974,16 +974,18 @@
       }
     },
     "securitySchemes": {
-      "oauth2": {
+      "oidc": {
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
             "authorizationUrl": "https://auth.wsh.no/api/oidc/authorization",
             "tokenUrl": "https://auth.wsh.no/api/oidc/token",
             "scopes": {
-              "openid": "OpenID Connect",
+              "openid": "OpenID",
               "profile": "Profile",
-              "email": "Email"
+              "email": "Email",
+              "groups": "Groups",
+              "offline_access": "Offline access"
             }
           }
         }
@@ -991,7 +993,9 @@
     }
   },
   "security": [
-    { }
+    {
+      "oidc": [ ]
+    }
   ],
   "tags": [
     {

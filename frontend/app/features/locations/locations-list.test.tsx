@@ -15,12 +15,8 @@ function renderLocationsList(locations: LocationResponse[]) {
 describe("LocationsList", () => {
   it("shows empty state and link to add location", () => {
     renderLocationsList([]);
-    expect(
-      screen.getByText(
-        /no locations yet\. add your first location to get started\./i,
-      ),
-    ).toBeInTheDocument();
-    const add = screen.getByRole("link", { name: /add location/i });
+    expect(screen.getByText("No locations yet.")).toBeInTheDocument();
+    const add = screen.getByRole("link", { name: /add.*location/i });
     expect(add).toHaveAttribute("href", routes.locations.new());
   });
 

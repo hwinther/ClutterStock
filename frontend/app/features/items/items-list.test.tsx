@@ -21,10 +21,8 @@ describe("ItemsList", () => {
       roomName: "Office",
       items: [],
     });
-    expect(
-      screen.getByText(/no items in office yet\. add the first item\./i),
-    ).toBeInTheDocument();
-    const add = screen.getByRole("link", { name: /add item/i });
+    expect(screen.getByText(/no items in office yet\./i)).toBeInTheDocument();
+    const add = screen.getByRole("link", { name: /add.*item/i });
     expect(add).toHaveAttribute(
       "href",
       routes.locations.roomItemsNew(1, 2),
@@ -66,6 +64,7 @@ describe("ItemsList", () => {
       roomName: "Office",
       items,
     });
-    expect(screen.getByText("Wood · Furniture")).toBeInTheDocument();
+    expect(screen.getByText("Wood")).toBeInTheDocument();
+    expect(screen.getByText("Furniture")).toBeInTheDocument();
   });
 });

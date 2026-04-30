@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import type { User } from "oidc-client-ts";
+import type { SessionUser } from "~/lib/session.server";
 
 interface Props {
-  user: User;
+  user: SessionUser;
   open: boolean;
   onClose: () => void;
   onSignOut: () => void;
@@ -16,80 +16,77 @@ export function UserModal({ user, open, onClose, onSignOut }: Props) {
     else ref.current?.close();
   }, [open]);
 
-  const { profile } = user;
-  const groups = Array.isArray(
-    (profile as Record<string, unknown>).groups,
-  )
-    ? ((profile as Record<string, unknown>).groups as string[])
-    : [];
-
-  const displayName = profile.name ?? profile.preferred_username ?? profile.sub;
-  const username = profile.preferred_username;
-  const email = profile.email;
+  const groups = user.groups ?? [];
+  const displayName = user.name ?? user.preferred_username ?? user.sub;
+  const username = user.preferred_username;
+  const email = user.email;
+  const initial = (displayName ?? "?")[0]?.toUpperCase() ?? "?";
 
   return (
     <dialog
       ref={ref}
       onClose={onClose}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
+      onClick={(e) => { if (e.target === ref.current) onClose(); }}
+      style={{
+        width: "100%",
+        maxWidth: 360,
+        padding: 0,
+        border: "1px solid var(--c-border)",
+        borderRadius: 10,
+        background: "var(--c-bg-2)",
+        color: "var(--c-fg)",
+        fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
       }}
-      className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-0 shadow-2xl dark:border-gray-700 dark:bg-gray-900"
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex flex-col gap-5 p-6"
-      >
-        {/* Avatar + name */}
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xl font-semibold text-white dark:bg-blue-500">
-            {(displayName ?? "?")[0]?.toUpperCase() ?? "?"}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-gray-900 dark:text-gray-100">
-              {displayName}
-            </p>
-            {username && displayName !== username && (
-              <p className="truncate text-sm text-gray-500 dark:text-gray-400">
-                @{username}
-              </p>
-            )}
+      <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--c-border-2)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{
+              width: 42, height: 42, borderRadius: 999, background: "var(--c-accent)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, fontWeight: 700, color: "white", flexShrink: 0,
+            }}>
+              {initial}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: "var(--c-fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {displayName}
+              </div>
+              {username && displayName !== username && (
+                <div style={{ fontSize: 12, color: "var(--c-fg-3)", marginTop: 2 }}>@{username}</div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Details */}
-        <dl className="flex flex-col gap-2 text-sm">
+        <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 0 }}>
           {email && (
-            <div className="flex items-center gap-2">
-              <dt className="w-16 shrink-0 text-gray-500 dark:text-gray-400">Email</dt>
-              <dd className="truncate text-gray-900 dark:text-gray-100">{email}</dd>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid var(--c-border-2)", fontSize: 13 }}>
+              <span style={{ color: "var(--c-fg-3)" }}>Email</span>
+              <span style={{ color: "var(--c-fg)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{email}</span>
             </div>
           )}
           {groups.length > 0 && (
-            <div className="flex items-start gap-2">
-              <dt className="w-16 shrink-0 pt-0.5 text-gray-500 dark:text-gray-400">Groups</dt>
-              <dd className="flex flex-wrap gap-1">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "7px 0", fontSize: 13 }}>
+              <span style={{ color: "var(--c-fg-3)", paddingTop: 2 }}>Groups</span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "flex-end", maxWidth: 200 }}>
                 {groups.map((g) => (
-                  <span
-                    key={g}
-                    className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                  >
+                  <span key={g} style={{
+                    fontSize: 11, padding: "2px 8px", borderRadius: 4,
+                    background: "var(--c-accent-bg)", color: "var(--c-accent)", fontWeight: 500,
+                  }}>
                     {g}
                   </span>
                 ))}
-              </dd>
+              </div>
             </div>
           )}
-        </dl>
+        </div>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
-          <button type="button" onClick={onClose} className="btn-secondary">
-            Close
-          </button>
-          <button type="button" onClick={onSignOut} className="btn-danger">
-            Sign out
-          </button>
+        <div style={{ padding: "12px 20px 16px", borderTop: "1px solid var(--c-border-2)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" onClick={onClose} className="btn-secondary">Close</button>
+          <button type="button" onClick={onSignOut} className="btn-danger">Sign out</button>
         </div>
       </div>
     </dialog>

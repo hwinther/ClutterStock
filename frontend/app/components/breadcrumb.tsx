@@ -4,16 +4,18 @@ type Crumb = { label: string; to?: string };
 
 export function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
   return (
-    <nav className="mb-4 flex items-center gap-2 text-sm text-muted">
+    <nav style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
       {crumbs.map((crumb, i) => (
-        <span key={i} className="flex items-center gap-2">
-          {i > 0 && <span aria-hidden>/</span>}
+        <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {i > 0 && <span style={{ color: "var(--c-fg-3)" }}>/</span>}
           {crumb.to ? (
-            <Link to={crumb.to} className="link-text">
+            <Link to={crumb.to} style={{ color: "var(--c-fg-2)", textDecoration: "none" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--c-accent)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--c-fg-2)")}>
               {crumb.label}
             </Link>
           ) : (
-            <span className="text-gray-900 dark:text-gray-100">{crumb.label}</span>
+            <span style={{ color: "var(--c-fg)", fontWeight: 500 }}>{crumb.label}</span>
           )}
         </span>
       ))}

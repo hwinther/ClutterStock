@@ -439,3 +439,6 @@ CoverageReport/
 
 # Claude code files
 .claude/
+
+design-template/
+.playwright-mcp/

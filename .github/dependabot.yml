@@ -114,6 +114,13 @@ updates:
       - "typescript"
       - "typescript-*"
       - "orval"
+    opentelemetry:
+      patterns:
+      - "@opentelemetry/*"
+    react-router:
+      patterns:
+      - "react-router"
+      - "@react-router/*"
 
 - package-ecosystem: "npm"
   directory: "/e2e"

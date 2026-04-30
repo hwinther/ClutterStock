@@ -12,9 +12,12 @@ import type { Route } from "./+types/root";
 import { SiteFooter } from "~/components/site-footer";
 import { SiteHeader } from "~/components/site-header";
 import type { PublicRuntimeConfig } from "~/public-runtime-config";
+import type { SessionUser } from "~/lib/session.server";
 import "./app.css";
 
-export async function loader(): Promise<{ publicRuntime: PublicRuntimeConfig }> {
+export async function loader({
+  request,
+}: Route.LoaderArgs): Promise<{ publicRuntime: PublicRuntimeConfig; user: SessionUser | null }> {
   if (globalThis.window !== undefined) {
     const w = globalThis.window as Window & {
       __CLUTTERSTOCK_PUBLIC__?: PublicRuntimeConfig;
@@ -24,7 +27,18 @@ export async function loader(): Promise<{ publicRuntime: PublicRuntimeConfig }> 
         otelTracesEndpoint: "",
         otelServiceName: "",
       },
+      user: null,
     };
+  }
+
+  const { getSession } = await import("~/lib/session.server");
+  let user: SessionUser | null = null;
+  try {
+    const sess = await getSession(request);
+    user = sess?.data.user ?? null;
+  } catch (err) {
+    // Redis unavailable — serve page unauthenticated rather than crashing
+    console.error("[root] session lookup failed:", err);
   }
 
   return {
@@ -38,6 +52,7 @@ export async function loader(): Promise<{ publicRuntime: PublicRuntimeConfig }> 
         process.env.VITE_OTEL_SERVICE_NAME?.trim() ||
         "",
     },
+    user,
   };
 }
 
@@ -79,6 +94,10 @@ export function Layout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Set theme before first paint to avoid flash */}
+        <script dangerouslySetInnerHTML={{ __html:
+          `(function(){try{var t=localStorage.getItem('cs-theme');if(t&&['tui','win98','cde'].includes(t))document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`
+        }} />
         <Meta />
         <Links />
       </head>

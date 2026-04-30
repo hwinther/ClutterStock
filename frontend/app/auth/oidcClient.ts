@@ -1,4 +1,8 @@
-import { UserManager } from "oidc-client-ts";
+import { UserManager, WebStorageStateStore } from "oidc-client-ts";
+
+// oidc-client-ts v3 defaults userStore to localStorage; we override to sessionStorage so
+// tokens are not shared across tabs and are cleared when the browser session ends.
+const sessionStore = () => new WebStorageStateStore({ store: window.sessionStorage });
 
 export const AUTH_COOKIE = "clutterstock_auth";
 
@@ -23,6 +27,7 @@ export function getUserManager(): UserManager {
       response_type: "code",
       automaticSilentRenew: true,
       loadUserInfo: true,
+      userStore: sessionStore(),
     });
 
     _manager.events.addUserLoaded((user) => {
