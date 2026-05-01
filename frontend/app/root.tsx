@@ -1,5 +1,4 @@
 import {
-  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
@@ -9,15 +8,21 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { ProblemBoundary } from "~/components/problem-boundary";
 import { SiteFooter } from "~/components/site-footer";
 import { SiteHeader } from "~/components/site-header";
+import { FlashToasts, Toaster, ToastProvider, type ToastInput } from "~/lib/toasts";
 import type { PublicRuntimeConfig } from "~/public-runtime-config";
 import type { SessionUser } from "~/lib/session.server";
 import "./app.css";
 
-export async function loader({
-  request,
-}: Route.LoaderArgs): Promise<{ publicRuntime: PublicRuntimeConfig; user: SessionUser | null }> {
+interface RootLoaderData {
+  publicRuntime: PublicRuntimeConfig;
+  user: SessionUser | null;
+  flashes: readonly ToastInput[];
+}
+
+export async function loader({ request }: Route.LoaderArgs): Promise<RootLoaderData> {
   if (globalThis.window !== undefined) {
     const w = globalThis.window as Window & {
       __CLUTTERSTOCK_PUBLIC__?: PublicRuntimeConfig;
@@ -28,14 +33,18 @@ export async function loader({
         otelServiceName: "",
       },
       user: null,
+      flashes: [],
     };
   }
 
   const { getSession } = await import("~/lib/session.server");
+  const { drainFlashes } = await import("~/lib/toasts.server");
   let user: SessionUser | null = null;
+  let flashes: readonly ToastInput[] = [];
   try {
     const sess = await getSession(request);
     user = sess?.data.user ?? null;
+    flashes = await drainFlashes(request);
   } catch (err) {
     // Redis unavailable — serve page unauthenticated rather than crashing
     console.error("[root] session lookup failed:", err);
@@ -53,6 +62,7 @@ export async function loader({
         "",
     },
     user,
+    flashes,
   };
 }
 
@@ -89,6 +99,9 @@ export function Layout({
 }: {
   readonly children: React.ReactNode;
 }) {
+  const data = useRouteLoaderData("root") as RootLoaderData | undefined;
+  const initialFlashes = data?.flashes ?? [];
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -102,9 +115,13 @@ export function Layout({
         <Links />
       </head>
       <body className="min-h-screen flex flex-col">
-        <SiteHeader />
-        <div className="flex-1 flex flex-col">{children}</div>
-        <SiteFooter />
+        <ToastProvider>
+          <FlashToasts flashes={initialFlashes} />
+          <SiteHeader />
+          <div className="flex-1 flex flex-col">{children}</div>
+          <SiteFooter />
+          <Toaster />
+        </ToastProvider>
         <PublicRuntimeConfigScript />
         <ScrollRestoration />
         <Scripts />
@@ -118,30 +135,9 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
-
-  if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
-  }
-
   return (
     <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
+      <ProblemBoundary error={error} scope="page" />
     </main>
   );
 }

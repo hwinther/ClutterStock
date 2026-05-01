@@ -3,6 +3,9 @@ import type { Route } from "./+types/locations.rooms.items.edit";
 import { deleteItem, getLocation, getRoom, getItem, updateItem } from "~/api/client";
 import { Breadcrumb } from "~/components/breadcrumb";
 import { ItemForm } from "~/components/items";
+import { tryApi } from "~/lib/action-helpers.server";
+import { useToastFromActionData } from "~/lib/toasts";
+import { pushFlash } from "~/lib/toasts.server";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const locationId = Number(params.id);
@@ -41,35 +44,44 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
   const formData = await request.formData();
   if (formData.get("_action") === "delete") {
-    await deleteItem(itemId, request);
-    return redirect(
-      `/locations/${locationId}/rooms/${roomId}/items`
-    );
+    const del = await tryApi(() => deleteItem(itemId, request));
+    if (!del.ok) return del;
+    await pushFlash(request, { kind: "success", message: "Item deleted" });
+    return redirect(`/locations/${locationId}/rooms/${roomId}/items`);
   }
   const name = formData.get("name");
   const description = formData.get("description");
   const category = formData.get("category");
   const notes = formData.get("notes");
   if (typeof name !== "string" || !name.trim()) {
-    return { error: "Name is required" };
+    return { ok: false as const, error: "Name is required" };
   }
-  await updateItem(itemId, {
-    roomId,
-    name: name.trim(),
-    description:
-      typeof description === "string" && description.trim()
-        ? description.trim()
-        : undefined,
-    category:
-      typeof category === "string" && category.trim()
-        ? category.trim()
-        : undefined,
-    notes:
-      typeof notes === "string" && notes.trim() ? notes.trim() : undefined,
-  }, request);
-  return redirect(
-    `/locations/${locationId}/rooms/${roomId}/items`
+  const result = await tryApi(() =>
+    updateItem(
+      itemId,
+      {
+        roomId,
+        name: name.trim(),
+        description:
+          typeof description === "string" && description.trim()
+            ? description.trim()
+            : undefined,
+        category:
+          typeof category === "string" && category.trim()
+            ? category.trim()
+            : undefined,
+        notes:
+          typeof notes === "string" && notes.trim() ? notes.trim() : undefined,
+      },
+      request,
+    ),
   );
+  if (!result.ok) return result;
+  await pushFlash(request, {
+    kind: "success",
+    message: `Item "${result.data.name}" updated`,
+  });
+  return redirect(`/locations/${locationId}/rooms/${roomId}/items`);
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -83,8 +95,8 @@ export default function LocationsRoomsItemsEdit({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
+  useToastFromActionData(actionData);
   if (!loaderData) return null;
-  // Assertion needed: generated Route.ComponentProps can type loaderData such that destructuring yields never
   const { location, room, item } = loaderData as LoaderData;
   const locationId = location.id!;
   const roomId = room.id!;
@@ -93,6 +105,12 @@ export default function LocationsRoomsItemsEdit({
     typeof actionData === "object" &&
     "error" in actionData
       ? (actionData as { error: string }).error
+      : undefined;
+  const fieldErrors =
+    actionData != null &&
+    typeof actionData === "object" &&
+    "fieldErrors" in actionData
+      ? (actionData as { fieldErrors?: Record<string, string[]> }).fieldErrors
       : undefined;
 
   return (
@@ -111,6 +129,7 @@ export default function LocationsRoomsItemsEdit({
         title="Edit item"
         submitLabel="Save"
         error={error}
+        fieldErrors={fieldErrors}
         item={item}
         roomId={roomId}
         cancelTo={`/locations/${locationId}/rooms/${roomId}/items`}

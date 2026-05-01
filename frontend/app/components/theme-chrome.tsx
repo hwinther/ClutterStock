@@ -1,4 +1,9 @@
+import { useSyncExternalStore } from "react";
 import type { LocationResponse, RoomResponse } from "~/api/client";
+
+const noopSubscribe = () => () => {};
+const getClientDate = () => new Date().toLocaleDateString();
+const getServerDate = () => "";
 
 export function CDEMenuBar() {
   const menus = ["File", "Selected", "View", "Items", "Help"];
@@ -75,12 +80,16 @@ export function Win98StatusBar({ count, location, room }: {
   const path = room && location
     ? `${location.name}\\${room.name}`
     : location?.name ?? "All Items";
+  // toLocaleDateString resolves to the host's locale, which differs between the
+  // SSR Node process and the browser — useSyncExternalStore returns the empty
+  // server snapshot during SSR and switches to the client value after hydration.
+  const date = useSyncExternalStore(noopSubscribe, getClientDate, getServerDate);
   return (
     <div className="win98-statusbar">
       <div className="win98-statusbar-seg">{count} object(s)</div>
       <div className="win98-statusbar-seg">{path}</div>
       <div className="win98-statusbar-seg win98-statusbar-seg--narrow">
-        {new Date().toLocaleDateString()}
+        {date}
       </div>
     </div>
   );

@@ -16,8 +16,12 @@ export function setApiLogListener(
 
 function resolveUrl(path: string): string {
   const base = getApiBase().replace(/\/$/, "");
-  const p = path.replace(/^\//, "");
-  const versionedPath = `${apiPathVersionPrefix}/${p}`;
+  // Paths beginning with "/api/" are treated as already-prefixed (the typed
+  // wrapper supplies them straight from the openapi `paths` keys). Other
+  // paths are prefixed with the version segment for legacy callers.
+  const versionedPath = path.startsWith("/api/")
+    ? path.replace(/^\//, "")
+    : `${apiPathVersionPrefix}/${path.replace(/^\//, "")}`;
   return base ? `${base}/${versionedPath}` : `/${versionedPath}`;
 }
 

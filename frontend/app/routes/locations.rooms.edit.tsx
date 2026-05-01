@@ -4,6 +4,9 @@ import { routes } from "~/constants/routes";
 import { deleteRoom, getLocation, getRoom, updateRoom } from "~/api/client";
 import { Breadcrumb } from "~/components/breadcrumb";
 import { RoomForm } from "~/features/rooms";
+import { tryApi } from "~/lib/action-helpers.server";
+import { useToastFromActionData } from "~/lib/toasts";
+import { pushFlash } from "~/lib/toasts.server";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const locationId = Number(params.id);
@@ -29,22 +32,35 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
   const formData = await request.formData();
   if (formData.get("_action") === "delete") {
-    await deleteRoom(roomId, request);
+    const del = await tryApi(() => deleteRoom(roomId, request));
+    if (!del.ok) return del;
+    await pushFlash(request, { kind: "success", message: "Room deleted" });
     return redirect(routes.locations.rooms(locationId));
   }
   const name = formData.get("name");
   const description = formData.get("description");
   if (typeof name !== "string" || !name.trim()) {
-    return { error: "Name is required" };
+    return { ok: false as const, error: "Name is required" };
   }
-  await updateRoom(roomId, {
-    locationId,
-    name: name.trim(),
-    description:
-      typeof description === "string" && description.trim()
-        ? description.trim()
-        : undefined,
-  }, request);
+  const result = await tryApi(() =>
+    updateRoom(
+      roomId,
+      {
+        locationId,
+        name: name.trim(),
+        description:
+          typeof description === "string" && description.trim()
+            ? description.trim()
+            : undefined,
+      },
+      request,
+    ),
+  );
+  if (!result.ok) return result;
+  await pushFlash(request, {
+    kind: "success",
+    message: `Room "${result.data.name}" updated`,
+  });
   return redirect(routes.locations.rooms(locationId));
 }
 
@@ -59,8 +75,8 @@ export default function LocationsRoomsEdit({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
+  useToastFromActionData(actionData);
   if (!loaderData) return null;
-  // Assertion needed: generated Route.ComponentProps can type loaderData such that destructuring yields never
   const { location, room } = loaderData as LoaderData;
   const locationId = location.id!;
   const error =
@@ -68,6 +84,12 @@ export default function LocationsRoomsEdit({
     typeof actionData === "object" &&
     "error" in actionData
       ? (actionData as { error: string }).error
+      : undefined;
+  const fieldErrors =
+    actionData != null &&
+    typeof actionData === "object" &&
+    "fieldErrors" in actionData
+      ? (actionData as { fieldErrors?: Record<string, string[]> }).fieldErrors
       : undefined;
 
   return (
@@ -84,6 +106,7 @@ export default function LocationsRoomsEdit({
         title="Edit room"
         submitLabel="Save"
         error={error}
+        fieldErrors={fieldErrors}
         room={room}
         locationId={locationId}
         cancelTo={routes.locations.rooms(locationId)}
