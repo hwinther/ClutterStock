@@ -1,3 +1,4 @@
+import type { ToastInput } from "~/lib/toasts";
 import { redis } from "./redis.server";
 
 export interface SessionUser {
@@ -14,6 +15,7 @@ export interface Session {
   expiresAt: number; // Unix seconds
   idToken: string;
   user: SessionUser;
+  flashes?: ToastInput[];
 }
 
 const COOKIE = "clutterstock_sid";

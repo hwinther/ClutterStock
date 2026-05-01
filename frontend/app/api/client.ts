@@ -1,6 +1,17 @@
 import type { components } from "~/api/types";
-import { apiFetch } from "~/api/http";
+import { del, get, post, put } from "~/api/typed";
+import { isApiProblem } from "~/api/problem";
 
+async function nullOn404<T>(promise: Promise<T>): Promise<T | null> {
+  try {
+    return await promise;
+  } catch (error) {
+    if (isApiProblem(error) && error.status === 404) return null;
+    throw error;
+  }
+}
+
+/* Locations */
 export type LocationResponse =
   components["schemas"]["ClutterStock.Contracts.Locations.LocationResponse"];
 export type AddLocationRequest =
@@ -8,53 +19,26 @@ export type AddLocationRequest =
 export type UpdateLocationRequest =
   components["schemas"]["ClutterStock.Contracts.Locations.UpdateLocationRequest"];
 
-export async function getLocations(request?: Request): Promise<LocationResponse[]> {
-  const res = await apiFetch("/locations", {}, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+export const getLocations = (request?: Request): Promise<LocationResponse[]> =>
+  get("/api/v1/locations", { ssrRequest: request });
 
-export async function getLocation(
-  id: number,
-  request?: Request,
-): Promise<LocationResponse | null> {
-  const res = await apiFetch(`/locations/${id}`, {}, request);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+export const getLocation = (id: number, request?: Request): Promise<LocationResponse | null> =>
+  nullOn404(get("/api/v1/locations/{id}", { params: { id }, ssrRequest: request }));
 
-export async function createLocation(
+export const createLocation = (
   body: AddLocationRequest,
   request?: Request,
-): Promise<LocationResponse> {
-  const res = await apiFetch("/locations", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+): Promise<LocationResponse> => post("/api/v1/locations", { body, ssrRequest: request });
 
-export async function updateLocation(
+export const updateLocation = (
   id: number,
   body: UpdateLocationRequest,
   request?: Request,
-): Promise<LocationResponse> {
-  const res = await apiFetch(`/locations/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+): Promise<LocationResponse> =>
+  put("/api/v1/locations/{id}", { params: { id }, body, ssrRequest: request });
 
-export async function deleteLocation(id: number, request?: Request): Promise<void> {
-  const res = await apiFetch(`/locations/${id}`, { method: "DELETE" }, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-}
+export const deleteLocation = (id: number, request?: Request): Promise<void> =>
+  del("/api/v1/locations/{id}", { params: { id }, ssrRequest: request });
 
 /* Rooms */
 export type RoomResponse =
@@ -64,47 +48,26 @@ export type AddRoomRequest =
 export type UpdateRoomRequest =
   components["schemas"]["ClutterStock.Contracts.Rooms.UpdateRoomRequest"];
 
-export async function getRooms(request?: Request): Promise<RoomResponse[]> {
-  const res = await apiFetch("/rooms", {}, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+export const getRooms = (request?: Request): Promise<RoomResponse[]> =>
+  get("/api/v1/rooms", { ssrRequest: request });
 
-export async function getRoom(id: number, request?: Request): Promise<RoomResponse | null> {
-  const res = await apiFetch(`/rooms/${id}`, {}, request);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+export const getRoom = (id: number, request?: Request): Promise<RoomResponse | null> =>
+  nullOn404(get("/api/v1/rooms/{id}", { params: { id }, ssrRequest: request }));
 
-export async function createRoom(body: AddRoomRequest, request?: Request): Promise<RoomResponse> {
-  const res = await apiFetch("/rooms", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+export const createRoom = (
+  body: AddRoomRequest,
+  request?: Request,
+): Promise<RoomResponse> => post("/api/v1/rooms", { body, ssrRequest: request });
 
-export async function updateRoom(
+export const updateRoom = (
   id: number,
   body: UpdateRoomRequest,
   request?: Request,
-): Promise<RoomResponse> {
-  const res = await apiFetch(`/rooms/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+): Promise<RoomResponse> =>
+  put("/api/v1/rooms/{id}", { params: { id }, body, ssrRequest: request });
 
-export async function deleteRoom(id: number, request?: Request): Promise<void> {
-  const res = await apiFetch(`/rooms/${id}`, { method: "DELETE" }, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-}
+export const deleteRoom = (id: number, request?: Request): Promise<void> =>
+  del("/api/v1/rooms/{id}", { params: { id }, ssrRequest: request });
 
 /* Items */
 export type ItemResponse =
@@ -114,44 +77,23 @@ export type AddItemRequest =
 export type UpdateItemRequest =
   components["schemas"]["ClutterStock.Contracts.Items.UpdateItemRequest"];
 
-export async function getItems(request?: Request): Promise<ItemResponse[]> {
-  const res = await apiFetch("/items", {}, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+export const getItems = (request?: Request): Promise<ItemResponse[]> =>
+  get("/api/v1/items", { ssrRequest: request });
 
-export async function getItem(id: number, request?: Request): Promise<ItemResponse | null> {
-  const res = await apiFetch(`/items/${id}`, {}, request);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+export const getItem = (id: number, request?: Request): Promise<ItemResponse | null> =>
+  nullOn404(get("/api/v1/items/{id}", { params: { id }, ssrRequest: request }));
 
-export async function createItem(body: AddItemRequest, request?: Request): Promise<ItemResponse> {
-  const res = await apiFetch("/items", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+export const createItem = (
+  body: AddItemRequest,
+  request?: Request,
+): Promise<ItemResponse> => post("/api/v1/items", { body, ssrRequest: request });
 
-export async function updateItem(
+export const updateItem = (
   id: number,
   body: UpdateItemRequest,
   request?: Request,
-): Promise<ItemResponse> {
-  const res = await apiFetch(`/items/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-  return res.json();
-}
+): Promise<ItemResponse> =>
+  put("/api/v1/items/{id}", { params: { id }, body, ssrRequest: request });
 
-export async function deleteItem(id: number, request?: Request): Promise<void> {
-  const res = await apiFetch(`/items/${id}`, { method: "DELETE" }, request);
-  if (!res.ok) throw new Response(await res.text(), { status: res.status });
-}
+export const deleteItem = (id: number, request?: Request): Promise<void> =>
+  del("/api/v1/items/{id}", { params: { id }, ssrRequest: request });

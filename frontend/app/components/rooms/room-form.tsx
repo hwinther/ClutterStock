@@ -1,10 +1,12 @@
 import { Form, Link } from "react-router";
 import type { RoomResponse } from "~/api/client";
+import { fieldError } from "~/lib/forms";
 
 type RoomFormProps = {
   title: string;
   submitLabel: string;
   error?: string;
+  fieldErrors?: Record<string, string[]>;
   room?: RoomResponse | null;
   locationId: number;
   cancelTo: string;
@@ -14,10 +16,13 @@ export function RoomForm({
   title,
   submitLabel,
   error,
+  fieldErrors,
   room,
   locationId: _locationId,
   cancelTo,
 }: RoomFormProps) {
+  const nameError = fieldError(fieldErrors, "name");
+  const descriptionError = fieldError(fieldErrors, "description");
   if (room === null) {
     return (
       <div className="card-padded">
@@ -47,7 +52,9 @@ export function RoomForm({
             defaultValue={room?.name ?? ""}
             className="form-input"
             placeholder="e.g. Living Room, Garage"
+            aria-invalid={nameError ? true : undefined}
           />
+          {nameError && <p className="text-error" style={{ marginTop: 4 }}>{nameError}</p>}
         </div>
         <div className="form-field">
           <label htmlFor="description" className="form-label">
@@ -60,7 +67,9 @@ export function RoomForm({
             defaultValue={room?.description ?? ""}
             className="form-input"
             placeholder="e.g. Main gathering space"
+            aria-invalid={descriptionError ? true : undefined}
           />
+          {descriptionError && <p className="text-error" style={{ marginTop: 4 }}>{descriptionError}</p>}
         </div>
         <div className="form-actions">
           <button type="submit" className="btn-primary">

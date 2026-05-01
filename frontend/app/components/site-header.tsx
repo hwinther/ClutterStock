@@ -85,7 +85,7 @@ export function SiteHeader() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link
-            to="/locations"
+            to="/"
             style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
           >
             <div className="modern-logo" style={{
