@@ -97,3 +97,10 @@ app.MapDiscoveredEndpoints();
 app.MapControllers();
 
 app.Run();
+
+namespace ClutterStock.Api
+{
+    /// <summary>Exposed so test projects can target <c>WebApplicationFactory&lt;Program&gt;</c>.</summary>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    public partial class Program;
+}

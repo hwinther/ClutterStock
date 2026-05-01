@@ -98,6 +98,9 @@ cd frontend && npm run openapi-typescript
 - **EditorConfig** enforces style — run ReSharper cleanup or check `.editorconfig` before committing
 - `IEndpoint` implementations are discovered automatically — do not register routes manually
 - OpenAPI documentation is auto-generated from endpoint metadata and XML comments
+- **Endpoint response types**: declare only endpoint-specific responses in the `Results<...>` typed signature (e.g. `Ok<T>`, `Created<T>`, `NotFound`, `NoContent`). Cross-cutting responses — `400` (validation), `401`, `403`, `500` — are advertised globally by `GlobalResponsesOperationFilter` (`backend/src/Api/Filters/GlobalResponsesOperationFilter.cs`); do not duplicate them per-endpoint
+- **Validation**: enabled via `builder.Services.AddValidation()`. Put `System.ComponentModel.DataAnnotations` attributes on `Contracts/` request records using the `[property: ...]` target (e.g. `[property: Range(1, int.MaxValue)] int RoomId`) and on `[FromRoute]` id parameters. Don't write manual `if (request.X is invalid) return BadRequest(...)` checks in handlers — let the validation pipeline produce the `HttpValidationProblemDetails` response
+- **ProblemDetails enrichment**: `requestId` (TraceIdentifier) and `traceId` (OTel activity id) are added to every problem-details response in `Program.cs`; lean on this for support/debugging instead of logging the correlation id separately
 - Frontend env vars in `frontend/.env`: `VITE_API_URL`, `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `REDIS_URL`, `PUBLIC_ORIGIN` (optional, defaults to request origin)
 - Backend listens on port **8081** (HTTP) by default in development
 - Observability: OTLP HTTP exporter for traces/metrics/logs; service names `clutterstock-frontend-ssr` and `clutterstock-frontend-web`
