@@ -12,12 +12,14 @@ inputs:
     required: true
   ef_migrations_project:
     description: >-
-      EF Core project that contains migrations (relative to working_directory), passed to dotnet ef --project
-    required: true
+      EF Core project that contains migrations (relative to working_directory), passed to dotnet ef --project.
+      Only used (and required) when database_type is sqlite.
+    required: false
   ef_startup_project:
     description: >-
-      Startup project used to resolve configuration and build the host (relative to working_directory), e.g. Api; passed to dotnet ef --startup-project
-    required: true
+      Startup project used to resolve configuration and build the host (relative to working_directory), e.g. Api;
+      passed to dotnet ef --startup-project. Only used (and required) when database_type is sqlite.
+    required: false
   ef_context:
     description: DbContext class name for dotnet ef --context
     required: false
@@ -68,6 +70,10 @@ runs:
       set -euo pipefail
       db_t=$(echo "${DATABASE_TYPE}" | tr '[:upper:]' '[:lower:]')
       if [[ "${db_t}" == "sqlite" || "${db_t}" == "sqlite3" ]]; then
+        if [[ -z "${{ inputs.ef_migrations_project }}" || -z "${{ inputs.ef_startup_project }}" ]]; then
+          echo "ef_migrations_project and ef_startup_project are required when database_type=sqlite." >&2
+          exit 1
+        fi
         dotnet restore --locked-mode "${{ inputs.solution_file }}"
         dotnet tool restore --tool-manifest .config/dotnet-tools.json
         sqlite_path=$(python3 "${SCHEMASPY_ACTION_PATH}/schemaspy_run.py" --print-sqlite-path)
@@ -78,7 +84,7 @@ runs:
             --startup-project "${{ inputs.ef_startup_project }}" \
             --context "${{ inputs.ef_context }}"
       else
-        echo "Skipping dotnet restore and EF migrations (database_type is not sqlite)."
+        echo "Skipping dotnet restore and EF migrations (database_type is not sqlite); caller is responsible for migrating the target database before invoking this action."
       fi
 
   - name: Download JDBC driver for SchemaSpy

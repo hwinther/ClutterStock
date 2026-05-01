@@ -1,6 +1,5 @@
 using ClutterStock.Api.Extensions;
 using ClutterStock.Api.Generated;
-using ClutterStock.Api.Options;
 using ClutterStock.Infrastructure.Database;
 using ClutterStock.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -34,8 +33,7 @@ builder.Services.AddAuthorization(options =>
         .Build());
 
 builder.Services.AddInfrastructure(
-    PostgresUrlParser.Parse(
-        builder.Configuration.GetConnectionString("ClutterStock") ?? throw new InvalidOperationException("Missing connection string for ClutterStock in the configuration")));
+    builder.Configuration.GetConnectionString("ClutterStock") ?? throw new InvalidOperationException("Missing connection string for ClutterStock in the configuration"));
 
 builder.Services.AddHealthChecks()
        .AddDbContextCheck<ApplicationContext>(tags: ["ready"]);
