@@ -1,5 +1,9 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import type { LocationResponse, RoomResponse } from "~/api/client";
+
+const noopSubscribe = () => () => {};
+const getClientDate = () => new Date().toLocaleDateString();
+const getServerDate = () => "";
 
 export function CDEMenuBar() {
   const menus = ["File", "Selected", "View", "Items", "Help"];
@@ -77,10 +81,9 @@ export function Win98StatusBar({ count, location, room }: {
     ? `${location.name}\\${room.name}`
     : location?.name ?? "All Items";
   // toLocaleDateString resolves to the host's locale, which differs between the
-  // SSR Node process and the browser — paint after hydration to dodge the
-  // mismatch (matches TuiTopBar's clock pattern in routes/home.tsx).
-  const [date, setDate] = useState("");
-  useEffect(() => setDate(new Date().toLocaleDateString()), []);
+  // SSR Node process and the browser — useSyncExternalStore returns the empty
+  // server snapshot during SSR and switches to the client value after hydration.
+  const date = useSyncExternalStore(noopSubscribe, getClientDate, getServerDate);
   return (
     <div className="win98-statusbar">
       <div className="win98-statusbar-seg">{count} object(s)</div>

@@ -83,6 +83,7 @@ export function FlashToasts({
   return null;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToasts(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error("useToasts must be used inside <ToastProvider>");
@@ -94,6 +95,7 @@ export function useToasts(): ToastContextValue {
  * shape from action-helpers.server), push it as an error toast — once per
  * actionData identity so re-renders don't spam.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToastFromActionData(actionData: unknown): void {
   const { push } = useToasts();
   const lastSeen = useRef<unknown>(null);

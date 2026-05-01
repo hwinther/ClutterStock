@@ -42,7 +42,7 @@ type HasPathParams<O> = O extends { parameters: { path: Record<string, unknown> 
 
 type HasBody<O> = O extends { requestBody: { content: unknown } } ? true : false;
 
-export interface CallOptions<P extends keyof paths, M extends HttpMethod> {
+export interface CallOptions {
   ssrRequest?: Request;
   signal?: AbortSignal;
 }
@@ -58,7 +58,7 @@ type WithBody<P extends keyof paths, M extends HttpMethod> =
     : { body?: never };
 
 export type Options<P extends keyof paths, M extends HttpMethod> =
-  CallOptions<P, M> & WithParams<P, M> & WithBody<P, M>;
+  CallOptions & WithParams<P, M> & WithBody<P, M>;
 
 function substitutePath(path: string, params?: Record<string, unknown>): string {
   if (!params) return path;
