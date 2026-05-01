@@ -695,7 +695,7 @@ export interface components {
              * @description Display name of the item.
              * @example Vintage Lamp
              */
-            name?: string | null;
+            name: string;
             /**
              * @description Optional longer description.
              * @example Brass table lamp, 1980s
@@ -771,7 +771,7 @@ export interface components {
              * @description Display name of the item.
              * @example Vintage Lamp
              */
-            name?: string | null;
+            name: string;
             /**
              * @description Optional longer description.
              * @example Brass table lamp, 1980s
@@ -794,7 +794,7 @@ export interface components {
              * @description Display name of the location (e.g. home, office).
              * @example Home
              */
-            name?: string | null;
+            name: string;
             /**
              * @description Optional description of the location.
              * @example Main residence
@@ -838,7 +838,7 @@ export interface components {
              * @description Display name of the location (e.g. home, office).
              * @example Home
              */
-            name?: string | null;
+            name: string;
             /**
              * @description Optional description of the location.
              * @example Main residence
@@ -857,7 +857,7 @@ export interface components {
              * @description Display name of the room (e.g. Living Room, Garage).
              * @example Living Room
              */
-            name?: string | null;
+            name: string;
             /**
              * @description Optional description of the room.
              * @example Main gathering space
@@ -913,7 +913,7 @@ export interface components {
              * @description Display name of the room (e.g. Living Room, Garage).
              * @example Living Room
              */
-            name?: string | null;
+            name: string;
             /**
              * @description Optional description of the room.
              * @example Main gathering space

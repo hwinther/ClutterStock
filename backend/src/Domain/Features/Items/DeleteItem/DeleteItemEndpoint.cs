@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ClutterStock.Domain.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -13,7 +14,7 @@ public class DeleteItemEndpoint : IEndpoint
 
     public static Delegate Handler => (Func<int, IDeleteItemCommandHandler, CancellationToken, Task<Results<NoContent, NotFound>>>) Handle;
 
-    private static async Task<Results<NoContent, NotFound>> Handle([FromRoute] int id,
+    private static async Task<Results<NoContent, NotFound>> Handle([FromRoute, Range(1, int.MaxValue)] int id,
                                                                    IDeleteItemCommandHandler handler,
                                                                    CancellationToken cancellationToken)
     {

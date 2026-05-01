@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ClutterStock.Contracts.Items;
 using ClutterStock.Domain.Abstractions;
 using ClutterStock.Domain.Extensions;
@@ -15,7 +16,7 @@ public class GetItemEndpoint : IEndpoint
 
     public static Delegate Handler => (Func<int, IGetItemQueryHandler, CancellationToken, Task<Results<Ok<ItemResponse>, NotFound>>>) Handle;
 
-    private static async Task<Results<Ok<ItemResponse>, NotFound>> Handle([FromRoute] int id,
+    private static async Task<Results<Ok<ItemResponse>, NotFound>> Handle([FromRoute, Range(1, int.MaxValue)] int id,
                                                                           IGetItemQueryHandler handler,
                                                                           CancellationToken cancellationToken)
     {

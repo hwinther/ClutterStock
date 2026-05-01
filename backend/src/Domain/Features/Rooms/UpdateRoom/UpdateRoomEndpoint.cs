@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ClutterStock.Contracts.Rooms;
 using ClutterStock.Domain.Abstractions;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -13,7 +14,7 @@ public class UpdateRoomEndpoint : IEndpoint
 
     public static Delegate Handler => (Func<int, UpdateRoomRequest, IUpdateRoomCommandHandler, CancellationToken, Task<Results<Ok<RoomResponse>, NotFound>>>) Handle;
 
-    private static async Task<Results<Ok<RoomResponse>, NotFound>> Handle([FromRoute] int id,
+    private static async Task<Results<Ok<RoomResponse>, NotFound>> Handle([FromRoute, Range(1, int.MaxValue)] int id,
                                                                           [FromBody] UpdateRoomRequest request,
                                                                           IUpdateRoomCommandHandler handler,
                                                                           CancellationToken cancellationToken)

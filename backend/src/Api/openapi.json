@@ -89,6 +89,8 @@
             "in": "path",
             "required": true,
             "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
               "type": "integer",
               "format": "int32"
             }
@@ -124,6 +126,8 @@
             "in": "path",
             "required": true,
             "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
               "type": "integer",
               "format": "int32"
             }
@@ -166,6 +170,8 @@
             "in": "path",
             "required": true,
             "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
               "type": "integer",
               "format": "int32"
             }
@@ -291,6 +297,8 @@
             "in": "path",
             "required": true,
             "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
               "type": "integer",
               "format": "int32"
             }
@@ -326,6 +334,8 @@
             "in": "path",
             "required": true,
             "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
               "type": "integer",
               "format": "int32"
             }
@@ -368,6 +378,8 @@
             "in": "path",
             "required": true,
             "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
               "type": "integer",
               "format": "int32"
             }
@@ -493,6 +505,8 @@
             "in": "path",
             "required": true,
             "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
               "type": "integer",
               "format": "int32"
             }
@@ -528,6 +542,8 @@
             "in": "path",
             "required": true,
             "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
               "type": "integer",
               "format": "int32"
             }
@@ -570,6 +586,8 @@
             "in": "path",
             "required": true,
             "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
               "type": "integer",
               "format": "int32"
             }
@@ -646,33 +664,45 @@
   "components": {
     "schemas": {
       "ClutterStock.Contracts.Items.AddItemRequest": {
+        "required": [
+          "name"
+        ],
         "type": "object",
         "properties": {
           "roomId": {
+            "maximum": 2147483647,
+            "minimum": 1,
             "type": "integer",
             "description": "Id of the room this item belongs to.",
             "format": "int32",
             "example": 1
           },
           "name": {
+            "maxLength": 200,
+            "minLength": 1,
             "type": "string",
             "description": "Display name of the item.",
-            "nullable": true,
             "example": "Vintage Lamp"
           },
           "description": {
+            "maxLength": 2000,
+            "minLength": 0,
             "type": "string",
             "description": "Optional longer description.",
             "nullable": true,
             "example": "Brass table lamp, 1980s"
           },
           "category": {
+            "maxLength": 100,
+            "minLength": 0,
             "type": "string",
             "description": "Optional category (e.g. Electronics, Furniture).",
             "nullable": true,
             "example": "Electronics"
           },
           "notes": {
+            "maxLength": 2000,
+            "minLength": 0,
             "type": "string",
             "description": "Optional free-form notes.",
             "nullable": true,
@@ -739,33 +769,45 @@
         "description": "Response payload for an item."
       },
       "ClutterStock.Contracts.Items.UpdateItemRequest": {
+        "required": [
+          "name"
+        ],
         "type": "object",
         "properties": {
           "roomId": {
+            "maximum": 2147483647,
+            "minimum": 1,
             "type": "integer",
             "description": "Id of the room this item belongs to.",
             "format": "int32",
             "example": 1
           },
           "name": {
+            "maxLength": 200,
+            "minLength": 1,
             "type": "string",
             "description": "Display name of the item.",
-            "nullable": true,
             "example": "Vintage Lamp"
           },
           "description": {
+            "maxLength": 2000,
+            "minLength": 0,
             "type": "string",
             "description": "Optional longer description.",
             "nullable": true,
             "example": "Brass table lamp, 1980s"
           },
           "category": {
+            "maxLength": 100,
+            "minLength": 0,
             "type": "string",
             "description": "Optional category (e.g. Electronics, Furniture).",
             "nullable": true,
             "example": "Electronics"
           },
           "notes": {
+            "maxLength": 2000,
+            "minLength": 0,
             "type": "string",
             "description": "Optional free-form notes.",
             "nullable": true,
@@ -776,15 +818,21 @@
         "description": "Request body for updating an item. Id is provided in the route."
       },
       "ClutterStock.Contracts.Locations.AddLocationRequest": {
+        "required": [
+          "name"
+        ],
         "type": "object",
         "properties": {
           "name": {
+            "maxLength": 200,
+            "minLength": 1,
             "type": "string",
             "description": "Display name of the location (e.g. home, office).",
-            "nullable": true,
             "example": "Home"
           },
           "description": {
+            "maxLength": 2000,
+            "minLength": 0,
             "type": "string",
             "description": "Optional description of the location.",
             "nullable": true,
@@ -833,15 +881,21 @@
         "description": "Response payload for a location."
       },
       "ClutterStock.Contracts.Locations.UpdateLocationRequest": {
+        "required": [
+          "name"
+        ],
         "type": "object",
         "properties": {
           "name": {
+            "maxLength": 200,
+            "minLength": 1,
             "type": "string",
             "description": "Display name of the location (e.g. home, office).",
-            "nullable": true,
             "example": "Home"
           },
           "description": {
+            "maxLength": 2000,
+            "minLength": 0,
             "type": "string",
             "description": "Optional description of the location.",
             "nullable": true,
@@ -852,21 +906,29 @@
         "description": "Request body for updating a location. Id is provided in the route."
       },
       "ClutterStock.Contracts.Rooms.AddRoomRequest": {
+        "required": [
+          "name"
+        ],
         "type": "object",
         "properties": {
           "locationId": {
+            "maximum": 2147483647,
+            "minimum": 1,
             "type": "integer",
             "description": "Id of the parent location.",
             "format": "int32",
             "example": 1
           },
           "name": {
+            "maxLength": 200,
+            "minLength": 1,
             "type": "string",
             "description": "Display name of the room (e.g. Living Room, Garage).",
-            "nullable": true,
             "example": "Living Room"
           },
           "description": {
+            "maxLength": 2000,
+            "minLength": 0,
             "type": "string",
             "description": "Optional description of the room.",
             "nullable": true,
@@ -921,21 +983,29 @@
         "description": "Response payload for a room."
       },
       "ClutterStock.Contracts.Rooms.UpdateRoomRequest": {
+        "required": [
+          "name"
+        ],
         "type": "object",
         "properties": {
           "locationId": {
+            "maximum": 2147483647,
+            "minimum": 1,
             "type": "integer",
             "description": "Id of the parent location.",
             "format": "int32",
             "example": 1
           },
           "name": {
+            "maxLength": 200,
+            "minLength": 1,
             "type": "string",
             "description": "Display name of the room (e.g. Living Room, Garage).",
-            "nullable": true,
             "example": "Living Room"
           },
           "description": {
+            "maxLength": 2000,
+            "minLength": 0,
             "type": "string",
             "description": "Optional description of the room.",
             "nullable": true,

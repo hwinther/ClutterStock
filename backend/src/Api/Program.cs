@@ -41,6 +41,7 @@ builder.Services.AddHealthChecks()
 builder.Services.AddDomainHandlers();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
+builder.Services.AddValidation();
 builder.Services.AddOpenApiDocumentation();
 
 var app = builder.Build();
