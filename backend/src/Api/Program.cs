@@ -5,6 +5,7 @@ using ClutterStock.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,7 +41,15 @@ builder.Services.AddHealthChecks()
 
 builder.Services.AddDomainHandlers();
 builder.Services.AddControllers();
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(options =>
+    options.CustomizeProblemDetails = ctx =>
+    {
+        ctx.ProblemDetails.Instance ??= $"{ctx.HttpContext.Request.Method} {ctx.HttpContext.Request.Path}";
+        ctx.ProblemDetails.Extensions.TryAdd("requestId", ctx.HttpContext.TraceIdentifier);
+        var activity = ctx.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity;
+        if (activity is not null)
+            ctx.ProblemDetails.Extensions.TryAdd("traceId", activity.Id);
+    });
 builder.Services.AddValidation();
 builder.Services.AddOpenApiDocumentation();
 
