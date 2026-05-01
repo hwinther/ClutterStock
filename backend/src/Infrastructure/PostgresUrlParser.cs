@@ -2,7 +2,7 @@ using System.Collections.Specialized;
 using System.Web;
 using Npgsql;
 
-namespace ClutterStock.Api.Options;
+namespace ClutterStock.Infrastructure;
 
 /// <summary>
 ///     Converts a PostgreSQL URI (<c>postgres[ql]://[user[:password]@]host[:port][/database][?options]</c>)
