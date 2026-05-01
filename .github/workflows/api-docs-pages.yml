@@ -213,7 +213,7 @@ jobs:
       - name: Generate coverage HTML (ReportGenerator)
         uses: danielpalme/ReportGenerator-GitHub-Action@a003c8fb9ac008fd0fffd5faa4f7d3ecb52e0675 # v5.5.7
         with:
-          reports: "${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}/**/TestResults/**/coverage.cobertura.xml"
+          reports: "${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}/**/TestResults/**/coverage.cobertura.*.xml"
           targetdir: "${{ github.workspace }}/coverage-html-dotnet"
           reporttypes: Html
 
