@@ -15,8 +15,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <NuGetAuditSuppress
-      Include="https://github.com/advisories/GHSA-5f2m-466j-3848;https://github.com/advisories/GHSA-x5qj-9vmx-7g6g;https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" />
+    <!--NuGetAuditSuppress
+      Include="https://github.com/advisories/GHSA-5f2m-466j-3848;https://github.com/advisories/GHSA-x5qj-9vmx-7g6g;https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" /-->
 
     <!-- TODO: GitVersion does not match the git tag well enough, in order to fully use it I think we would have to embrace their commit message format -->
     <!--PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
@@ -24,7 +24,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference-->
 
-    <!--PackageReference Include="SonarAnalyzer.CSharp" Version="9.11.0.78383">
+    <!--PackageReference Include="SonarAnalyzer.CSharp" Version="10.25.0.139117">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference-->

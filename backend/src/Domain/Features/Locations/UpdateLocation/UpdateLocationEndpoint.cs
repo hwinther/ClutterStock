@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ClutterStock.Contracts.Locations;
 using ClutterStock.Domain.Abstractions;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -13,7 +14,7 @@ public class UpdateLocationEndpoint : IEndpoint
 
     public static Delegate Handler => (Func<int, UpdateLocationRequest, IUpdateLocationCommandHandler, CancellationToken, Task<Results<Ok<LocationResponse>, NotFound>>>) Handle;
 
-    private static async Task<Results<Ok<LocationResponse>, NotFound>> Handle([FromRoute] int id,
+    private static async Task<Results<Ok<LocationResponse>, NotFound>> Handle([FromRoute, Range(1, int.MaxValue)] int id,
                                                                               [FromBody] UpdateLocationRequest request,
                                                                               IUpdateLocationCommandHandler handler,
                                                                               CancellationToken cancellationToken)

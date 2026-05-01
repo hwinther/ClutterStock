@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ClutterStock.Contracts.Items;
 
 /// <summary>Request body for updating an item. Id is provided in the route.</summary>
@@ -7,8 +9,8 @@ namespace ClutterStock.Contracts.Items;
 /// <param name="Category" example="Electronics">Optional category (e.g. Electronics, Furniture).</param>
 /// <param name="Notes" example="Needs new shade">Optional free-form notes.</param>
 public record UpdateItemRequest(
-    int RoomId,
-    string Name,
-    string? Description,
-    string? Category,
-    string? Notes);
+    [property: Range(1, int.MaxValue)] int RoomId,
+    [property: Required, StringLength(200, MinimumLength = 1)] string Name,
+    [property: StringLength(2000)] string? Description,
+    [property: StringLength(100)] string? Category,
+    [property: StringLength(2000)] string? Notes);

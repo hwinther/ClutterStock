@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ClutterStock.Contracts.Rooms;
 using ClutterStock.Domain.Abstractions;
 using ClutterStock.Domain.Extensions;
@@ -15,7 +16,7 @@ public class GetRoomEndpoint : IEndpoint
 
     public static Delegate Handler => (Func<int, IGetRoomQueryHandler, CancellationToken, Task<Results<Ok<RoomResponse>, NotFound>>>) Handle;
 
-    private static async Task<Results<Ok<RoomResponse>, NotFound>> Handle([FromRoute] int id,
+    private static async Task<Results<Ok<RoomResponse>, NotFound>> Handle([FromRoute, Range(1, int.MaxValue)] int id,
                                                                           IGetRoomQueryHandler handler,
                                                                           CancellationToken cancellationToken)
     {
