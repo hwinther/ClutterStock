@@ -2,12 +2,14 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <!--
-    Coverage exclusions consumed by coverlet.MTP. Filter syntax is [AssemblyName]TypeName,
-    '*' is a wildcard. ExcludeFromCodeCoverage is honored by coverlet by default.
+    Coverage exclusions consumed by coverlet.MTP via the MTP CLI args MSBuild hook.
+    Filter syntax is [AssemblyName]TypeName, '*' is a wildcard. ExcludeFromCodeCoverage,
+    GeneratedCodeAttribute, and CompilerGeneratedAttribute are honored by default.
       - Entities.SeedData / EntityRecordGenerator: scaffolding, not product code under test
       - Docker.DotNet* / Testcontainers*: external test infrastructure pulled in transitively
+    coverlet.MTP does NOT read the classic <Exclude> MSBuild property (that's coverlet.msbuild).
   -->
   <PropertyGroup>
-    <Exclude>[Entities.SeedData]*,[EntityRecordGenerator]*,[Docker.DotNet*]*,[Testcontainers*]*</Exclude>
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet-exclude [Entities.SeedData]* --coverlet-exclude [EntityRecordGenerator]* --coverlet-exclude [Docker.DotNet*]* --coverlet-exclude [Testcontainers*]*</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 </Project>
