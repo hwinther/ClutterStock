@@ -358,11 +358,23 @@ html[data-theme="tui"] .tui-cursor {
 /* TUI warn colour */
 :root[data-theme="tui"] { --c-warn: #ffd24d; }
 
-/* Panel boxes with dashed border */
+/* Panel boxes with solid border */
 .tui-panel { position: relative; }
 html[data-theme="tui"] .tui-panel {
-  border: 1px dashed var(--c-border) !important;
+  border: 1px solid var(--c-fg-2) !important;
   margin-top: 14px;
+}
+/* Sidebar shares the page background under TUI (no contrasting panel fill) */
+html[data-theme="tui"] aside.tui-panel {
+  background: var(--c-bg) !important;
+}
+
+/* Breathing room between the sidebar and center column so their solid 1px
+   borders don't overlap. Padding on three sides keeps the panels off the
+   viewport edges and off the bottom status bar. */
+html[data-theme="tui"] .cs-body {
+  gap: 12px;
+  padding: 0 12px 12px;
 }
 
 /* Floating panel title */
@@ -407,7 +419,7 @@ html[data-theme="tui"] .tui-statusbar {
   align-items: center;
   gap: 18px;
   padding: 6px 14px;
-  border-top: 1px dashed var(--c-border);
+  border-top: 1px solid var(--c-fg-2);
   font-size: 12px;
   color: var(--c-fg-2);
   flex-shrink: 0;
@@ -421,6 +433,177 @@ html[data-theme="tui"] .tui-statusbar-key {
 html[data-theme="tui"] .tui-statusbar-prompt {
   margin-left: auto;
   color: var(--c-fg);
+  background: transparent;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-shadow: inherit;
+}
+html[data-theme="tui"] .tui-statusbar-prompt:hover { color: var(--c-good); }
+
+/* ── TUI terminal overlay ──────────────────────────────────────────
+   Floating CLI that expands from the bottom-right `$ _▌` corner.
+   Mostly opaque so the prompt stays readable, with a faint backdrop
+   blur and phosphor glow so it still feels like an overlay. */
+@keyframes tui-term-in {
+  from { transform: scale(0.04); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+.tui-terminal {
+  position: fixed;
+  right: 12px;
+  bottom: 36px;                                /* clears the status bar */
+  width: clamp(360px, 60vw, 820px);
+  height: clamp(220px, 45vh, 460px);
+  background: rgba(10, 15, 10, 0.92);
+  color: var(--c-fg);
+  border: 1px solid var(--c-fg-2);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  z-index: 900;
+  box-shadow: 0 0 20px rgba(51, 255, 102, 0.15);
+  text-shadow: 0 0 6px rgba(51, 255, 102, 0.30);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  transform-origin: 100% 100%;
+  animation: tui-term-in 180ms cubic-bezier(0.18, 0.7, 0.3, 1);
+}
+/* Title bar style (reuse .tui-panel-title positioning) */
+.tui-terminal > .tui-panel-title {
+  position: absolute;
+  top: -10px; left: 12px;
+  background: var(--c-bg);
+  color: var(--c-fg-2);
+  padding: 0 6px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.tui-terminal-close {
+  position: absolute;
+  top: -10px; right: 10px;
+  background: var(--c-bg);
+  color: var(--c-fg-2);
+  border: none;
+  padding: 0 6px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-shadow: inherit;
+}
+.tui-terminal-close:hover { color: var(--c-danger); }
+.tui-terminal-history {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 14px 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tui-terminal-line { padding: 0; }
+.tui-terminal-line--info { color: var(--c-fg-2); font-style: italic; }
+.tui-terminal-line--in   { color: var(--c-good); }
+.tui-terminal-line--out  { color: var(--c-fg); }
+.tui-terminal-line--err  { color: var(--c-danger); }
+.tui-terminal-prompt {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 12px 8px;
+  border-top: 1px solid var(--c-fg-2);
+}
+.tui-terminal-sigil { color: var(--c-warn); font-weight: 700; }
+.tui-terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--c-good);
+  font: inherit;
+  caret-color: var(--c-good);
+  text-shadow: inherit;
+  padding: 0;
+}
+.tui-terminal-input::placeholder { color: var(--c-fg-3); }
+.tui-terminal-prompt .tui-cursor { color: var(--c-good); }
+
+/* Hide the terminal under non-TUI themes — the styling and bindings
+   are TUI-flavored; other themes don't get a phosphor overlay. */
+.tui-terminal { display: none; }
+html[data-theme="tui"] .tui-terminal { display: flex; }
+
+/* ── TUI user chip + dropdown ──────────────────────────────────────
+   Modern avatar pill is replaced under TUI by a `[ name ▌ ]` chip in
+   the header; clicking it drops a small panel from the top-right that
+   mirrors the bottom-right terminal's expand-from-corner behaviour. */
+.tui-user        { display: none; }
+/* `!important` is required to beat the inline `display: flex` on the modern pill button. */
+html[data-theme="tui"] .modern-user { display: none !important; }
+html[data-theme="tui"] .tui-user    { display: inline-flex; }
+
+html[data-theme="tui"] .tui-user-chip {
+  align-items: baseline;
+  gap: 0;
+  background: transparent;
+  border: none;
+  padding: 0 4px;
+  font: inherit;
+  color: var(--c-fg);
+  cursor: pointer;
+  text-shadow: inherit;
+}
+html[data-theme="tui"] .tui-user-chip:hover { color: var(--c-good); }
+html[data-theme="tui"] .tui-user-chip:hover .cs-tui-topbar-bracket { color: var(--c-good); }
+html[data-theme="tui"] .tui-user-chip-name {
+  display: inline-block;
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+@keyframes tui-userpanel-in {
+  from { transform: scale(0.04); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+.tui-user-panel { display: none; }
+html[data-theme="tui"] .tui-user-panel {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 40px;
+  right: 12px;
+  width: clamp(300px, 28vw, 380px);
+  background: rgba(10, 15, 10, 0.94);
+  color: var(--c-fg);
+  border: 1px solid var(--c-fg-2) !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+  font-size: 12px;
+  z-index: 950;
+  box-shadow: 0 0 18px rgba(51, 255, 102, 0.18);
+  text-shadow: 0 0 6px rgba(51, 255, 102, 0.30);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  transform-origin: 100% 0%;
+  animation: tui-userpanel-in 180ms cubic-bezier(0.18, 0.7, 0.3, 1);
+  margin-top: 0;            /* override the .tui-panel margin-top */
+  padding: 12px 14px 8px;
+}
+html[data-theme="tui"] .tui-user-panel-grid { gap: 2px 24px; }
+html[data-theme="tui"] .tui-user-panel-sub { grid-column: 1 / -1; }
+html[data-theme="tui"] .tui-user-panel-sub-value {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  color: var(--c-fg-3);
+  font-size: 11px;
 }
 
 /* Logo variants */
@@ -428,6 +611,477 @@ html[data-theme="tui"] .tui-statusbar-prompt {
 .modern-logo { display: inherit; }
 html[data-theme="tui"] .tui-brand   { display: inline; }
 html[data-theme="tui"] .modern-logo { display: none; }
+
+/* ── Hide modern stats grid + toolbar + footer under TUI ──
+   Version info now lives in the TUI top bar (cs-tui-topbar). */
+html[data-theme="tui"] .cs-stats-row,
+html[data-theme="tui"] .cs-toolbar,
+html[data-theme="tui"] body > footer {
+  display: none !important;
+}
+
+/* ── TUI top bar (only visible under TUI) ── */
+.cs-tui-topbar { display: none; }
+html[data-theme="tui"] .cs-tui-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px 6px;
+  border-bottom: 1px solid var(--c-fg-2);
+  font-size: 12px;
+  background: var(--c-bg);
+  flex-shrink: 0;
+  font-family: inherit;
+}
+html[data-theme="tui"] .cs-tui-topbar-bracket { color: var(--c-good); }
+html[data-theme="tui"] .cs-tui-topbar-path    { color: var(--c-warn); }
+html[data-theme="tui"] .cs-tui-topbar-right   { color: var(--c-fg-2); }
+
+/* ── TUI raw line-printer table ── */
+.tui-table { display: none; }
+html[data-theme="tui"] .tui-table {
+  display: flex !important;
+  background: var(--c-bg) !important;
+  margin-top: 14px;
+  margin-left: 0;
+  margin-right: 0;
+  border: 1px solid var(--c-fg-2) !important;
+}
+html[data-theme="tui"] .tui-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+html[data-theme="tui"] .tui-table-head,
+html[data-theme="tui"] .tui-table-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 120px 110px 92px;
+  gap: 8px;
+  align-items: baseline;
+}
+html[data-theme="tui"] .tui-table-head {
+  color: var(--c-fg-2);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--c-fg-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+html[data-theme="tui"] .tui-table-row {
+  padding: 1px 0;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+html[data-theme="tui"] .tui-table-row:hover {
+  background: var(--c-accent-bg);
+}
+html[data-theme="tui"] .tui-table-row[data-selected="true"] {
+  background: var(--c-accent) !important;
+  color: var(--c-bg) !important;
+  text-shadow: none !important;
+}
+html[data-theme="tui"] .tui-table-row[data-selected="true"] .tui-table-id,
+html[data-theme="tui"] .tui-table-row[data-selected="true"] .tui-table-dim,
+html[data-theme="tui"] .tui-table-row[data-selected="true"] .tui-table-cat {
+  color: var(--c-bg) !important;
+}
+html[data-theme="tui"] .tui-table-id   { color: var(--c-fg-2); }
+html[data-theme="tui"] .tui-table-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-theme="tui"] .tui-table-arrow { display: inline-block; width: 1.2em; }
+html[data-theme="tui"] .tui-table-dim  { color: var(--c-fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-theme="tui"] .tui-table-cat  { color: var(--c-warn); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── TUI bottom detail strip ── */
+.tui-detail { display: none; }
+html[data-theme="tui"] .tui-detail {
+  display: flex !important;
+  flex-direction: column;
+  margin-top: 14px;
+  background: var(--c-bg) !important;
+  border: 1px solid var(--c-fg-2) !important;
+  padding: 10px 14px 8px;
+  font-size: 12px;
+  position: relative;
+}
+html[data-theme="tui"] .tui-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 24px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+html[data-theme="tui"] .tui-detail-field {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html[data-theme="tui"] .tui-detail-notes {
+  grid-column: 1 / -1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html[data-theme="tui"] .tui-detail-label {
+  color: var(--c-fg-2);
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+}
+html[data-theme="tui"] .tui-detail-colon { color: var(--c-fg-2); }
+html[data-theme="tui"] .tui-detail-value { color: var(--c-fg); }
+html[data-theme="tui"] .tui-detail-value--bright { color: var(--c-good); font-weight: 600; }
+html[data-theme="tui"] .tui-detail-value--warn   { color: var(--c-warn); }
+html[data-theme="tui"] .tui-detail-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--c-fg-2);
+}
+html[data-theme="tui"] .tui-detail-action {
+  background: transparent;
+  border: none;
+  color: var(--c-accent);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+html[data-theme="tui"] .tui-detail-action:hover { text-decoration: underline; }
+html[data-theme="tui"] .tui-detail-action--danger { color: var(--c-danger); }
+html[data-theme="tui"] .tui-detail-sep { color: var(--c-fg-3); }
+html[data-theme="tui"] .tui-detail-action[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+/* ── TUI search bar (filter) ── */
+.cs-search-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-bg-2);
+  flex-shrink: 0;
+  font-size: 13px;
+}
+html[data-theme="tui"] .cs-search-bar {
+  background: var(--c-bg);
+  border-bottom: 1px solid var(--c-fg-2);
+  font-family: inherit;
+}
+.cs-search-prompt {
+  color: var(--c-fg-2);
+  font-family: ui-monospace, monospace;
+}
+html[data-theme="tui"] .cs-search-prompt { color: var(--c-good); }
+.cs-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--c-fg);
+  font: inherit;
+  padding: 0 4px;
+}
+html[data-theme="tui"] .cs-search-input {
+  caret-color: var(--c-good);
+  text-shadow: inherit;
+}
+html[data-theme="tui"] .cs-search-input::placeholder { color: var(--c-fg-3); }
+
+/* ── Help overlay (universal) ── */
+.cs-help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  padding: 24px;
+}
+html[data-theme="tui"] .cs-help-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+.cs-help-panel {
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  padding: 24px 24px 18px;
+  max-width: 720px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+html[data-theme="tui"] .cs-help-panel {
+  background: var(--c-bg);
+  border: 1px solid var(--c-fg-2);
+  border-radius: 0;
+  padding: 18px 20px 12px;
+  font-family: inherit;
+  text-shadow: 0 0 6px rgba(51, 255, 102, 0.30);
+  box-shadow: 0 0 22px rgba(51, 255, 102, 0.2);
+}
+.cs-help-panel .tui-panel-title { display: none; }
+html[data-theme="tui"] .cs-help-panel .tui-panel-title { display: block; }
+.cs-help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 28px;
+}
+@media (max-width: 600px) {
+  .cs-help-grid { grid-template-columns: 1fr; }
+}
+.cs-help-heading {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-fg-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 6px;
+}
+html[data-theme="tui"] .cs-help-heading {
+  text-transform: lowercase;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: var(--c-fg-2);
+}
+.cs-help-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+  font-size: 12px;
+  padding: 1px 0;
+}
+.cs-help-row dt { margin: 0; }
+.cs-help-row dd { margin: 0; color: var(--c-fg-2); }
+.cs-help-row kbd {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  padding: 1px 6px;
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  color: var(--c-fg);
+}
+html[data-theme="tui"] .cs-help-row kbd {
+  background: var(--c-fg-2);
+  color: var(--c-bg);
+  border: none;
+  border-radius: 0;
+  text-shadow: none;
+  font-weight: 700;
+}
+.cs-help-footer {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--c-border);
+  display: flex;
+  justify-content: flex-end;
+}
+html[data-theme="tui"] .cs-help-footer { border-top-color: var(--c-fg-2); }
+.cs-help-close {
+  background: transparent;
+  border: 1px solid var(--c-border);
+  color: var(--c-fg-2);
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+html[data-theme="tui"] .cs-help-close {
+  border: none;
+  color: var(--c-good);
+  border-radius: 0;
+  padding: 0 8px;
+}
+html[data-theme="tui"] .cs-help-close:hover { text-decoration: underline; }
+
+/* ── TUI inline edit form ── */
+html[data-theme="tui"] .tui-edit { padding-bottom: 6px; }
+html[data-theme="tui"] .tui-edit-grid { gap: 2px 24px; }
+html[data-theme="tui"] .tui-edit-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+html[data-theme="tui"] .tui-edit-row--full { grid-column: 1 / -1; }
+html[data-theme="tui"] .tui-edit-bracket {
+  color: var(--c-fg-3);
+  flex-shrink: 0;
+}
+html[data-theme="tui"] .tui-edit-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--c-fg);
+  font: inherit;
+  padding: 0 4px;
+  caret-color: var(--c-good);
+  text-shadow: inherit;
+}
+html[data-theme="tui"] .tui-edit-input:focus {
+  background: var(--c-accent-bg);
+  color: var(--c-good);
+}
+html[data-theme="tui"] .tui-edit-input:focus + .tui-edit-bracket {
+  color: var(--c-good);
+}
+/* Highlight the opening bracket of the focused field too */
+html[data-theme="tui"] .tui-edit-row:focus-within .tui-edit-bracket {
+  color: var(--c-good);
+}
+/* Blinking caret cue at the focused row's right edge */
+html[data-theme="tui"] .tui-edit-row:focus-within::after {
+  content: "▌";
+  color: var(--c-good);
+  margin-left: 4px;
+  animation: tui-blink 1s step-end infinite;
+}
+html[data-theme="tui"] .tui-edit-input[disabled] { opacity: 0.5; }
+html[data-theme="tui"] .tui-edit-error {
+  font-size: 11px;
+  color: var(--c-danger);
+  padding: 2px 0;
+}
+
+/* ── TUI combobox (room selector) ── */
+html[data-theme="tui"] .tui-edit-row--combo {
+  position: relative;       /* anchor for the dropdown overlay */
+  align-items: center;
+}
+html[data-theme="tui"] .tui-combobox {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+html[data-theme="tui"] .tui-combobox-trigger {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font: inherit;
+  color: var(--c-fg);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  text-shadow: inherit;
+}
+html[data-theme="tui"] .tui-combobox-trigger:focus {
+  color: var(--c-good);
+}
+html[data-theme="tui"] .tui-combobox-trigger:focus .tui-edit-bracket,
+html[data-theme="tui"] .tui-combobox[data-open="true"] .tui-edit-bracket {
+  color: var(--c-good);
+}
+html[data-theme="tui"] .tui-combobox-arrow {
+  color: var(--c-fg-2);
+  flex-shrink: 0;
+}
+html[data-theme="tui"] .tui-combobox-trigger:focus .tui-combobox-arrow,
+html[data-theme="tui"] .tui-combobox[data-open="true"] .tui-combobox-arrow {
+  color: var(--c-good);
+}
+html[data-theme="tui"] .tui-combobox-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-theme="tui"] .tui-combobox-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 2px;
+  list-style: none;
+  padding: 2px 0;
+  background: var(--c-bg);
+  border: 1px solid var(--c-good);
+  z-index: 50;
+  max-height: 220px;
+  overflow-y: auto;
+  font: inherit;
+  text-shadow: inherit;
+  box-shadow: 0 0 12px rgba(51, 255, 102, 0.25);
+}
+html[data-theme="tui"] .tui-combobox-group {
+  padding: 2px 8px;
+  color: var(--c-fg-2);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+html[data-theme="tui"] .tui-combobox-option {
+  display: flex;
+  gap: 6px;
+  padding: 1px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--c-fg);
+}
+html[data-theme="tui"] .tui-combobox-option[data-selected="true"] {
+  color: var(--c-good);
+}
+html[data-theme="tui"] .tui-combobox-option[data-highlighted="true"] {
+  background: var(--c-accent);
+  color: var(--c-bg);
+  text-shadow: none;
+}
+html[data-theme="tui"] .tui-combobox-arrow-cell {
+  display: inline-block;
+  width: 1ch;
+  flex-shrink: 0;
+}
+/* Suppress the ▌ caret pseudo on the combobox row so it doesn't double up */
+html[data-theme="tui"] .tui-edit-row--combo:focus-within::after {
+  content: none;
+}
+
+/* ── TUI sidebar polish ── */
+html[data-theme="tui"] .sidebar-group-title {
+  text-transform: lowercase;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--c-fg-2);
+  white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+}
+html[data-theme="tui"] .sidebar-group-title::before { content: "── "; }
+html[data-theme="tui"] .sidebar-group-title::after  { content: " ──────"; }
+html[data-theme="tui"] .sidebar-row-active {
+  background: transparent !important;
+  color: var(--c-good) !important;
+  font-weight: 600;
+  border-left-color: transparent !important;
+}
+html[data-theme="tui"] .sidebar-row-active::before {
+  content: "▶ ";
+}
+
+/* ── Hide modern sparklines under retro themes ── */
+html[data-theme="tui"] .cs-stats-row svg,
+html[data-theme="win98"] .cs-stats-row svg,
+html[data-theme="cde"] .cs-stats-row svg {
+  display: none !important;
+}
 
 /* ══════════════════════════════════════════════════════════════════
    Win98 theme
@@ -690,6 +1344,95 @@ html[data-theme="win98"] .win98-statusbar-seg--narrow {
   min-width: 100px;
 }
 
+/* ── Win98 folder-tree sidebar ── */
+.win98-tree { display: none; }
+html[data-theme="win98"] .win98-tree {
+  display: block;
+  padding: 4px;
+  font-size: 11px;
+  color: #000000;
+}
+html[data-theme="win98"] aside.tui-panel {
+  background: #ffffff !important;
+  padding: 0 !important;
+}
+html[data-theme="win98"] .win98-tree-indent {
+  padding-left: 14px;
+  position: relative;
+}
+html[data-theme="win98"] .win98-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 2px;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+html[data-theme="win98"] .win98-tree-row--selected {
+  background: #000080;
+  color: #ffffff;
+}
+html[data-theme="win98"] .win98-tree-chevron {
+  display: inline-block;
+  width: 10px;
+  font-size: 8px;
+  color: #404040;
+  text-align: center;
+  flex-shrink: 0;
+}
+html[data-theme="win98"] .win98-tree-row--selected .win98-tree-chevron { color: #ffffff; }
+html[data-theme="win98"] .win98-tree-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+  display: inline-block;
+  width: 14px;
+}
+html[data-theme="win98"] .win98-tree-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html[data-theme="win98"] .win98-tree-trailing {
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+html[data-theme="win98"] .win98-tree-add {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  color: inherit;
+}
+html[data-theme="win98"] .win98-tree-add:hover { text-decoration: underline; }
+html[data-theme="win98"] .win98-tree-empty {
+  padding: 1px 14px;
+  color: #808080;
+  font-style: italic;
+  font-size: 11px;
+}
+html[data-theme="win98"] .win98-tree-divider {
+  margin-top: 12px;
+  padding: 0 2px;
+  color: #404040;
+}
+html[data-theme="win98"] .win98-tree-divider-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+html[data-theme="win98"] .win98-tree-divider-btn:hover { text-decoration: underline; }
+
+/* Hide modern sidebar groups under Win98 (we render Win98Tree instead) */
+/* (Already handled by conditional render in home.tsx — keep CSS lean.) */
+
 /* ── Window controls ── */
 .win98-wincontrols { display: none; }
 html[data-theme="win98"] .win98-wincontrols {
@@ -947,6 +1690,40 @@ html[data-theme="cde"] .cde-footrow-btn--primary {
   background: #5e8c8e;
   color: #ffffff;
   box-shadow: inset -1px -1px 0 #3d6062, inset 1px 1px 0 #8bbcbe;
+}
+
+/* ── CDE inset-bevel stats tiles ──
+   Restyles the modern stats grid to match retro-themes.jsx CDEStatsRow:
+   sunken Motif bevel + bgField background, label on left, big value on right. */
+html[data-theme="cde"] .cs-stats-row {
+  gap: 6px !important;
+  padding: 6px !important;
+  background: var(--c-bg-2) !important;
+}
+html[data-theme="cde"] .cs-stats-row > div {
+  background: #dcdad5 !important;
+  padding: 6px 10px !important;
+  align-items: baseline !important;
+  box-shadow:
+    inset  2px  2px 0 #5b6878,
+    inset -2px -2px 0 #cbd1dc !important;
+}
+html[data-theme="cde"] .cs-stats-row > div > div {
+  display: contents !important;
+}
+html[data-theme="cde"] .cs-stats-row > div > div > span:first-child {
+  color: #3d6062 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+}
+html[data-theme="cde"] .cs-stats-row > div > div > span:last-child {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: 0 !important;
+  color: #000000 !important;
 }
 
 /* ── CDE logo and window controls ── */
