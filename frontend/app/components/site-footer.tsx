@@ -1,11 +1,7 @@
-export function SiteFooter() {
-  const version = import.meta.env.VITE_APP_VERSION ?? "";
-  const sha = import.meta.env.VITE_GIT_SHA ?? "";
-  const parts: string[] = [];
-  if (version) parts.push(version);
-  if (sha) parts.push(sha.slice(0, 7));
+import { getVersionLine } from "~/lib/version";
 
-  const line = parts.length > 0 ? parts.join(" · ") : import.meta.env.DEV ? "dev" : "";
+export function SiteFooter() {
+  const { line, sha } = getVersionLine();
   if (!line) return null;
 
   return (

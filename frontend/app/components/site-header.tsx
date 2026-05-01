@@ -1,7 +1,9 @@
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate, useRouteLoaderData } from "react-router";
 import type { SessionUser } from "~/lib/session.server";
 import { UserModal } from "./user-modal";
+import { TuiUserPanel } from "./tui-user-panel";
+import { useTheme } from "~/lib/theme";
 
 type ThemeId = "system" | "tui" | "win98" | "cde";
 const THEMES: ThemeId[] = ["system", "tui", "win98", "cde"];
@@ -39,6 +41,14 @@ export function SiteHeader() {
     return "system";
   });
   const navigate = useNavigate();
+  const activeTheme = useTheme();
+  const isTui = activeTheme === "tui";
+
+  // Re-apply the stored theme on mount in case hydration stripped the
+  // data-theme attribute that the pre-paint script set on <html>.
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   function cycleTheme() {
     const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length] ?? "system";
@@ -130,43 +140,59 @@ export function SiteHeader() {
 
           {mounted && (
             user ? (
-              <button
-                type="button"
-                onClick={() => setModalOpen(true)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 7,
-                  padding: "4px 10px 4px 4px",
-                  borderRadius: 999,
-                  border: "1px solid var(--c-border)",
-                  background: "var(--c-bg-3)",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  color: "var(--c-fg-2)",
-                  fontWeight: 500,
-                }}
-                aria-label="Account"
-              >
-                <span style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 22,
-                  height: 22,
-                  borderRadius: 999,
-                  background: "var(--c-accent)",
-                  color: "white",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  flexShrink: 0,
-                }}>
-                  {initial}
-                </span>
-                <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {displayName}
-                </span>
-              </button>
+              <>
+                {/* Modern avatar pill — hidden under TUI via .modern-user CSS swap */}
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="modern-user"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    padding: "4px 10px 4px 4px",
+                    borderRadius: 999,
+                    border: "1px solid var(--c-border)",
+                    background: "var(--c-bg-3)",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    color: "var(--c-fg-2)",
+                    fontWeight: 500,
+                  }}
+                  aria-label="Account"
+                >
+                  <span style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 22,
+                    height: 22,
+                    borderRadius: 999,
+                    background: "var(--c-accent)",
+                    color: "white",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}>
+                    {initial}
+                  </span>
+                  <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {displayName}
+                  </span>
+                </button>
+                {/* TUI chip — shown only under TUI via .tui-user CSS swap */}
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(o => !o)}
+                  className="tui-user tui-user-chip"
+                  aria-label="Account"
+                >
+                  <span className="cs-tui-topbar-bracket">[ </span>
+                  <span className="tui-user-chip-name">{displayName}</span>
+                  <span className="tui-cursor">▌</span>
+                  <span className="cs-tui-topbar-bracket"> ]</span>
+                </button>
+              </>
             ) : (
               <button
                 type="button"
@@ -191,12 +217,20 @@ export function SiteHeader() {
       </header>
 
       {user && (
-        <UserModal
-          user={user}
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onSignOut={handleSignOut}
-        />
+        <>
+          <UserModal
+            user={user}
+            open={modalOpen && !isTui}
+            onClose={() => setModalOpen(false)}
+            onSignOut={handleSignOut}
+          />
+          <TuiUserPanel
+            user={user}
+            open={modalOpen && isTui}
+            onClose={() => setModalOpen(false)}
+            onSignOut={handleSignOut}
+          />
+        </>
       )}
     </>
   );
