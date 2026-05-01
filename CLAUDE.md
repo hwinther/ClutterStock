@@ -86,7 +86,9 @@ cd frontend && npm run openapi-typescript
 
 ## Testing
 
-**Backend integration tests** use `WebApplicationFactory` pattern — they spin up the full API with a test database. Test class names and namespaces determine the `--filter` value.
+**Backend tests** run on **xUnit v3** with **Microsoft.Testing.Platform (MTP)** — coverage is collected via **`coverlet.MTP`** (no `coverlet.collector` / VSTest needed). Filter syntax is the MTP form, e.g. `dotnet test --project ... -- --filter-method "*ItemsApiTests*"` (note the `--` separator and `--filter-method` flag, not `--filter "FullyQualifiedName~..."`).
+
+Integration tests use the `WebApplicationFactory` pattern with a real PostgreSQL **Testcontainer** (no in-memory provider). The factory in `tests/Api.Tests/Infrastructure/ClutterStockApiFactory.cs` starts a `postgres:16-alpine` container in `IAsyncLifetime.InitializeAsync` and injects the container's connection string via `builder.UseSetting("ConnectionStrings:ClutterStock", ...)` — `ConfigureAppConfiguration` is too late because `Program.cs` reads the connection string before `Build()`. Each test gets a clean slate via `ResetDatabaseAsync()` (TRUNCATE … RESTART IDENTITY CASCADE), not by re-running migrations. Docker must be available on the test host.
 
 **Frontend unit tests** use Vitest with MSW for API mocking. Test setup is in `app/test/setup.ts`. Coverage uses V8 provider (Cobertura/LCOV output).
 
