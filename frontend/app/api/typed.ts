@@ -1,6 +1,6 @@
 import type { paths } from "~/api/types";
 import { apiFetch } from "~/api/http";
-import { ApiProblemError, type ProblemBody } from "~/api/problem";
+import type { ProblemBody } from "~/api/problem";
 
 type HttpMethod = "get" | "post" | "put" | "delete";
 
@@ -102,7 +102,17 @@ async function call<P extends keyof paths, M extends HttpMethod>(
   if (!response.ok) {
     const body = await parseProblem(response);
     const fallback: ProblemBody = body ?? { title: response.statusText, status: response.status };
-    throw new ApiProblemError(response.status, fallback);
+    // Throw a `Response` (not a custom Error) so RR7 serializes the body to the
+    // client across SSR — `useRouteError` exposes the parsed body via `error.data`
+    // and `isRouteErrorResponse(error)` returns true. Custom Error subclass
+    // fields would be stripped by `serializeError`.
+    throw new Response(JSON.stringify(fallback), {
+      status: response.status,
+      statusText: typeof fallback.title === "string"
+        ? fallback.title.slice(0, 200)
+        : response.statusText,
+      headers: { "Content-Type": "application/problem+json" },
+    });
   }
 
   if (response.status === 204) return undefined as SuccessBody<Op<P, M>>;

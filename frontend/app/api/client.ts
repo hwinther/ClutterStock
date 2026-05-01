@@ -6,6 +6,9 @@ async function nullOn404<T>(promise: Promise<T>): Promise<T | null> {
   try {
     return await promise;
   } catch (error) {
+    // The wrapper throws Response so problem details survive RR7's SSR
+    // serialization; ApiProblemError is the legacy/test path.
+    if (error instanceof Response && error.status === 404) return null;
     if (isApiProblem(error) && error.status === 404) return null;
     throw error;
   }

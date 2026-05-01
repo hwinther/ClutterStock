@@ -39,14 +39,10 @@ function makeId(): string {
 
 export function ToastProvider({
   children,
-  initial,
 }: {
   readonly children: React.ReactNode;
-  readonly initial?: readonly ToastInput[];
 }) {
-  const [toasts, setToasts] = useState<readonly Toast[]>(() =>
-    (initial ?? []).map((t) => ({ ...t, id: makeId() })),
-  );
+  const [toasts, setToasts] = useState<readonly Toast[]>([]);
 
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -64,6 +60,27 @@ export function ToastProvider({
   );
 
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
+}
+
+/**
+ * Drains server-side flash toasts (from the root loader) onto the client
+ * toast queue. Lives inside the provider, watches an array of flashes that
+ * may change on every navigation, and uses array identity to detect a fresh
+ * batch. Render this in the layout — once.
+ */
+export function FlashToasts({
+  flashes,
+}: {
+  readonly flashes: readonly ToastInput[];
+}) {
+  const { push } = useToasts();
+  const lastSeen = useRef<readonly ToastInput[] | null>(null);
+  useEffect(() => {
+    if (flashes === lastSeen.current) return;
+    lastSeen.current = flashes;
+    for (const f of flashes) push(f);
+  }, [flashes, push]);
+  return null;
 }
 
 export function useToasts(): ToastContextValue {

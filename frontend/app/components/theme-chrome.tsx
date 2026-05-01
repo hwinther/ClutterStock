@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { LocationResponse, RoomResponse } from "~/api/client";
 
 export function CDEMenuBar() {
@@ -75,12 +76,17 @@ export function Win98StatusBar({ count, location, room }: {
   const path = room && location
     ? `${location.name}\\${room.name}`
     : location?.name ?? "All Items";
+  // toLocaleDateString resolves to the host's locale, which differs between the
+  // SSR Node process and the browser — paint after hydration to dodge the
+  // mismatch (matches TuiTopBar's clock pattern in routes/home.tsx).
+  const [date, setDate] = useState("");
+  useEffect(() => setDate(new Date().toLocaleDateString()), []);
   return (
     <div className="win98-statusbar">
       <div className="win98-statusbar-seg">{count} object(s)</div>
       <div className="win98-statusbar-seg">{path}</div>
       <div className="win98-statusbar-seg win98-statusbar-seg--narrow">
-        {new Date().toLocaleDateString()}
+        {date}
       </div>
     </div>
   );

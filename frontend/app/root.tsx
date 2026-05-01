@@ -11,7 +11,7 @@ import type { Route } from "./+types/root";
 import { ProblemBoundary } from "~/components/problem-boundary";
 import { SiteFooter } from "~/components/site-footer";
 import { SiteHeader } from "~/components/site-header";
-import { Toaster, ToastProvider, type ToastInput } from "~/lib/toasts";
+import { FlashToasts, Toaster, ToastProvider, type ToastInput } from "~/lib/toasts";
 import type { PublicRuntimeConfig } from "~/public-runtime-config";
 import type { SessionUser } from "~/lib/session.server";
 import "./app.css";
@@ -115,7 +115,8 @@ export function Layout({
         <Links />
       </head>
       <body className="min-h-screen flex flex-col">
-        <ToastProvider initial={initialFlashes}>
+        <ToastProvider>
+          <FlashToasts flashes={initialFlashes} />
           <SiteHeader />
           <div className="flex-1 flex flex-col">{children}</div>
           <SiteFooter />

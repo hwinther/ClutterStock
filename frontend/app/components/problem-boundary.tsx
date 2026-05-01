@@ -1,5 +1,5 @@
 import { isRouteErrorResponse } from "react-router";
-import { ApiProblemError, isApiProblem } from "~/api/problem";
+import { asApiProblem } from "~/api/problem";
 
 interface ProblemBoundaryProps {
   readonly error: unknown;
@@ -17,15 +17,17 @@ interface RenderShape {
 }
 
 function shapeFromError(error: unknown): RenderShape {
-  if (isApiProblem(error)) {
-    const e: ApiProblemError = error;
+  // The typed wrapper throws Response with a ProblemDetails JSON body, which
+  // RR7 surfaces as a route ErrorResponse. asApiProblem unwraps either.
+  const problem = asApiProblem(error);
+  if (problem) {
     return {
-      title: e.title,
-      detail: e.detail ?? e.message,
-      status: e.status,
-      fieldErrors: e.errors,
-      requestId: e.requestId,
-      traceId: e.traceId,
+      title: problem.title,
+      detail: problem.detail ?? problem.message,
+      status: problem.status,
+      fieldErrors: problem.errors,
+      requestId: problem.requestId,
+      traceId: problem.traceId,
     };
   }
 
