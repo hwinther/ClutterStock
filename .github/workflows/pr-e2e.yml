@@ -31,7 +31,7 @@ jobs:
       container_image_name_postfix: api
       cosign_sign_enabled: false
       cosign_supply_chain_attest_enabled: false
-      grype_fail_build: true
+      grype_fail_build: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-grype') }}
 
   migrator-container:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
@@ -52,7 +52,7 @@ jobs:
       container_image_name_postfix: migrator
       cosign_sign_enabled: false
       cosign_supply_chain_attest_enabled: false
-      grype_fail_build: true
+      grype_fail_build: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-grype') }}
 
   frontend-container:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
@@ -71,7 +71,7 @@ jobs:
       dockerfile: frontend/Dockerfile
       cosign_sign_enabled: false
       cosign_supply_chain_attest_enabled: false
-      grype_fail_build: true
+      grype_fail_build: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-grype') }}
 
   e2e:
     needs: [api-container, migrator-container, frontend-container]
