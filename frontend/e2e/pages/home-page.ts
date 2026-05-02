@@ -142,4 +142,12 @@ export class HomePage {
   async expectAuthenticated(): Promise<void> {
     await expect(this.accountButton).toBeVisible();
   }
+
+  // Open the user account modal and click Sign out. Does NOT wait for the
+  // full /auth/signout → Authelia end-session → app redirect chain — the
+  // caller decides what to assert (e.g. cookie-cleared, or URL-changed).
+  async signOut(): Promise<void> {
+    await this.accountButton.click();
+    await this.page.getByRole("button", { name: "Sign out" }).click();
+  }
 }
