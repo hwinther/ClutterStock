@@ -46,7 +46,7 @@ services:
       ASPNETCORE_URLS: http://+:8081
       ConnectionStrings__ClutterStock: "Host=postgres;Port=5432;Database=clutterstock;Username=clutter;Password=clutter"
       Authentication__Authority: https://auth.wsh.no
-      Authentication__Audience: clutterstock
+      Authentication__Audience: clutterstock-api
       Cors__AllowedOrigins__0: http://localhost:5173
       OTEL_SDK_DISABLED: "true"
     ports:
@@ -74,6 +74,10 @@ services:
       SERVER_API_URL: http://api:8081
       REDIS_URL: redis://redis:6379/0
       PUBLIC_ORIGIN: http://localhost:5173
+      # Read at runtime by oidc.server.ts via process.env (not inlined at build time
+      # because the SSR code uses process.env.VITE_*, not import.meta.env).
+      VITE_OIDC_AUTHORITY: https://auth.wsh.no
+      VITE_OIDC_CLIENT_ID: clutterstock
       OTEL_SDK_DISABLED: "true"
       NODE_ENV: production
     ports:
