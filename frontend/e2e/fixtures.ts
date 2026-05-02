@@ -1,6 +1,7 @@
 import { expect, test as base } from "@playwright/test";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import { HomePage } from "./pages/home-page";
 
 export { expect };
 
@@ -8,7 +9,11 @@ const sessionFile = fileURLToPath(
   new URL("../playwright/.auth/session-storage.json", import.meta.url),
 );
 
-export const test = base.extend({
+interface Fixtures {
+  home: HomePage;
+}
+
+export const test = base.extend<Fixtures>({
   page: async ({ page }, use) => {
     if (fs.existsSync(sessionFile)) {
       const stored: Record<string, Record<string, string>> = JSON.parse(
@@ -25,5 +30,8 @@ export const test = base.extend({
       }, stored);
     }
     await use(page);
+  },
+  home: async ({ page }, use) => {
+    await use(new HomePage(page));
   },
 });

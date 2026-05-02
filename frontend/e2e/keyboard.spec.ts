@@ -1,31 +1,22 @@
 import { expect, test } from "./fixtures";
-import {
-  createItem,
-  deleteCurrentItem,
-  gotoStandardTheme,
-  openItemByName,
-  uniqueSuffix,
-} from "./helpers";
+import { uniqueSuffix } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
 test.describe("keyboard shortcuts (standard theme)", () => {
-  test("? opens the help overlay; Esc closes it", async ({ page }) => {
-    await gotoStandardTheme(page);
-    await expect(page.getByRole("button", { name: /account/i })).toBeVisible();
+  test("? opens the help overlay; Esc closes it", async ({ home }) => {
+    await home.goto();
+    await home.expectAuthenticated();
 
-    await page.keyboard.press("?");
-    const overlay = page.getByRole("dialog", { name: /keyboard shortcuts/i });
-    await expect(overlay).toBeVisible();
+    await home.help.open();
     // Spot-check a couple of well-known shortcut rows.
-    await expect(overlay.getByText("next item")).toBeVisible();
-    await expect(overlay.getByText("filter items")).toBeVisible();
+    await expect(home.help.rowByLabel("next item")).toBeVisible();
+    await expect(home.help.rowByLabel("filter items")).toBeVisible();
 
-    await page.keyboard.press("Escape");
-    await expect(overlay).toBeHidden();
+    await home.help.close();
   });
 
-  test("j and k move the selection through the items table", async ({ page }) => {
+  test("j and k move the selection through the items table", async ({ home }) => {
     // Seed two items so we can guarantee at least two distinct rows to step
     // through. Share a per-run token across both names so we can search for
     // exactly these two rows even if other tests (or leaked data from past
@@ -34,54 +25,41 @@ test.describe("keyboard shortcuts (standard theme)", () => {
     const a = `${token}-A`;
     const b = `${token}-B`;
 
-    await gotoStandardTheme(page);
+    await home.goto();
 
     for (const name of [a, b]) {
-      await createItem(page, { name });
-      await page.keyboard.press("Escape");
+      await home.createItem({ name });
+      await home.page.keyboard.press("Escape");
     }
 
     // Filter to just our two seeded rows so j/k navigation is deterministic.
-    await page.locator("body").click({ position: { x: 5, y: 5 } });
-    await page.keyboard.press("/");
-    const searchInput = page.locator(".cs-search-input");
-    await searchInput.fill(token);
-    await searchInput.press("Enter");
-    await expect(searchInput).toBeHidden();
+    await home.page.locator("body").click({ position: { x: 5, y: 5 } });
+    await home.searchBar.open();
+    await home.searchBar.fill(token);
+    await home.searchBar.submit();
 
-    const itemsTable = page.locator(".cs-body table");
-    await expect(itemsTable.locator("tbody tr")).toHaveCount(2);
+    await home.itemsTable.expectRowCount(2);
 
     // No selection yet — pressing j selects the first visible row.
-    await page.keyboard.press("j");
-    await expect(
-      itemsTable.locator('tbody tr[data-selected="true"]'),
-    ).toHaveCount(1);
-    const firstSelectedText = (
-      await itemsTable.locator('tbody tr[data-selected="true"]').first().innerText()
-    ).trim();
+    await home.page.keyboard.press("j");
+    await expect(home.itemsTable.selectedRows).toHaveCount(1);
+    const firstSelectedText = await home.itemsTable.selectedRowText();
 
     // Press j → selection moves to the next row.
-    await page.keyboard.press("j");
-    await expect(
-      itemsTable.locator('tbody tr[data-selected="true"]'),
-    ).toHaveCount(1);
-    const secondSelectedText = (
-      await itemsTable.locator('tbody tr[data-selected="true"]').first().innerText()
-    ).trim();
+    await home.page.keyboard.press("j");
+    await expect(home.itemsTable.selectedRows).toHaveCount(1);
+    const secondSelectedText = await home.itemsTable.selectedRowText();
     expect(secondSelectedText).not.toBe(firstSelectedText);
 
     // Press k → back to the first row.
-    await page.keyboard.press("k");
-    const backText = (
-      await itemsTable.locator('tbody tr[data-selected="true"]').first().innerText()
-    ).trim();
+    await home.page.keyboard.press("k");
+    const backText = await home.itemsTable.selectedRowText();
     expect(backText).toBe(firstSelectedText);
 
     // Cleanup both seeded items.
     for (const name of [a, b]) {
-      await openItemByName(page, name);
-      await deleteCurrentItem(page);
+      await home.openItemByName(name);
+      await home.deleteCurrentItem();
     }
   });
 });
