@@ -241,6 +241,17 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
+      - name: Upload monocart e2e coverage
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-coverage
+          path: |
+            frontend/monocart-report/
+            frontend/monocart-coverage/
+          retention-days: 14
+          if-no-files-found: warn
+
       - name: Tear down stack
         if: always()
         run: docker compose -f docker-compose.e2e.yml down -v

@@ -6,6 +6,13 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  // Source maps in the production build let monocart-reporter map browser-side
+  // V8 coverage from the minified bundles back to app/* source files. Adds
+  // ~10MB to the image but the bundle URLs are already viewable in DevTools,
+  // so no additional disclosure beyond what's already reachable.
+  build: {
+    sourcemap: true,
+  },
   plugins: [
     tailwindcss(),
     ...(process.env.VITEST ? [] : [reactRouter()]),

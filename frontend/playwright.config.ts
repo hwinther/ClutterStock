@@ -18,6 +18,29 @@ export default defineConfig({
         ["html", { open: "never" }],
         ["json", { outputFile: "playwright-report/results.json" }],
         ["allure-playwright", { resultsDir: "allure-results" }],
+        [
+          "monocart-reporter",
+          {
+            name: "ClutterStock E2E",
+            outputFile: "./monocart-report/index.html",
+            coverage: {
+              name: "ClutterStock E2E coverage",
+              // Only collect coverage for entries served by the frontend
+              // container. Excludes inline data: URLs, hot-reload websockets,
+              // and the OIDC redirect to auth.wsh.no.
+              entryFilter: (entry: { url: string }) =>
+                entry.url.includes("localhost:5173"),
+              // Map bundled output back to source files via the build's
+              // source maps. Keep only files under app/ — drop node_modules,
+              // build artifacts, and the generated react-router types.
+              sourceFilter: (sourcePath: string) =>
+                /(^|\/)app\//.test(sourcePath) &&
+                !/node_modules\//.test(sourcePath),
+              outputDir: "./monocart-coverage",
+              reports: ["v8", "cobertura", "lcov"],
+            },
+          },
+        ],
       ]
     : "list",
   use: {
