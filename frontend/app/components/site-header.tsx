@@ -88,28 +88,28 @@ export function SiteHeader() {
             to="/"
             style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
           >
-            <div className="modern-logo" style={{
-              width: 22,
-              height: 22,
-              borderRadius: 6,
-              background: "var(--c-accent)",
-              display: "grid",
-              placeItems: "center",
-              color: "white",
-              fontSize: 11,
+            <img
+              className="modern-logo"
+              src="/brand/icon.svg"
+              alt=""
+              width={26}
+              height={26}
+              style={{ display: "block", flexShrink: 0 }}
+            />
+            <span className="modern-logo" style={{
+              fontSize: 14,
               fontWeight: 700,
-              flexShrink: 0,
+              color: "var(--c-fg)",
+              fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+              letterSpacing: "-0.02em",
             }}>
-              ▦
-            </div>
-            <span className="modern-logo" style={{ fontSize: 13, fontWeight: 600, color: "var(--c-fg)" }}>
-              ClutterStock
+              clutter<span style={{ color: "#c4502a" }}>:stock</span>
             </span>
             <span className="tui-brand" style={{ fontSize: 13, color: "var(--c-fg)", fontFamily: "inherit" }}>
-              ╭─[ <strong>clutterstock</strong> ]─
+              ╭─[ <strong>clutter<span style={{ color: "#c4502a" }}>:stock</span></strong> ]─
             </span>
             <span className="cde-brand" style={{ fontWeight: 700, fontSize: 12, color: "var(--c-fg)" }}>
-              ClutterStock — Home
+              clutter<span style={{ color: "#c4502a" }}>:stock</span> — Home
             </span>
           </Link>
         </div>

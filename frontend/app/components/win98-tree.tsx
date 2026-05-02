@@ -33,8 +33,8 @@ export function Win98Tree({
     <div className="win98-tree">
       <Row
         chevron={rootCollapsed ? "▶" : "▼"}
-        icon="▦"
-        label="ClutterStock"
+        icon={<img src="/brand/icon.svg" alt="" width={16} height={16} style={{ display: "block" }} />}
+        label={<>clutter<span style={{ color: "#c4502a" }}>:stock</span></>}
         bold
         onChevronClick={() => setRootCollapsed(v => !v)}
       />
@@ -127,8 +127,8 @@ function Row({
   onRowClick, onChevronClick, onIconClick, trailing,
 }: {
   chevron?: string;
-  icon: string;
-  label: string;
+  icon: React.ReactNode;
+  label: React.ReactNode;
   selected?: boolean;
   bold?: boolean;
   onRowClick?: () => void;

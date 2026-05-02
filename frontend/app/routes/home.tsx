@@ -782,7 +782,7 @@ function TuiTopBar({ locationPath, itemCount }: { locationPath: string; itemCoun
     <div className="cs-tui-topbar">
       <span className="cs-tui-topbar-left">
         <span className="cs-tui-topbar-bracket">╭─[ </span>
-        <strong>clutterstock</strong>
+        <strong>clutter<span style={{ color: "#c4502a" }}>:stock</span></strong>
         <span className="cs-tui-topbar-bracket"> ]─[ </span>
         <span className="cs-tui-topbar-path">{locationPath}</span>
         <span className="cs-tui-topbar-bracket"> ]</span>

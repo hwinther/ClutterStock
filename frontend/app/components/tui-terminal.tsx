@@ -6,7 +6,7 @@ import type { SessionUser } from "~/lib/session.server";
 type Line = { kind: "in" | "out" | "err" | "info"; text: string };
 
 const INTRO: Line[] = [
-  { kind: "info", text: "ClutterStock terminal" },
+  { kind: "info", text: "clutter:stock terminal" },
   { kind: "info", text: "type 'help' for commands · 'clear' to wipe · Esc to close" },
 ];
 
