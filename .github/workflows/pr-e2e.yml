@@ -1,0 +1,156 @@
+name: "PR build, scan, and E2E"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, labeled, synchronize, ready_for_review]
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  api-container:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      actions: write
+      security-events: write
+    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@v1
+    with:
+      dotnet_version: 10.0.x
+      solution_path: backend
+      solution_file: ClutterStock.slnx
+      project_file: src/Api/Api.csproj
+      container_registry: ghcr.io
+      container_image_name_postfix: api
+      cosign_sign_enabled: false
+      cosign_supply_chain_attest_enabled: false
+      grype_fail_build: true
+
+  migrator-container:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      actions: write
+      security-events: write
+    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@v1
+    with:
+      dotnet_version: 10.0.x
+      solution_path: backend
+      solution_file: ClutterStock.slnx
+      project_file: src/Migrator/Migrator.csproj
+      container_registry: ghcr.io
+      container_image_name_postfix: migrator
+      cosign_sign_enabled: false
+      cosign_supply_chain_attest_enabled: false
+      grype_fail_build: true
+
+  frontend-container:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      actions: write
+      security-events: write
+    uses: hwinther/reusable-workflows/.github/workflows/docker-container.yml@v1
+    with:
+      container_registry: ghcr.io
+      container_image_name_postfix: frontend
+      build_context: frontend
+      dockerfile: frontend/Dockerfile
+      cosign_sign_enabled: false
+      cosign_supply_chain_attest_enabled: false
+      grype_fail_build: true
+
+  e2e:
+    needs: [api-container, migrator-container, frontend-container]
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Resolve digest-pinned image refs
+        env:
+          API_DIGEST: ${{ needs.api-container.outputs.image_digest }}
+          MIGRATOR_DIGEST: ${{ needs.migrator-container.outputs.image_digest }}
+          FRONTEND_DIGEST: ${{ needs.frontend-container.outputs.image_digest }}
+        run: |
+          set -euo pipefail
+          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+          echo "API_IMAGE=ghcr.io/${REPO}/api@${API_DIGEST}"             >> $GITHUB_ENV
+          echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator@${MIGRATOR_DIGEST}" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend@${FRONTEND_DIGEST}" >> $GITHUB_ENV
+
+      - name: Pull images
+        run: docker compose -f docker-compose.e2e.yml pull
+
+      - name: Start stack
+        run: docker compose -f docker-compose.e2e.yml up -d --wait --wait-timeout 180
+
+      - name: Run Playwright
+        working-directory: frontend
+        env:
+          CI: "true"
+          E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          E2E_OTP_SECRET: ${{ secrets.E2E_OTP_SECRET }}
+        run: npx playwright test
+
+      - name: Capture compose logs
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml logs --no-color > compose-logs.txt
+
+      - name: Upload Playwright report and compose logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+            compose-logs.txt
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v

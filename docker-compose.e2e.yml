@@ -1,0 +1,85 @@
+# Stack used by the pr-e2e workflow and for local Playwright runs against built images.
+# Image refs come from env vars so the same file works for any digest:
+#   API_IMAGE=ghcr.io/<owner>/<repo>/api@sha256:...
+#   MIGRATOR_IMAGE=ghcr.io/<owner>/<repo>/migrator@sha256:...
+#   FRONTEND_IMAGE=ghcr.io/<owner>/<repo>/frontend@sha256:...
+#
+# Host port mapping is chosen to match what's already baked into the existing images
+# and hardcoded in tests: api on 5155 (matches frontend/.env VITE_API_URL), frontend
+# on 5173 (matches playwright baseURL, auth.setup.ts, fixtures.ts origin keying, and
+# the Authelia client's registered redirect URI).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: clutter
+      POSTGRES_PASSWORD: clutter
+      POSTGRES_DB: clutterstock
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clutter -d clutterstock"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  migrator:
+    image: ${MIGRATOR_IMAGE}
+    environment:
+      ConnectionStrings__ClutterStock: "Host=postgres;Port=5432;Database=clutterstock;Username=clutter;Password=clutter"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: ${API_IMAGE}
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8081
+      ConnectionStrings__ClutterStock: "Host=postgres;Port=5432;Database=clutterstock;Username=clutter;Password=clutter"
+      Authentication__Authority: https://auth.wsh.no
+      Authentication__Audience: clutterstock
+      Cors__AllowedOrigins__0: http://localhost:5173
+      OTEL_SDK_DISABLED: "true"
+    ports:
+      - "5155:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+
+  # The aspnet base image is chiseled and lacks curl/wget/bash, so we can't define a
+  # native container healthcheck. This sidecar polls the readiness endpoint from
+  # outside and exits when it gets a 200 — frontend gates startup on it.
+  api-ready:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      api:
+        condition: service_started
+    command: ["sh", "-c", "until curl -fsS http://api:8081/healthz/ready; do sleep 1; done"]
+    restart: "no"
+
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    environment:
+      SERVER_API_URL: http://api:8081
+      REDIS_URL: redis://redis:6379/0
+      PUBLIC_ORIGIN: http://localhost:5173
+      OTEL_SDK_DISABLED: "true"
+      NODE_ENV: production
+    ports:
+      - "5173:3000"
+    depends_on:
+      api-ready:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
