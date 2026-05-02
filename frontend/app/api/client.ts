@@ -12,7 +12,7 @@ async function nullOn404<T>(promise: Promise<T>): Promise<T | null> {
     if (isApiProblem(error) && error.status === 404) return null;
     throw error;
   }
-}
+} // Test
 
 /* Locations */
 export type LocationResponse =
@@ -25,13 +25,19 @@ export type UpdateLocationRequest =
 export const getLocations = (request?: Request): Promise<LocationResponse[]> =>
   get("/api/v1/locations", { ssrRequest: request });
 
-export const getLocation = (id: number, request?: Request): Promise<LocationResponse | null> =>
-  nullOn404(get("/api/v1/locations/{id}", { params: { id }, ssrRequest: request }));
+export const getLocation = (
+  id: number,
+  request?: Request,
+): Promise<LocationResponse | null> =>
+  nullOn404(
+    get("/api/v1/locations/{id}", { params: { id }, ssrRequest: request }),
+  );
 
 export const createLocation = (
   body: AddLocationRequest,
   request?: Request,
-): Promise<LocationResponse> => post("/api/v1/locations", { body, ssrRequest: request });
+): Promise<LocationResponse> =>
+  post("/api/v1/locations", { body, ssrRequest: request });
 
 export const updateLocation = (
   id: number,
@@ -54,13 +60,17 @@ export type UpdateRoomRequest =
 export const getRooms = (request?: Request): Promise<RoomResponse[]> =>
   get("/api/v1/rooms", { ssrRequest: request });
 
-export const getRoom = (id: number, request?: Request): Promise<RoomResponse | null> =>
+export const getRoom = (
+  id: number,
+  request?: Request,
+): Promise<RoomResponse | null> =>
   nullOn404(get("/api/v1/rooms/{id}", { params: { id }, ssrRequest: request }));
 
 export const createRoom = (
   body: AddRoomRequest,
   request?: Request,
-): Promise<RoomResponse> => post("/api/v1/rooms", { body, ssrRequest: request });
+): Promise<RoomResponse> =>
+  post("/api/v1/rooms", { body, ssrRequest: request });
 
 export const updateRoom = (
   id: number,
@@ -83,13 +93,17 @@ export type UpdateItemRequest =
 export const getItems = (request?: Request): Promise<ItemResponse[]> =>
   get("/api/v1/items", { ssrRequest: request });
 
-export const getItem = (id: number, request?: Request): Promise<ItemResponse | null> =>
+export const getItem = (
+  id: number,
+  request?: Request,
+): Promise<ItemResponse | null> =>
   nullOn404(get("/api/v1/items/{id}", { params: { id }, ssrRequest: request }));
 
 export const createItem = (
   body: AddItemRequest,
   request?: Request,
-): Promise<ItemResponse> => post("/api/v1/items", { body, ssrRequest: request });
+): Promise<ItemResponse> =>
+  post("/api/v1/items", { body, ssrRequest: request });
 
 export const updateItem = (
   id: number,
