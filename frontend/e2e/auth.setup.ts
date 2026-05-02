@@ -11,7 +11,16 @@ export const sessionFile = fileURLToPath(
   new URL("../playwright/.auth/session-storage.json", import.meta.url),
 );
 
+// Reuse cached storage state if it's younger than this. Keep well under the
+// OIDC access-token lifetime so a cached session can't expire mid-test.
+const AUTH_TTL_MS = 20 * 60 * 1000;
+
 setup("authenticate", async ({ page }) => {
+  if (fs.existsSync(authFile) && fs.existsSync(sessionFile)) {
+    const ageMs = Date.now() - fs.statSync(authFile).mtimeMs;
+    if (ageMs < AUTH_TTL_MS) return;
+  }
+
   const username = process.env.E2E_USERNAME;
   const password = process.env.E2E_PASSWORD;
   if (!username || !password) {
