@@ -23,6 +23,10 @@ on:
         description: Include Node coverage (/coverage-node/)
         type: boolean
         default: true
+      include_e2e_allure:
+        description: Include Playwright Allure report (/e2e-allure/)
+        type: boolean
+        default: true
   push:
     tags:
       - "v*"
@@ -265,6 +269,49 @@ jobs:
           name: github-pages-coverage-node
           path: coverage-html-node
 
+  pull-e2e-allure:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_e2e_allure)
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+    outputs:
+      available: ${{ steps.pull-allure.outputs.available }}
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull and extract Allure report image
+        id: pull-allure
+        run: |
+          set -euo pipefail
+          REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          IMG="ghcr.io/${REPO}/allure-report:latest"
+          if docker pull "$IMG" 2>/dev/null; then
+            cid=$(docker create "$IMG")
+            docker cp "$cid:/allure-report" ./allure-report
+            docker rm "$cid" >/dev/null
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Extracted $(find ./allure-report -type f | wc -l) files from $IMG."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::${IMG} not found — the nightly E2E workflow has not seeded it yet. Skipping the e2e-allure section of the Pages site."
+          fi
+
+      - name: Upload e2e Allure report artifact
+        if: steps.pull-allure.outputs.available == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-pages-e2e-allure
+          path: allure-report
+
   assemble-github-pages:
     needs:
       - build-api-docs
@@ -272,6 +319,7 @@ jobs:
       - build-project-docs
       - dotnet-test-and-coverage
       - node-test-and-coverage
+      - pull-e2e-allure
     runs-on: ubuntu-latest
     if: |
       always() &&
@@ -285,11 +333,13 @@ jobs:
       (needs.build-project-docs.result == 'success' || needs.build-project-docs.result == 'skipped') &&
       (needs.dotnet-test-and-coverage.result == 'success' || needs.dotnet-test-and-coverage.result == 'skipped') &&
       (needs.node-test-and-coverage.result == 'success' || needs.node-test-and-coverage.result == 'skipped') &&
+      (needs.pull-e2e-allure.result == 'success' || needs.pull-e2e-allure.result == 'skipped') &&
       needs.build-api-docs.result != 'failure' &&
       needs.dotnet-database-docs.result != 'failure' &&
       needs.build-project-docs.result != 'failure' &&
       needs.dotnet-test-and-coverage.result != 'failure' &&
-      needs.node-test-and-coverage.result != 'failure'
+      needs.node-test-and-coverage.result != 'failure' &&
+      needs.pull-e2e-allure.result != 'failure'
     permissions:
       contents: read
       actions: write
@@ -348,6 +398,13 @@ jobs:
           name: github-pages-coverage-node
           path: site/coverage-node
 
+      - name: Download e2e Allure report
+        if: needs.pull-e2e-allure.result == 'success' && needs.pull-e2e-allure.outputs.available == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages-e2e-allure
+          path: site/e2e-allure
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
@@ -381,3 +438,4 @@ jobs:
           echo "- Node coverage: ${base}/coverage-node/" >> "$GITHUB_STEP_SUMMARY"
           echo "- Database docs (SchemaSpy): ${base}/database/" >> "$GITHUB_STEP_SUMMARY"
           echo "- Project docs (Markdown): ${base}/project-docs/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- E2E Allure report: ${base}/e2e-allure/" >> "$GITHUB_STEP_SUMMARY"

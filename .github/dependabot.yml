@@ -19,6 +19,7 @@ updates:
 
 - package-ecosystem: "docker"
   directories:
+  - "/"
   - "/frontend"
   open-pull-requests-limit: 20
   target-branch: "main"

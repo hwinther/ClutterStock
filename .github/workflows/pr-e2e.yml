@@ -6,6 +6,9 @@ on:
     branches:
       - main
     types: [opened, reopened, labeled, synchronize, ready_for_review]
+  push:
+    branches:
+      - main
 
 concurrency:
   group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"

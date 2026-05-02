@@ -18,5 +18,10 @@ playwright-report/
 test-results/
 playwright/.auth/
 
+# Allure (history travels via GHCR image, report is a CI artifact)
+allure-results/
+allure-report/
+allure-history.jsonl
+
 .env.*
 !.env.*.sample
