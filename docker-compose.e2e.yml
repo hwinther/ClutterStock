@@ -51,18 +51,22 @@ services:
       OTEL_SDK_DISABLED: "true"
     ports:
       - "5155:8081"
-    # chiseled-extra ships curl, so we can do a native healthcheck without a sidecar.
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8081/healthz/ready"]
-      interval: 5s
-      timeout: 3s
-      retries: 12
-      start_period: 10s
+    # No native healthcheck: aspnet:*-chiseled-extra has no shell, no curl, no wget
+    # — only the .NET runtime + ICU/tzdata/ca-certs. The api-ready sidecar polls
+    # /healthz/ready from outside instead and gates frontend startup.
     depends_on:
       postgres:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
+
+  api-ready:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      api:
+        condition: service_started
+    command: ["sh", "-c", "until curl -fsS http://api:8081/healthz/ready; do sleep 1; done"]
+    restart: "no"
 
   frontend:
     image: ${FRONTEND_IMAGE}
@@ -87,7 +91,7 @@ services:
       retries: 12
       start_period: 10s
     depends_on:
-      api:
-        condition: service_healthy
+      api-ready:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
