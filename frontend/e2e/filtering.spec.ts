@@ -5,10 +5,15 @@ test.describe.configure({ mode: "serial" });
 
 test.describe("filtering and search (standard theme)", () => {
   test("/ opens search and filters the items table by name", async ({ home }) => {
-    const uniqueName = uniqueSuffix("Searchable");
+    // Two items so the post-Esc assertion can prove the filter was actually
+    // cleared (search narrows to A, Esc widens back to ≥2) without depending
+    // on incidental data left behind by other tests.
+    const a = uniqueSuffix("Searchable-A");
+    const b = uniqueSuffix("Searchable-B");
 
     await home.goto();
-    await home.createItem({ name: uniqueName, description: "find me" });
+    await home.createItem({ name: a, description: "find me" });
+    await home.createItem({ name: b });
 
     // Drop focus & close the detail panel so the global "/" handler fires.
     await home.page.keyboard.press("Escape");
@@ -17,16 +22,20 @@ test.describe("filtering and search (standard theme)", () => {
     await home.searchBar.open();
     await home.searchBar.expectFocused();
 
-    await home.searchBar.fill(uniqueName);
+    await home.searchBar.fill(a);
     await home.itemsTable.expectRowCount(1);
-    await home.itemsTable.expectRowVisible(uniqueName);
+    await home.itemsTable.expectRowVisible(a);
+    await home.itemsTable.expectRowHidden(b);
 
-    // Esc clears the search and re-shows all rows.
+    // Esc clears the search and re-shows all rows — both A and B come back.
     await home.searchBar.close();
-    expect(await home.itemsTable.rows.count()).toBeGreaterThan(1);
+    await home.itemsTable.expectRowVisible(a);
+    await home.itemsTable.expectRowVisible(b);
 
     // Cleanup.
-    await home.openItemByName(uniqueName);
+    await home.openItemByName(a);
+    await home.deleteCurrentItem();
+    await home.openItemByName(b);
     await home.deleteCurrentItem();
   });
 
