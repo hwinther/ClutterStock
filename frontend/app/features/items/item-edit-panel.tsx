@@ -118,15 +118,20 @@ export function ItemEditPanel({ item, rooms, locations, defaultRoomId, onClose, 
         )}
 
         {!isNew && item.roomId != null && (
-          <FormField label="Room">
-            <div style={{ ...inputStyle, color: "var(--c-fg-2)", cursor: "default" }}>
-              {(() => {
-                const room = rooms.find(r => r.id === item.roomId);
-                const loc = room?.locationId != null ? locationById[room.locationId] : null;
-                return loc ? `${loc.name} / ${room?.name}` : (room?.name ?? "—");
-              })()}
-            </div>
-          </FormField>
+          <>
+            {/* Backend's UpdateItemRequest requires RoomId>=1; the read-only display
+                wouldn't post a value, so carry it through with a hidden input. */}
+            <input type="hidden" name="roomId" value={item.roomId} />
+            <FormField label="Room">
+              <div style={{ ...inputStyle, color: "var(--c-fg-2)", cursor: "default" }}>
+                {(() => {
+                  const room = rooms.find(r => r.id === item.roomId);
+                  const loc = room?.locationId != null ? locationById[room.locationId] : null;
+                  return loc ? `${loc.name} / ${room?.name}` : (room?.name ?? "—");
+                })()}
+              </div>
+            </FormField>
+          </>
         )}
 
         <FormField label="Name *">
