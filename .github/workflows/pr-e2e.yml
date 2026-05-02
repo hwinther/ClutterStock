@@ -6,9 +6,19 @@ on:
     branches:
       - main
     types: [opened, reopened, labeled, synchronize, ready_for_review]
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - "docker-compose.e2e.yml"
+      - ".github/workflows/pr-e2e.yml"
   push:
     branches:
       - main
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - "docker-compose.e2e.yml"
+      - ".github/workflows/pr-e2e.yml"
 
 concurrency:
   group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
