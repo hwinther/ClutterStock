@@ -28,11 +28,24 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "chromium",
+      // signout destroys the shared Redis session, which would invalidate the
+      // sid every parallel test in this project carries. Run it in its own
+      // dependent project that fires after chromium finishes.
+      testIgnore: /signout\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/user.json",
       },
       dependencies: ["setup"],
+    },
+    {
+      name: "signout",
+      testMatch: /signout\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/user.json",
+      },
+      dependencies: ["chromium"],
     },
   ],
   // webServer: {

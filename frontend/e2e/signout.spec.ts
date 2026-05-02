@@ -1,6 +1,17 @@
+import fs from "node:fs";
 import { expect, test } from "./fixtures";
+import { authFile, sessionFile } from "./auth-paths";
 
 test.describe.configure({ mode: "serial" });
+
+// Sign-out destroys the Redis session keyed by the sid baked into user.json.
+// If we leave the cached storage files behind, the auth.setup mtime gate (20
+// minutes) will skip the OTP flow on the next run and every test will hit a
+// stale sid the server no longer recognises. Force a fresh authentication.
+test.afterAll(async () => {
+  await fs.promises.rm(authFile, { force: true });
+  await fs.promises.rm(sessionFile, { force: true });
+});
 
 test("sign-out clears the app session and forces re-auth on next visit", async ({ home, page }) => {
   await home.goto();

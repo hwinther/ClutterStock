@@ -1,13 +1,9 @@
 import { expect, test as base } from "@playwright/test";
 import fs from "node:fs";
-import { fileURLToPath } from "node:url";
+import { sessionFile } from "./auth-paths";
 import { HomePage } from "./pages/home-page";
 
 export { expect };
-
-const sessionFile = fileURLToPath(
-  new URL("../playwright/.auth/session-storage.json", import.meta.url),
-);
 
 interface Fixtures {
   home: HomePage;

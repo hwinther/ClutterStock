@@ -1,15 +1,7 @@
 import { expect, test as setup } from "@playwright/test";
 import fs from "node:fs";
-import { fileURLToPath } from "node:url";
 import * as OTPAuth from "otpauth";
-
-export const authFile = fileURLToPath(
-  new URL("../playwright/.auth/user.json", import.meta.url),
-);
-
-export const sessionFile = fileURLToPath(
-  new URL("../playwright/.auth/session-storage.json", import.meta.url),
-);
+import { authDir, authFile, sessionFile } from "./auth-paths";
 
 // Reuse cached storage state if it's younger than this. Keep well under the
 // OIDC access-token lifetime so a cached session can't expire mid-test.
@@ -84,9 +76,7 @@ setup("authenticate", async ({ page }) => {
     }
     return data;
   });
-  fs.mkdirSync(fileURLToPath(new URL("../playwright/.auth", import.meta.url)), {
-    recursive: true,
-  });
+  fs.mkdirSync(authDir, { recursive: true });
   fs.writeFileSync(
     sessionFile,
     JSON.stringify({ "http://localhost:5173": sessionData }, null, 2),
