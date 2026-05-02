@@ -82,6 +82,11 @@ function PublicRuntimeConfigScript() {
 }
 
 export const links: Route.LinksFunction = () => [
+  { rel: "icon", type: "image/svg+xml", href: "/brand/icon.svg" },
+  { rel: "icon", type: "image/png", sizes: "32x32", href: "/brand/icon-32.png" },
+  { rel: "icon", type: "image/png", sizes: "16x16", href: "/brand/icon-16.png" },
+  { rel: "apple-touch-icon", sizes: "180x180", href: "/brand/apple-touch-icon.png" },
+  { rel: "manifest", href: "/site.webmanifest" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
