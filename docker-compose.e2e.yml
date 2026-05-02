@@ -51,15 +51,15 @@ services:
       OTEL_SDK_DISABLED: "true"
     ports:
       - "5155:8081"
+    # No native healthcheck: aspnet:*-chiseled-extra has no shell, no curl, no wget
+    # — only the .NET runtime + ICU/tzdata/ca-certs. The api-ready sidecar polls
+    # /healthz/ready from outside instead and gates frontend startup.
     depends_on:
       postgres:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
 
-  # The aspnet base image is chiseled and lacks curl/wget/bash, so we can't define a
-  # native container healthcheck. This sidecar polls the readiness endpoint from
-  # outside and exits when it gets a 200 — frontend gates startup on it.
   api-ready:
     image: curlimages/curl:8.10.1
     depends_on:
@@ -82,6 +82,14 @@ services:
       NODE_ENV: production
     ports:
       - "5173:3000"
+    # Distroless image has no shell/curl/wget — use node directly. /nodejs/bin/node
+    # is the absolute path inside gcr.io/distroless/nodejs*; node 22+ has global fetch.
+    healthcheck:
+      test: ["CMD", "/nodejs/bin/node", "-e", "fetch('http://localhost:3000/healthz/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     depends_on:
       api-ready:
         condition: service_completed_successfully

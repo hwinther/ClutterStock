@@ -2,7 +2,10 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>ClutterStock.Migrator</RootNamespace>
-    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
+    <!-- aspnet (not runtime) is required because Domain.csproj declares
+         FrameworkReference Microsoft.AspNetCore.App for its IEndpoint feature
+         classes; Migrator inherits that runtime requirement transitively. -->
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled</ContainerBaseImage>
     <ContainerRepository>clutterstock/migrator</ContainerRepository>
   </PropertyGroup>
 

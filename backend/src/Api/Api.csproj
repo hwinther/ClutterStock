@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <EnableSdkContainerDebugging>True</EnableSdkContainerDebugging>
-    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra</ContainerBaseImage>
     <ContainerRepository>clutterstock/api</ContainerRepository>
     <UserSecretsId>ClutterStock</UserSecretsId>
     <RootNamespace>ClutterStock.Api</RootNamespace>
