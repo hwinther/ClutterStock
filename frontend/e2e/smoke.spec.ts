@@ -1,13 +1,17 @@
 import { expect, test } from "./fixtures";
 
-test("home loads and shows authenticated app after sign-in", async ({ page }) => {
+test("home loads and shows authenticated app after sign-in", async ({
+  page,
+}) => {
   await page.goto("/");
 
   // Must stay on the app — not redirected to auth
   await expect(page).toHaveURL(/localhost:5173/);
 
   // Header link is present
-  await expect(page.getByRole("link", { name: /ClutterStock/i })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /clutter :stock/i }),
+  ).toBeVisible();
 
   // Stats panel confirms real data loaded
   await expect(page.getByText("Total items")).toBeVisible();

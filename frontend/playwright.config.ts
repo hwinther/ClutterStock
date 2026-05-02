@@ -12,7 +12,13 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? "github" : "list",
+  reporter: process.env.CI
+    ? [
+        ["github"],
+        ["html", { open: "never" }],
+        ["json", { outputFile: "playwright-report/results.json" }],
+      ]
+    : "list",
   use: {
     // Use localhost (not 127.0.0.1): Vite may bind IPv6-only on Windows.
     baseURL: "http://localhost:5173",
