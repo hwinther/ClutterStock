@@ -23,5 +23,9 @@ allure-results/
 allure-report/
 allure-history.jsonl
 
+# Monocart (Playwright browser-side coverage)
+monocart-report/
+monocart-coverage/
+
 .env.*
 !.env.*.sample

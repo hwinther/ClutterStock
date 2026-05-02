@@ -33,6 +33,7 @@ jobs:
       attestations: write
       actions: write
       security-events: write
+      pull-requests: write
     uses: hwinther/reusable-workflows/.github/workflows/docker-container.yml@v1
     with:
       container_registry: ghcr.io

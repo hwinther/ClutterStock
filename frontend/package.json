@@ -68,6 +68,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "jsdom": "29.1.1",
+    "monocart-reporter": "2.10.1",
     "msw": "2.14.2",
     "openapi-msw": "2.0.0",
     "openapi-typescript": "7.13.0",
