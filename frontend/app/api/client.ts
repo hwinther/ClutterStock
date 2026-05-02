@@ -57,9 +57,6 @@ export type AddRoomRequest =
 export type UpdateRoomRequest =
   components["schemas"]["ClutterStock.Contracts.Rooms.UpdateRoomRequest"];
 
-export const getRooms = (request?: Request): Promise<RoomResponse[]> =>
-  get("/api/v1/rooms", { ssrRequest: request });
-
 export const getRoom = (
   id: number,
   request?: Request,

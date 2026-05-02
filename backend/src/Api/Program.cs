@@ -60,7 +60,7 @@ app.UseStatusCodePages();
 app.UseCors();
 app.UseOpenApiDocumentation();
 app.UseAuthentication();
-app.UseAuthorization(); // Test
+app.UseAuthorization();Test
 
 if (app.Environment.IsDevelopment())
 {
