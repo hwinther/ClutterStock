@@ -80,6 +80,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      pull-requests: write
     environment: build
     steps:
       - name: Checkout
@@ -139,6 +140,78 @@ jobs:
       - name: Capture compose logs
         if: always()
         run: docker compose -f docker-compose.e2e.yml logs --no-color > compose-logs.txt
+
+      - name: Build PR comment from Playwright report
+        if: always() && github.event_name == 'pull_request'
+        id: e2e-comment
+        env:
+          REPORT_JSON: frontend/playwright-report/results.json
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          out=/tmp/comment.md
+          if [ ! -f "$REPORT_JSON" ]; then
+            {
+              echo "### 🎭 Playwright E2E"
+              echo
+              echo "The Playwright run did not produce a report — check the [workflow logs](${RUN_URL}) for setup or compose failures."
+            } > "$out"
+          else
+            passed=$(jq -r '.stats.expected // 0' "$REPORT_JSON")
+            failed=$(jq -r '.stats.unexpected // 0' "$REPORT_JSON")
+            flaky=$(jq -r '.stats.flaky // 0' "$REPORT_JSON")
+            skipped=$(jq -r '.stats.skipped // 0' "$REPORT_JSON")
+            duration_ms=$(jq -r '.stats.duration // 0' "$REPORT_JSON")
+            duration=$(awk -v ms="$duration_ms" 'BEGIN { s=int(ms/1000); m=int(s/60); s=s%60; printf "%dm %ds", m, s }')
+            total=$((passed + failed + flaky + skipped))
+            if [ "$failed" -eq 0 ]; then
+              header="✅ All tests passed"
+            else
+              header="❌ ${failed} test(s) failed"
+            fi
+            {
+              echo "### 🎭 Playwright E2E — ${header}"
+              echo
+              echo "| Result | Count |"
+              echo "|--------|------:|"
+              echo "| ✅ Passed | ${passed} |"
+              echo "| ❌ Failed | ${failed} |"
+              echo "| ⚠️ Flaky | ${flaky} |"
+              echo "| ⏭️ Skipped | ${skipped} |"
+              echo "| **Total** | **${total}** |"
+              echo
+              echo "Duration: ${duration}"
+              echo
+              if [ "$failed" -gt 0 ] || [ "$flaky" -gt 0 ]; then
+                echo "<details><summary>Failed and flaky tests</summary>"
+                echo
+                jq -r '
+                  [ .suites[] | recurse(.suites[]?) | .specs[]? as $s
+                    | $s.tests[]
+                    | select(.status != "expected" and .status != "skipped")
+                    | "- `\($s.file // "")` — \($s.title) [\(.projectName // "")] (\(.status))"
+                  ] | unique[]
+                ' "$REPORT_JSON"
+                echo
+                echo "</details>"
+                echo
+              fi
+              echo "Full report and traces: [download the \`playwright-report\` artifact](${RUN_URL}#artifacts)."
+            } > "$out"
+          fi
+          {
+            echo "comment<<__EOM__"
+            cat "$out"
+            echo "__EOM__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post or update PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: im-open/update-pr-comment@b782531000dfcf02162c0bd9e78639d82a13c3b5 # v1.2.2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-identifier: "e2e-results"
+          comment-content: ${{ steps.e2e-comment.outputs.comment }}
 
       - name: Upload Playwright report and compose logs
         if: always()
