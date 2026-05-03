@@ -39,10 +39,11 @@ test("home page lighthouse audit", async ({ home, page, context }, testInfo) => 
   });
 
   // Attach the HTML report so monocart-reporter can surface it inline alongside
-  // the test row. The report path follows playwright-lighthouse's naming
-  // convention: <directory>/<name>.report.html.
+  // the test row. playwright-lighthouse writes <directory>/<name>.<type> — the
+  // `.report.<type>` suffix is the lighthouse CLI convention, which this
+  // library deliberately strips (see task.js:getReport).
   await testInfo.attach("lighthouse-home", {
-    path: path.join(testInfo.outputDir, "lighthouse-home.report.html"),
+    path: path.join(testInfo.outputDir, "lighthouse-home.html"),
     contentType: "text/html",
   });
 });
