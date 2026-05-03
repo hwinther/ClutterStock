@@ -38,6 +38,13 @@ export default defineConfig({
                 !/node_modules\//.test(sourcePath),
               outputDir: "./monocart-coverage",
               reports: ["v8", "cobertura", "lcov"],
+              // Inline all V8 assets into the single index.html. Without this
+              // the report fetches sibling JSON/JS over file:// when opened
+              // locally — Chromium blocks that as a unique-origin violation
+              // and the page renders blank. Inlining bumps the HTML to a few
+              // MB but lets you double-click the artifact straight from the
+              // PR Actions download.
+              inline: true,
             },
           },
         ],
