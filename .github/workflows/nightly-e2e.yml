@@ -64,7 +64,9 @@ jobs:
           REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
           IMG="ghcr.io/${REPO}/allure-history:latest"
           if docker pull "$IMG" 2>/dev/null; then
-            cid=$(docker create "$IMG")
+            # FROM-scratch image has no CMD; pass a dummy so `docker create`
+            # passes spec validation. We only cp out then rm — never start.
+            cid=$(docker create "$IMG" /history.jsonl)
             docker cp "$cid:/history.jsonl" frontend/allure-history.jsonl
             docker rm "$cid" >/dev/null
             echo "Restored history.jsonl ($(wc -l < frontend/allure-history.jsonl) entries)."
