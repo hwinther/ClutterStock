@@ -295,7 +295,9 @@ jobs:
           REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
           IMG="ghcr.io/${REPO}/allure-report:latest"
           if docker pull "$IMG" 2>/dev/null; then
-            cid=$(docker create "$IMG")
+            # FROM-scratch image has no CMD; pass a dummy so `docker create`
+            # passes spec validation. We only cp out then rm — never start.
+            cid=$(docker create "$IMG" /allure-report)
             docker cp "$cid:/allure-report" ./allure-report
             docker rm "$cid" >/dev/null
             echo "available=true" >> "$GITHUB_OUTPUT"
