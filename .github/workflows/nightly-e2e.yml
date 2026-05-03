@@ -93,6 +93,27 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.e2e.yml logs --no-color > compose-logs.txt
 
+      # The lighthouse HTML lives at frontend/test-results/perf.home-*/lighthouse-home.html
+      # (written by playwright-lighthouse). testInfo.attach() also copies it
+      # under monocart-report/ but with a content-hash filename, which
+      # changes every run and can't be linked from README. Drop a stable copy
+      # next to monocart's index.html so the Pages site has a fixed URL.
+      - name: Stage Lighthouse report at stable path
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ ! -d frontend/monocart-report ]; then
+            echo "monocart-report not produced — skipping lighthouse staging."
+            exit 0
+          fi
+          LH=$(find frontend/test-results -name 'lighthouse-home.html' -type f 2>/dev/null | sort | tail -1)
+          if [ -n "$LH" ]; then
+            cp "$LH" frontend/monocart-report/lighthouse-home.html
+            echo "Staged $LH -> frontend/monocart-report/lighthouse-home.html"
+          else
+            echo "No lighthouse-home.html found in test-results — skipping."
+          fi
+
       - name: Generate Allure report
         if: always()
         working-directory: frontend
@@ -146,6 +167,34 @@ jobs:
           docker build -t "ghcr.io/${REPO}/allure-report:latest" \
             -f scripts/allure-report.Dockerfile frontend/
           docker push "ghcr.io/${REPO}/allure-report:latest"
+
+      # Same success-or-failure gate as Allure — a failed run still produces
+      # the dashboard and coverage view, and that's what we want on Pages.
+      - name: Push monocart-report image
+        if: ${{ success() || failure() }}
+        run: |
+          set -euo pipefail
+          REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          if [ ! -d frontend/monocart-report ]; then
+            echo "No monocart-report directory produced — skipping."
+            exit 0
+          fi
+          docker build -t "ghcr.io/${REPO}/monocart-report:latest" \
+            -f scripts/monocart-report.Dockerfile frontend/
+          docker push "ghcr.io/${REPO}/monocart-report:latest"
+
+      - name: Push monocart-coverage image
+        if: ${{ success() || failure() }}
+        run: |
+          set -euo pipefail
+          REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          if [ ! -d frontend/monocart-coverage ]; then
+            echo "No monocart-coverage directory produced — skipping."
+            exit 0
+          fi
+          docker build -t "ghcr.io/${REPO}/monocart-coverage:latest" \
+            -f scripts/monocart-coverage.Dockerfile frontend/
+          docker push "ghcr.io/${REPO}/monocart-coverage:latest"
 
       - name: Tear down stack
         if: always()
