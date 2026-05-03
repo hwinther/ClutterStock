@@ -27,5 +27,12 @@ allure-history.jsonl
 monocart-report/
 monocart-coverage/
 
+# Artillery load test outputs
+load-report.json
+load-report.html
+# Artillery's TS processor bundler stages CJS output here mid-run; usually
+# cleaned up but ignore proactively in case a crash leaves it behind.
+load/scenarios/dist/
+
 .env.*
 !.env.*.sample

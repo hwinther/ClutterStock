@@ -1,0 +1,41 @@
+# Browser-driven load test against the running e2e stack (frontend on :5173,
+# api on :5155). Run via `npm run load` — the workflow `.github/workflows/
+# load-test.yml` is the CI entrypoint and overrides phases via --overrides.
+#
+# Prereqs:
+#   1. Stack up: `bash scripts/e2e-up.sh` (or compose pull + up for CI).
+#   2. Auth seeded: `npx playwright test --project=setup` — produces
+#      playwright/.auth/user.json + session-storage.json that scenarios/home.ts
+#      replays per VU. Without this the run will throw on the first goto.
+#
+# Caveats:
+#   - GitHub-hosted runners are 4 vCPU / 16 GB. Real-browser VUs are heavy;
+#     don't push past ~15 concurrent on default runners or the numbers
+#     measure the runner, not ClutterStock.
+#   - All VUs share one Authelia identity (the cached session). Backend
+#     per-user metrics will show a single hot user — intentional for v1.
+
+config:
+  target: "http://localhost:5173"
+  engines:
+    playwright:
+      launchOptions:
+        headless: true
+  phases:
+    - name: ramp
+      duration: 60
+      arrivalRate: 1
+      rampTo: 5
+    - name: sustain
+      duration: 120
+      arrivalRate: 5
+    - name: rampdown
+      duration: 30
+      arrivalRate: 5
+      rampTo: 1
+  processor: "./scenarios/home.ts"
+
+scenarios:
+  - name: "home + search"
+    engine: playwright
+    testFunction: "homeFlow"
