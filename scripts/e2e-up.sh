@@ -124,6 +124,13 @@ if [[ "$down" == "true" ]]; then
   if [[ "$is_remote" == "true" && "$endpoint_scheme" == "ssh" && -S "$SSH_CTRL" ]]; then
     export DOCKER_HOST="tcp://127.0.0.1:${DOCKER_SOCK_LOCAL_PORT}"
   fi
+  # `compose down` matches containers by service name and never touches the
+  # images, but compose still parses the file and rejects empty `image:` refs.
+  # Export the :local tags so parsing succeeds; whether they exist on the
+  # daemon is irrelevant for teardown.
+  export API_IMAGE="$API_TAG"
+  export MIGRATOR_IMAGE="$MIGRATOR_TAG"
+  export FRONTEND_IMAGE="$FRONTEND_TAG"
   docker compose -f docker-compose.e2e.yml down -v || true
   stop_ssh_tunnel
   exit 0

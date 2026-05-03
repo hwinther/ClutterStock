@@ -1,0 +1,18 @@
+# Grype scanner configuration. Auto-discovered when grype runs from the
+# repo root (the GitHub Actions workspace for anchore/scan-action), so this
+# applies to all three image scans (api, migrator, frontend) without any
+# workflow changes.
+#
+# Add an entry here for each false-positive or platform-irrelevant finding.
+# Keep the `reason` short but specific — future you needs to remember why.
+ignore:
+  - vulnerability: CVE-2026-39883
+    package:
+      name: OpenTelemetry
+    reason: >-
+      Upstream CVE is a gopsutil PATH-hijack via the BSD `kenv` lookup. Our
+      images run on Linux only (mcr.microsoft.com/dotnet/aspnet:10.0-noble-
+      chiseled, gcr.io/distroless/nodejs24-debian13) and ship no gopsutil.
+      Grype additionally mis-matches this CVE against the OpenTelemetry .NET
+      SDK (UnknownPackage type) which has no code path to the affected
+      function. Doubly inapplicable.
