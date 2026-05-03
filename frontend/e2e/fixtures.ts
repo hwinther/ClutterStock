@@ -10,11 +10,6 @@ interface Fixtures {
   home: HomePage;
 }
 
-// Browser-side V8 coverage is only collected in CI — locally the start/stop
-// roundtrip and the per-test attachment add overhead nobody asked for during
-// `npx playwright test:ui`.
-const collectCoverage = !!process.env.CI;
-
 export const test = base.extend<Fixtures>({
   page: async ({ page }, use, testInfo) => {
     if (fs.existsSync(sessionFile)) {
@@ -31,6 +26,12 @@ export const test = base.extend<Fixtures>({
         }
       }, stored);
     }
+    // Browser-side V8 coverage is only collected in CI — locally the start/stop
+    // roundtrip and the per-test attachment add overhead nobody asked for
+    // during `npx playwright test --ui`. Skip the perf project too: Lighthouse
+    // uses the same V8 coverage interface, and concurrent calls fight.
+    const collectCoverage =
+      !!process.env.CI && testInfo.project.name !== "perf";
     if (collectCoverage) {
       await page.coverage.startJSCoverage({ resetOnNavigation: false });
     }

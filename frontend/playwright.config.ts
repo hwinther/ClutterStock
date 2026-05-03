@@ -54,8 +54,9 @@ export default defineConfig({
       name: "chromium",
       // signout destroys the shared Redis session, which would invalidate the
       // sid every parallel test in this project carries. Run it in its own
-      // dependent project that fires after chromium finishes.
-      testIgnore: /signout\.spec\.ts/,
+      // dependent project that fires after chromium finishes. Perf specs run
+      // in their own project too because Lighthouse needs --remote-debugging-port.
+      testIgnore: [/signout\.spec\.ts/, /perf\..*\.spec\.ts/],
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/user.json",
@@ -70,6 +71,23 @@ export default defineConfig({
         storageState: "playwright/.auth/user.json",
       },
       dependencies: ["chromium"],
+    },
+    {
+      name: "perf",
+      testMatch: /perf\..*\.spec\.ts/,
+      // Lighthouse connects to the Playwright Chromium instance via CDP on a
+      // fixed debug port. Multiple parallel workers would race on this port,
+      // so perf specs use mode: "serial" inside each file and there's only
+      // one perf file today. If you add more, audit them serially or assign
+      // unique ports per worker.
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/user.json",
+        launchOptions: {
+          args: ["--remote-debugging-port=9222"],
+        },
+      },
+      dependencies: ["setup"],
     },
   ],
   // webServer: {
