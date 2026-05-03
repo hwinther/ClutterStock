@@ -1,0 +1,143 @@
+name: "Load Test (Artillery + Playwright)"
+
+# Manual-only for now. Browser-driven load runs use real Chromium VUs and are
+# heavy — running on every PR would dominate CI cost without much signal, and
+# bolting onto nightly-e2e would inflate that workflow's runtime. Promote to
+# a cron schedule once we trust the numbers.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag for api/migrator/frontend (e.g. latest, v1.2.3)"
+        type: string
+        default: "latest"
+      arrival_rate:
+        description: "Peak VUs/sec during the sustain phase"
+        type: number
+        default: 5
+      duration_sec:
+        description: "Sustain phase duration in seconds"
+        type: number
+        default: 120
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    environment: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Log in to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Resolve image refs
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+          echo "API_IMAGE=ghcr.io/${REPO}/api:${IMAGE_TAG}"           >> $GITHUB_ENV
+          echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator:${IMAGE_TAG}" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend:${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Pull images
+        run: docker compose -f docker-compose.e2e.yml pull
+
+      - name: Start stack
+        run: docker compose -f docker-compose.e2e.yml up -d --wait --wait-timeout 180
+
+      # Seed playwright/.auth/ once. The Artillery scenario reads user.json +
+      # session-storage.json per VU and replays them — no concurrent Authelia
+      # logins, no TOTP races.
+      - name: Seed auth state (Playwright setup project)
+        working-directory: frontend
+        env:
+          CI: "true"
+          E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          E2E_OTP_SECRET: ${{ secrets.E2E_OTP_SECRET }}
+        run: npx playwright test --project=setup
+
+      - name: Build phases override
+        id: phases
+        env:
+          ARRIVAL_RATE: ${{ inputs.arrival_rate }}
+          DURATION_SEC: ${{ inputs.duration_sec }}
+        run: |
+          set -euo pipefail
+          OVERRIDES=$(jq -nc \
+            --argjson ar "${ARRIVAL_RATE}" \
+            --argjson ds "${DURATION_SEC}" \
+            '{config: {phases: [
+              {name: "ramp",     duration: 60, arrivalRate: 1,   rampTo: $ar},
+              {name: "sustain",  duration: $ds, arrivalRate: $ar},
+              {name: "rampdown", duration: 30, arrivalRate: $ar, rampTo: 1}
+            ]}}')
+          echo "overrides=$OVERRIDES" >> $GITHUB_OUTPUT
+
+      - name: Run Artillery load test
+        working-directory: frontend
+        run: |
+          npx artillery run \
+            --output load-report.json \
+            --overrides '${{ steps.phases.outputs.overrides }}' \
+            load/clutterstock.yml
+
+      # `artillery report` is deprecated in v2 but still functional. If it ever
+      # breaks, fall back to uploading just the JSON; the dashboard is the
+      # nice-to-have, the raw metrics are the source of truth.
+      - name: Generate HTML report
+        if: always()
+        working-directory: frontend
+        continue-on-error: true
+        run: npx artillery report --output load-report.html load-report.json
+
+      - name: Capture compose logs
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml logs --no-color > compose-logs.txt
+
+      - name: Upload load report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: load-report
+          path: |
+            frontend/load-report.json
+            frontend/load-report.html
+            compose-logs.txt
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v

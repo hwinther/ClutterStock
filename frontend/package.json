@@ -18,7 +18,9 @@
     "coverage:ci": "vitest run --coverage",
     "stryker": "react-router typegen && stryker run",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "load": "artillery run --output load-report.json load/clutterstock.yml",
+    "load:report": "artillery report load-report.json"
   },
   "dependencies": {
     "@opentelemetry/api": "1.9.1",
@@ -48,6 +50,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.3",
     "@playwright/test": "1.59.1",
+    "artillery": "2.0.31",
     "@react-router/dev": "7.14.2",
     "@stryker-mutator/core": "9.6.1",
     "@stryker-mutator/typescript-checker": "9.6.1",
@@ -73,7 +76,7 @@
     "msw": "2.14.2",
     "openapi-msw": "2.0.0",
     "openapi-typescript": "7.13.0",
-    "otpauth": "^9.5.1",
+    "otpauth": "9.5.1",
     "playwright-lighthouse": "4.0.0",
     "tailwindcss": "4.2.4",
     "typescript": "5.9.3",
