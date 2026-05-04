@@ -1,0 +1,130 @@
+name: "OWASP ZAP Scan"
+
+on:
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: "Scan depth (baseline = passive ~5min; full = active ~30-60min)"
+        type: choice
+        options: [baseline, full]
+        default: baseline
+  schedule:
+    # Weekly Sunday 04:00 UTC — runs after Saturday's nightly so Pages picks up
+    # both signals on the same redeploy chain when api-docs-pages.yml fires.
+    - cron: "0 4 * * 0"
+
+concurrency:
+  # Same group key as nightly-e2e, so the two never run simultaneously against
+  # the shared Authelia user (Phase 2 will need that anyway; cheap to enforce now).
+  group: e2e-shared-auth
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    environment: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Log in to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24.x
+
+      - name: Resolve :latest image refs
+        run: |
+          set -euo pipefail
+          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+          echo "API_IMAGE=ghcr.io/${REPO}/api:latest"           >> $GITHUB_ENV
+          echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator:latest" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend:latest" >> $GITHUB_ENV
+
+      - name: Pull stack images
+        run: docker compose -f docker-compose.e2e.yml pull
+
+      - name: Start stack
+        run: docker compose -f docker-compose.e2e.yml up -d --wait --wait-timeout 180
+
+      # zaproxy/action-baseline runs ZAP in a container with --network=host on
+      # Linux runners, so http://localhost:5173 resolves to the frontend
+      # service exposed by docker-compose.e2e.yml.
+      - name: Run ZAP baseline scan
+        if: ${{ github.event_name == 'schedule' || inputs.scan_type == 'baseline' }}
+        uses: zaproxy/action-baseline@7c4deb10e6261301961c86d65d54a516394f9aed # v0.14.0
+        with:
+          target: "http://localhost:5173"
+          rules_file_name: ".zap/rules.tsv"
+          # Off until the first run is clean — otherwise every finding becomes
+          # a GitHub issue. Flip to true after rules.tsv is tuned.
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-baseline
+
+      - name: Run ZAP full scan
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.scan_type == 'full' }}
+        uses: zaproxy/action-full-scan@75ee1686750ab1511a73b26b77a2aedd295053ed # v0.12.0
+        with:
+          target: "http://localhost:5173"
+          rules_file_name: ".zap/rules.tsv"
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-full
+
+      # The action drops report.html / report_md.md / report_json.json in the
+      # workflow workspace. Copy them to a stable directory so the badge
+      # generator and the GHCR push step have a single path to reference.
+      - name: Stage ZAP report
+        if: ${{ success() || failure() }}
+        run: |
+          set -euo pipefail
+          mkdir -p zap-report
+          for f in report.html report_md.md report_json.json; do
+            if [ -f "$f" ]; then
+              cp "$f" "zap-report/$f"
+            fi
+          done
+          echo "Staged:"
+          ls -la zap-report || true
+
+      - name: Generate ZAP findings badge
+        if: ${{ success() || failure() }}
+        run: |
+          set -euo pipefail
+          if [ ! -f zap-report/report_json.json ]; then
+            echo "No report_json.json — skipping badge generation."
+            exit 0
+          fi
+          npm ci --prefix scripts/badges
+          node scripts/badges/generate-badges.mjs \
+            --zap-json zap-report/report_json.json \
+            --out zap-report/
+
+      - name: Push zap-report image
+        if: ${{ success() || failure() }}
+        run: |
+          set -euo pipefail
+          REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          if [ ! -d zap-report ] || [ -z "$(ls -A zap-report 2>/dev/null)" ]; then
+            echo "No zap-report/ produced — skipping image push."
+            exit 0
+          fi
+          docker build -t "ghcr.io/${REPO}/zap-report:latest" \
+            -f scripts/zap-report.Dockerfile .
+          docker push "ghcr.io/${REPO}/zap-report:latest"
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v

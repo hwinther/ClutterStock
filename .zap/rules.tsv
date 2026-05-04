@@ -1,0 +1,10 @@
+# OWASP ZAP rule tuning for ClutterStock.
+# Format (TAB-separated): <rule-id>	<IGNORE|WARN|FAIL>	<comment>
+#
+# Start permissive — every rule WARNs by default. After the first few clean
+# baseline runs, suppress known-false-positives here (e.g. cookie-without-
+# secure on localhost-only test stack, missing-CSP-meta if the app sets CSP
+# via header instead).
+#
+# Rule IDs come from the ZAP scan output (numeric, e.g. 10038, 10202).
+# See https://www.zaproxy.org/docs/alerts/ for the catalogue.

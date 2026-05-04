@@ -21,6 +21,7 @@ const FLAGS = [
   "e2e-cobertura",
   "lighthouse-json",
   "nightly-status",
+  "zap-json",
   "out",
 ];
 
@@ -184,6 +185,39 @@ async function readLighthouseScores(file) {
   return out;
 }
 
+// --- zap --------------------------------------------------------------------
+
+// ZAP JSON report (action-baseline / action-full-scan): site[].alerts[].riskcode
+// is "0" (info) | "1" (low) | "2" (medium) | "3" (high). Same alert can appear
+// across multiple sites — sum across all to get the run total.
+async function readZapFindings(file) {
+  const json = JSON.parse(await readFile(file, "utf8"));
+  const counts = { high: 0, med: 0, low: 0, info: 0 };
+  for (const site of json?.site ?? []) {
+    for (const a of site?.alerts ?? []) {
+      switch (Number(a.riskcode)) {
+        case 3: counts.high++; break;
+        case 2: counts.med++; break;
+        case 1: counts.low++; break;
+        default: counts.info++;
+      }
+    }
+  }
+  return counts;
+}
+
+function zapColor({ high, med, low }) {
+  if (high > 0) return "red";
+  if (med > 0) return "orange";
+  if (low > 0) return "yellow";
+  return "brightgreen";
+}
+
+function zapMessage({ high, med, low }) {
+  if (high + med + low === 0) return "clean";
+  return `${high}H ${med}M ${low}L`;
+}
+
 // --- emit -------------------------------------------------------------------
 
 function svgCoverage(label, pct) {
@@ -257,6 +291,21 @@ async function main() {
     const status = args["nightly-status"];
     await writeSvg(outDir, "nightly-e2e", svgStatus("nightly e2e", status));
     generated["nightly-e2e"] = status;
+  }
+
+  if (args["zap-json"]) {
+    const f = await readZapFindings(args["zap-json"]);
+    await writeSvg(
+      outDir,
+      "security-zap",
+      makeBadge({
+        label: "zap",
+        message: zapMessage(f),
+        color: zapColor(f),
+        style: "flat",
+      }),
+    );
+    generated["security-zap"] = f;
   }
 
   process.stdout.write(JSON.stringify({ outDir, generated }, null, 2) + "\n");
