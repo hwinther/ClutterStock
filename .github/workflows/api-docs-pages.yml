@@ -35,6 +35,10 @@ on:
         description: Include self-rendered SVG coverage / Lighthouse / status badges (/badges/)
         type: boolean
         default: true
+      include_zap_report:
+        description: Include OWASP ZAP DAST report (/security/)
+        type: boolean
+        default: true
   push:
     tags:
       - "v*"
@@ -49,12 +53,14 @@ on:
       - ".github/scripts/render_project_docs.py"
       - "scripts/badges/**"
       - "scripts/badges-e2e.Dockerfile"
+      - "scripts/zap-report.Dockerfile"
+      - ".zap/**"
       - "README.md"
-  # Refresh nightly-sourced badges (e2e coverage, Lighthouse, last-status)
-  # whenever the nightly run finishes. The conclusion gate inside each job
-  # prevents redeploying Pages from a failed nightly.
+  # Refresh signal-sourced artifacts (nightly-e2e badges, ZAP report) whenever
+  # the source workflow finishes. The conclusion gate inside each job prevents
+  # redeploying Pages from a failed source run.
   workflow_run:
-    workflows: ["Nightly E2E (Allure)"]
+    workflows: ["Nightly E2E (Allure)", "OWASP ZAP Scan"]
     types: [completed]
     branches: [main]
 
@@ -423,10 +429,55 @@ jobs:
           name: github-pages-e2e-monocart-coverage
           path: monocart-coverage
 
+  pull-zap-report:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_zap_report) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+    outputs:
+      available: ${{ steps.pull-zap.outputs.available }}
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull and extract zap-report image
+        id: pull-zap
+        run: |
+          set -euo pipefail
+          REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          IMG="ghcr.io/${REPO}/zap-report:latest"
+          if docker pull "$IMG" 2>/dev/null; then
+            cid=$(docker create "$IMG" /zap-report)
+            docker cp "$cid:/zap-report" ./zap-report
+            docker rm "$cid" >/dev/null
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Extracted $(find ./zap-report -type f | wc -l) files from $IMG."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::${IMG} not found — the OWASP ZAP Scan workflow has not seeded it yet. Skipping /security/."
+          fi
+
+      - name: Upload zap-report artifact
+        if: steps.pull-zap.outputs.available == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-pages-zap-report
+          path: zap-report
+
   generate-badges:
     needs:
       - dotnet-test-and-coverage
       - node-test-and-coverage
+      - pull-zap-report
     runs-on: ubuntu-latest
     if: |
       always() &&
@@ -437,7 +488,8 @@ jobs:
         (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
       ) &&
       (needs.dotnet-test-and-coverage.result == 'success' || needs.dotnet-test-and-coverage.result == 'skipped') &&
-      (needs.node-test-and-coverage.result == 'success' || needs.node-test-and-coverage.result == 'skipped')
+      (needs.node-test-and-coverage.result == 'success' || needs.node-test-and-coverage.result == 'skipped') &&
+      (needs.pull-zap-report.result == 'success' || needs.pull-zap-report.result == 'skipped')
     permissions:
       contents: read
       packages: read
@@ -475,6 +527,13 @@ jobs:
           name: github-pages-coverage-node-cobertura
           path: node-cobertura
 
+      - name: Download zap-report (for security-zap.svg)
+        if: needs.pull-zap-report.result == 'success' && needs.pull-zap-report.outputs.available == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages-zap-report
+          path: zap-report
+
       - name: Log in to GHCR
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
@@ -505,6 +564,11 @@ jobs:
           fi
 
       - name: Render coverage + nightly-status SVGs
+        env:
+          # Source workflow name when triggered by workflow_run (empty otherwise).
+          # Used to scope which cached SVG gets overwritten — only the
+          # nightly-e2e workflow_run should refresh nightly-e2e.svg.
+          SOURCE_WORKFLOW: ${{ github.event.workflow_run.name }}
         run: |
           set -euo pipefail
           mkdir -p badges
@@ -513,6 +577,11 @@ jobs:
           # are intentional — they're regenerated from this run's coverage.
           if [ -d badges-e2e ]; then
             cp -v badges-e2e/*.svg badges/ 2>/dev/null || true
+          fi
+          # Carry forward the ZAP findings badge — rendered inline by the zap
+          # workflow, shipped via the zap-report image, surfaced here.
+          if [ -f zap-report/security-zap.svg ]; then
+            cp -v zap-report/security-zap.svg badges/
           fi
 
           BACKEND_ARG=()
@@ -523,16 +592,16 @@ jobs:
           if [ -f node-cobertura/cobertura-coverage.xml ]; then
             FRONTEND_ARG=(--frontend-cobertura node-cobertura/cobertura-coverage.xml)
           fi
-          # On a workflow_run trigger, the conclusion of the source workflow
-          # is the freshest signal. Otherwise leave the previously-cached
-          # nightly-e2e.svg in place (copied from badges-e2e above).
+          # Only update nightly-e2e.svg when the source of this run is the
+          # nightly workflow itself. ZAP-triggered runs leave the cached
+          # nightly status badge alone.
           STATUS_ARG=()
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+          if [ "${{ github.event_name }}" = "workflow_run" ] && [ "$SOURCE_WORKFLOW" = "Nightly E2E (Allure)" ]; then
             STATUS_ARG=(--nightly-status "${{ github.event.workflow_run.conclusion }}")
           fi
 
           if [ "${#BACKEND_ARG[@]}" -eq 0 ] && [ "${#FRONTEND_ARG[@]}" -eq 0 ] && [ "${#STATUS_ARG[@]}" -eq 0 ]; then
-            echo "Nothing to (re)generate in this run; relying on cached nightly badges."
+            echo "Nothing to (re)generate in this run; relying on cached nightly + zap badges."
           else
             node scripts/badges/generate-badges.mjs \
               "${BACKEND_ARG[@]}" \
@@ -559,6 +628,7 @@ jobs:
       - node-test-and-coverage
       - pull-e2e-allure
       - pull-e2e-monocart
+      - pull-zap-report
       - generate-badges
     runs-on: ubuntu-latest
     if: |
@@ -576,6 +646,7 @@ jobs:
       (needs.node-test-and-coverage.result == 'success' || needs.node-test-and-coverage.result == 'skipped') &&
       (needs.pull-e2e-allure.result == 'success' || needs.pull-e2e-allure.result == 'skipped') &&
       (needs.pull-e2e-monocart.result == 'success' || needs.pull-e2e-monocart.result == 'skipped') &&
+      (needs.pull-zap-report.result == 'success' || needs.pull-zap-report.result == 'skipped') &&
       (needs.generate-badges.result == 'success' || needs.generate-badges.result == 'skipped') &&
       needs.build-api-docs.result != 'failure' &&
       needs.dotnet-database-docs.result != 'failure' &&
@@ -584,6 +655,7 @@ jobs:
       needs.node-test-and-coverage.result != 'failure' &&
       needs.pull-e2e-allure.result != 'failure' &&
       needs.pull-e2e-monocart.result != 'failure' &&
+      needs.pull-zap-report.result != 'failure' &&
       needs.generate-badges.result != 'failure'
     permissions:
       contents: read
@@ -671,6 +743,24 @@ jobs:
           name: github-pages-badges
           path: site/badges
 
+      - name: Download ZAP report
+        if: needs.pull-zap-report.result == 'success' && needs.pull-zap-report.outputs.available == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages-zap-report
+          path: site/security
+
+      - name: Rename ZAP HTML to index.html
+        if: needs.pull-zap-report.result == 'success' && needs.pull-zap-report.outputs.available == 'true'
+        run: |
+          set -euo pipefail
+          # action-baseline emits report.html; Pages serves /security/index.html
+          # for a clean trailing-slash URL.
+          if [ -f site/security/report.html ] && [ ! -f site/security/index.html ]; then
+            cp site/security/report.html site/security/index.html
+          fi
+          ls -la site/security/
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
@@ -714,3 +804,5 @@ jobs:
           echo "  - E2E coverage: ${base}/badges/coverage-e2e.svg" >> "$GITHUB_STEP_SUMMARY"
           echo "  - Lighthouse perf: ${base}/badges/lighthouse-performance.svg" >> "$GITHUB_STEP_SUMMARY"
           echo "  - Nightly E2E (cached): ${base}/badges/nightly-e2e.svg" >> "$GITHUB_STEP_SUMMARY"
+          echo "  - ZAP findings: ${base}/badges/security-zap.svg" >> "$GITHUB_STEP_SUMMARY"
+          echo "- OWASP ZAP report: ${base}/security/" >> "$GITHUB_STEP_SUMMARY"
