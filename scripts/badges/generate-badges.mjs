@@ -1,0 +1,268 @@
+#!/usr/bin/env node
+// Render coverage / Lighthouse / nightly-status badges as SVGs.
+// Designed to be self-contained: no ClutterStock-specific paths, all inputs via CLI.
+// Drop the parent scripts/badges/ directory into another repo, npm install, run.
+
+import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { makeBadge } from "badge-maker";
+import { XMLParser } from "fast-xml-parser";
+
+// --- argv parsing -----------------------------------------------------------
+
+const FLAGS = [
+  "backend-cobertura",
+  "backend-summary-json",
+  "frontend-cobertura",
+  "frontend-summary-json",
+  "e2e-cobertura",
+  "lighthouse-json",
+  "nightly-status",
+  "out",
+];
+
+function parseArgs(argv) {
+  const args = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (!a.startsWith("--")) continue;
+    const key = a.slice(2);
+    if (!FLAGS.includes(key)) {
+      throw new Error(`Unknown flag --${key}`);
+    }
+    const next = argv[i + 1];
+    if (!next || next.startsWith("--")) {
+      throw new Error(`Flag --${key} needs a value`);
+    }
+    args[key] = next;
+    i++;
+  }
+  return args;
+}
+
+// --- color scale ------------------------------------------------------------
+
+// shields.io standard. Locked for visual consistency across repos that adopt
+// this script.
+function coverageColor(pct) {
+  if (pct < 50) return "red";
+  if (pct < 60) return "orange";
+  if (pct < 70) return "yellow";
+  if (pct < 80) return "yellowgreen";
+  if (pct < 90) return "green";
+  return "brightgreen";
+}
+
+function statusColor(status) {
+  switch (status) {
+    case "success":
+      return "brightgreen";
+    case "failure":
+      return "red";
+    case "cancelled":
+      return "lightgrey";
+    default:
+      return "lightgrey";
+  }
+}
+
+// --- cobertura parsing ------------------------------------------------------
+
+const xmlParser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "",
+  allowBooleanAttributes: true,
+});
+
+async function expandGlob(pattern) {
+  // Tiny glob: supports `**/<filename-pattern>` and exact paths. The filename
+  // may itself contain `*` (e.g. `coverage.cobertura.*.xml`) which is treated
+  // as `[^/]*`. Anything fancier should pre-resolve before passing here.
+  if (!pattern.includes("*")) {
+    return existsSync(pattern) ? [pattern] : [];
+  }
+  const idx = pattern.indexOf("**/");
+  if (idx === -1) {
+    throw new Error(`Unsupported glob: ${pattern} (only **/<name> is supported)`);
+  }
+  const root = pattern.slice(0, idx) || ".";
+  const tail = pattern.slice(idx + 3);
+  const tailRe = new RegExp(
+    "^" + tail.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*") + "$",
+  );
+  const matches = [];
+  await walk(root, tailRe, matches);
+  return matches;
+}
+
+async function walk(dir, tailRe, out) {
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const e of entries) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) {
+      await walk(p, tailRe, out);
+    } else if (e.isFile() && tailRe.test(e.name)) {
+      out.push(p);
+    }
+  }
+}
+
+async function readCoberturaPercentage(globOrFile) {
+  const files = await expandGlob(globOrFile);
+  if (files.length === 0) {
+    throw new Error(`No Cobertura XML matched ${globOrFile}`);
+  }
+  let covered = 0;
+  let valid = 0;
+  for (const f of files) {
+    const xml = await readFile(f, "utf8");
+    const doc = xmlParser.parse(xml);
+    const root = doc.coverage;
+    if (!root) {
+      throw new Error(`${f} has no <coverage> root`);
+    }
+    // Aggregate by sums, never by averaging line-rate. Different shards have
+    // different sizes; arithmetic mean gives the wrong answer.
+    const c = Number(root["lines-covered"]);
+    const v = Number(root["lines-valid"]);
+    if (Number.isFinite(c) && Number.isFinite(v) && v > 0) {
+      covered += c;
+      valid += v;
+    } else if (Number.isFinite(Number(root["line-rate"]))) {
+      // Fallback: shard didn't emit lines-covered/valid. Use line-rate as a
+      // single-shard percentage; only safe when there's exactly one file.
+      if (files.length !== 1) {
+        throw new Error(
+          `${f} only exposes line-rate; can't aggregate ${files.length} shards safely`,
+        );
+      }
+      return Number(root["line-rate"]) * 100;
+    }
+  }
+  if (valid === 0) {
+    throw new Error(`No coverable lines reported across ${files.length} files`);
+  }
+  return (covered / valid) * 100;
+}
+
+async function readReportGeneratorSummary(file) {
+  const json = JSON.parse(await readFile(file, "utf8"));
+  const pct = json?.summary?.linecoverage;
+  if (typeof pct !== "number") {
+    throw new Error(`${file} has no summary.linecoverage`);
+  }
+  return pct;
+}
+
+// --- lighthouse -------------------------------------------------------------
+
+const LIGHTHOUSE_CATEGORIES = [
+  ["performance", "lighthouse perf"],
+  ["accessibility", "lighthouse a11y"],
+  ["best-practices", "lighthouse bp"],
+  ["seo", "lighthouse seo"],
+];
+
+async function readLighthouseScores(file) {
+  const json = JSON.parse(await readFile(file, "utf8"));
+  const cats = json?.categories ?? {};
+  const out = {};
+  for (const [key, label] of LIGHTHOUSE_CATEGORIES) {
+    const score = cats?.[key]?.score;
+    if (typeof score === "number") {
+      out[key] = { label, pct: Math.round(score * 100) };
+    }
+  }
+  return out;
+}
+
+// --- emit -------------------------------------------------------------------
+
+function svgCoverage(label, pct) {
+  return makeBadge({
+    label,
+    message: `${pct.toFixed(1)}%`,
+    color: coverageColor(pct),
+    style: "flat",
+  });
+}
+
+function svgStatus(label, status) {
+  return makeBadge({
+    label,
+    message: status,
+    color: statusColor(status),
+    style: "flat",
+  });
+}
+
+async function writeSvg(outDir, name, svg) {
+  await mkdir(outDir, { recursive: true });
+  const path = join(outDir, `${name}.svg`);
+  await writeFile(path, svg, "utf8");
+  return path;
+}
+
+// --- main -------------------------------------------------------------------
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const outDir = resolve(args.out ?? "badges");
+  const generated = {};
+
+  if (args["backend-summary-json"]) {
+    const pct = await readReportGeneratorSummary(args["backend-summary-json"]);
+    await writeSvg(outDir, "coverage-backend", svgCoverage("backend coverage", pct));
+    generated["coverage-backend"] = pct;
+  } else if (args["backend-cobertura"]) {
+    const pct = await readCoberturaPercentage(args["backend-cobertura"]);
+    await writeSvg(outDir, "coverage-backend", svgCoverage("backend coverage", pct));
+    generated["coverage-backend"] = pct;
+  }
+
+  if (args["frontend-summary-json"]) {
+    const pct = await readReportGeneratorSummary(args["frontend-summary-json"]);
+    await writeSvg(outDir, "coverage-frontend", svgCoverage("frontend coverage", pct));
+    generated["coverage-frontend"] = pct;
+  } else if (args["frontend-cobertura"]) {
+    const pct = await readCoberturaPercentage(args["frontend-cobertura"]);
+    await writeSvg(outDir, "coverage-frontend", svgCoverage("frontend coverage", pct));
+    generated["coverage-frontend"] = pct;
+  }
+
+  if (args["e2e-cobertura"]) {
+    const pct = await readCoberturaPercentage(args["e2e-cobertura"]);
+    await writeSvg(outDir, "coverage-e2e", svgCoverage("e2e coverage", pct));
+    generated["coverage-e2e"] = pct;
+  }
+
+  if (args["lighthouse-json"]) {
+    const scores = await readLighthouseScores(args["lighthouse-json"]);
+    for (const key of Object.keys(scores)) {
+      const { label, pct } = scores[key];
+      await writeSvg(outDir, `lighthouse-${key}`, svgCoverage(label, pct));
+      generated[`lighthouse-${key}`] = pct;
+    }
+  }
+
+  if (args["nightly-status"]) {
+    const status = args["nightly-status"];
+    await writeSvg(outDir, "nightly-e2e", svgStatus("nightly e2e", status));
+    generated["nightly-e2e"] = status;
+  }
+
+  process.stdout.write(JSON.stringify({ outDir, generated }, null, 2) + "\n");
+}
+
+main().catch((err) => {
+  process.stderr.write(`generate-badges: ${err.message}\n`);
+  process.exit(1);
+});
