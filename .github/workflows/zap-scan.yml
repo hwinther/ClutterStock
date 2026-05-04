@@ -43,6 +43,8 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24.x
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Resolve :latest image refs
         run: |
@@ -58,6 +60,65 @@ jobs:
       - name: Start stack
         run: docker compose -f docker-compose.e2e.yml up -d --wait --wait-timeout 180
 
+      # ── Phase 2: authenticated scan ──
+      # Reuse the existing Playwright auth.setup project to drive the full
+      # OIDC/TOTP dance against Authelia and persist a session. Then extract
+      # the clutterstock_sid cookie and inject it as a Cookie header on every
+      # ZAP request via the replacer add-on, plus exclude the IdP and the
+      # signout endpoint from the spider so we don't crawl Authelia or kill
+      # our own session mid-scan.
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run Playwright auth.setup (mints session)
+        working-directory: frontend
+        env:
+          CI: "true"
+          E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          E2E_OTP_SECRET: ${{ secrets.E2E_OTP_SECRET }}
+        run: npx playwright test --project=setup
+
+      - name: Extract session cookie + build ZAP cmd_options
+        run: |
+          set -euo pipefail
+          AUTH_FILE="frontend/playwright/.auth/user.json"
+          if [ ! -f "$AUTH_FILE" ]; then
+            echo "::error::auth.setup did not produce $AUTH_FILE; cannot inject session into ZAP."
+            exit 1
+          fi
+          # Pull just the localhost session cookie (Authelia cookies for
+          # auth.wsh.no are scoped there; we only need ours).
+          SID=$(node -e '
+            const c = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).cookies
+              .find(c => c.name === "clutterstock_sid" && c.domain === "localhost");
+            if (!c) { console.error("clutterstock_sid not found in storageState"); process.exit(1); }
+            process.stdout.write(c.value);
+          ' "$AUTH_FILE")
+          echo "::add-mask::$SID"
+          # Build a single -z config string. Quoting rules:
+          # - The action invokes ZAP via @actions/exec, which tokenizes args
+          #   respecting double-quoted strings but NOT single-quoted ones.
+          # - ZAP's own -z parser then splits its argument on whitespace.
+          # - So: wrap the whole list in double quotes, no single quotes
+          #   inside, and avoid spaces in any *value* (use underscores in
+          #   description fields).
+          # Replacer rewrites the Cookie header on every outbound request;
+          # globalexcludeurl keeps the spider out of Authelia and the auth
+          # routes that would invalidate or loop our session.
+          OPTS="-z \"-config replacer.full_list(0).description=clutterstock_sid -config replacer.full_list(0).enabled=true -config replacer.full_list(0).matchtype=REQ_HEADER -config replacer.full_list(0).matchstr=Cookie -config replacer.full_list(0).regex=false -config replacer.full_list(0).replacement=clutterstock_sid=${SID} -config globalexcludeurl.url_list.url(0).description=Authelia_IdP -config globalexcludeurl.url_list.url(0).enabled=true -config globalexcludeurl.url_list.url(0).regex=https?://auth\\.wsh\\.no.* -config globalexcludeurl.url_list.url(1).description=Signout -config globalexcludeurl.url_list.url(1).enabled=true -config globalexcludeurl.url_list.url(1).regex=http://localhost:5173/auth/signout.* -config globalexcludeurl.url_list.url(2).description=Signin_redirect -config globalexcludeurl.url_list.url(2).enabled=true -config globalexcludeurl.url_list.url(2).regex=http://localhost:5173/auth/signin.*\""
+          {
+            echo "ZAP_CMD_OPTIONS<<ZAP_EOF"
+            echo "${OPTS}"
+            echo "ZAP_EOF"
+          } >> "$GITHUB_ENV"
+
       # zaproxy/action-baseline runs ZAP in a container with --network=host on
       # Linux runners, so http://localhost:5173 resolves to the frontend
       # service exposed by docker-compose.e2e.yml.
@@ -72,6 +133,7 @@ jobs:
           allow_issue_writing: false
           fail_action: false
           artifact_name: zap-baseline
+          cmd_options: ${{ env.ZAP_CMD_OPTIONS }}
 
       - name: Run ZAP full scan
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.scan_type == 'full' }}
@@ -82,6 +144,7 @@ jobs:
           allow_issue_writing: false
           fail_action: false
           artifact_name: zap-full
+          cmd_options: ${{ env.ZAP_CMD_OPTIONS }}
 
       # The action drops report.html / report_md.md / report_json.json in the
       # workflow workspace. Copy them to a stable directory so the badge

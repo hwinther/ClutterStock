@@ -7,10 +7,11 @@ on:
     - cron: "0 3 * * *"
 
 concurrency:
-  # Don't cancel an in-flight run if the cron and a manual dispatch overlap;
-  # let the second one queue. Two daily runs racing on :latest history is
-  # last-writer-wins anyway, not catastrophic.
-  group: ${{ github.workflow }}
+  # Shared with zap-scan.yml: both workflows run Playwright auth.setup against
+  # the same Authelia user (with the same TOTP secret), so simultaneous runs
+  # would collide on 2FA. Don't cancel — let the second one queue. Two daily
+  # runs racing on :latest history is last-writer-wins anyway, not catastrophic.
+  group: e2e-shared-auth
   cancel-in-progress: false
 
 jobs:
