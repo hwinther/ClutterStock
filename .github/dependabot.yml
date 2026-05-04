@@ -63,7 +63,9 @@ updates:
       - "OpenTelemetry.*"
 
 - package-ecosystem: "npm"
-  directory: "/frontend"
+  directories:
+  - "/frontend"
+  - "/scripts/badges"
   open-pull-requests-limit: 20
   target-branch: "main"
   schedule:

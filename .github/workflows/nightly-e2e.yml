@@ -114,6 +114,72 @@ jobs:
             echo "No lighthouse-home.html found in test-results — skipping."
           fi
 
+      # Symmetric to the HTML stage step above. The badge generator needs a
+      # stable path; playwright-lighthouse writes the JSON next to the HTML
+      # under a content-hashed test-results/perf.home-*/ directory.
+      - name: Stage Lighthouse JSON at stable path
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ ! -d frontend/monocart-report ]; then
+            echo "monocart-report not produced — skipping lighthouse JSON staging."
+            exit 0
+          fi
+          LH=$(find frontend/test-results -name 'lighthouse-home.json' -type f 2>/dev/null | sort | tail -1)
+          if [ -n "$LH" ]; then
+            cp "$LH" frontend/monocart-report/lighthouse-home.json
+            echo "Staged $LH -> frontend/monocart-report/lighthouse-home.json"
+          else
+            echo "No lighthouse-home.json found in test-results — skipping."
+          fi
+
+      # Render e2e coverage + Lighthouse SVG badges. They ship out via the
+      # badges-e2e GHCR image, where api-docs-pages.yml picks them up on the
+      # workflow_run trigger to embed under /badges/ on the Pages site.
+      - name: Install badge generator deps
+        if: ${{ success() || failure() }}
+        run: npm ci
+        working-directory: scripts/badges
+
+      - name: Generate e2e + Lighthouse badge SVGs
+        if: ${{ success() || failure() }}
+        run: |
+          set -euo pipefail
+          mkdir -p badges-e2e
+          E2E_COV_ARG=()
+          if [ -f frontend/monocart-coverage/cobertura-coverage.xml ]; then
+            E2E_COV_ARG=(--e2e-cobertura frontend/monocart-coverage/cobertura-coverage.xml)
+          else
+            echo "::warning::No monocart cobertura-coverage.xml — skipping e2e coverage badge."
+          fi
+          LH_ARG=()
+          if [ -f frontend/monocart-report/lighthouse-home.json ]; then
+            LH_ARG=(--lighthouse-json frontend/monocart-report/lighthouse-home.json)
+          else
+            echo "::warning::No lighthouse-home.json — skipping lighthouse badges."
+          fi
+          if [ "${#E2E_COV_ARG[@]}" -eq 0 ] && [ "${#LH_ARG[@]}" -eq 0 ]; then
+            echo "Nothing to render. Leaving badges-e2e empty."
+            exit 0
+          fi
+          node scripts/badges/generate-badges.mjs \
+            "${E2E_COV_ARG[@]}" \
+            "${LH_ARG[@]}" \
+            --out badges-e2e/
+
+      - name: Push badges-e2e image
+        if: ${{ success() || failure() }}
+        run: |
+          set -euo pipefail
+          REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          if [ ! -d badges-e2e ] || [ -z "$(ls -A badges-e2e 2>/dev/null)" ]; then
+            echo "No badges-e2e/ produced — skipping image push."
+            exit 0
+          fi
+          docker build -t "ghcr.io/${REPO}/badges-e2e:latest" \
+            -f scripts/badges-e2e.Dockerfile .
+          docker push "ghcr.io/${REPO}/badges-e2e:latest"
+
       - name: Generate Allure report
         if: always()
         working-directory: frontend

@@ -31,9 +31,15 @@ on:
         description: Include monocart e2e dashboard + V8 coverage (/e2e-report/, /coverage-e2e/)
         type: boolean
         default: true
+      include_badges:
+        description: Include self-rendered SVG coverage / Lighthouse / status badges (/badges/)
+        type: boolean
+        default: true
   push:
     tags:
       - "v*"
+    branches:
+      - main
     paths:
       - "backend/**"
       - "frontend/**"
@@ -41,7 +47,16 @@ on:
       - ".github/workflows/api-docs-pages.yml"
       - ".github/actions/schemaspy-report/**"
       - ".github/scripts/render_project_docs.py"
+      - "scripts/badges/**"
+      - "scripts/badges-e2e.Dockerfile"
       - "README.md"
+  # Refresh nightly-sourced badges (e2e coverage, Lighthouse, last-status)
+  # whenever the nightly run finishes. The conclusion gate inside each job
+  # prevents redeploying Pages from a failed nightly.
+  workflow_run:
+    workflows: ["Nightly E2E (Allure)"]
+    types: [completed]
+    branches: [main]
 
 concurrency:
   group: "${{ github.workflow }} @ ${{ github.ref }}"
@@ -63,8 +78,9 @@ jobs:
   build-api-docs:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && inputs.include_api_redoc)
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_api_redoc) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     permissions:
       contents: read
       actions: write
@@ -103,8 +119,9 @@ jobs:
   dotnet-database-docs:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && inputs.include_database_docs)
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_database_docs) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     permissions:
       contents: read
       actions: write
@@ -164,8 +181,9 @@ jobs:
   build-project-docs:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && inputs.include_project_docs)
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_project_docs) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     permissions:
       contents: read
       actions: write
@@ -187,8 +205,9 @@ jobs:
   dotnet-test-and-coverage:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && inputs.include_dotnet_coverage)
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_dotnet_coverage) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     permissions:
       contents: read
       actions: write
@@ -218,12 +237,15 @@ jobs:
           --coverlet-output-format cobertura
           --configuration Release
 
-      - name: Generate coverage HTML (ReportGenerator)
+      - name: Generate coverage HTML + JSON summary (ReportGenerator)
         uses: danielpalme/ReportGenerator-GitHub-Action@c31aa4ed4f12f147061186cf2a029f307b5c3636 # v5.5.9
         with:
           reports: "${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}/**/TestResults/**/coverage.cobertura.*.xml"
           targetdir: "${{ github.workspace }}/coverage-html-dotnet"
-          reporttypes: Html
+          # JsonSummary aggregates across coverlet shards once, so the badge
+          # generator can read a single file (Summary.json) instead of doing
+          # the lines-covered/lines-valid math itself.
+          reporttypes: Html;JsonSummary
 
       - name: Upload dotnet coverage report artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -231,11 +253,18 @@ jobs:
           name: github-pages-coverage-dotnet
           path: coverage-html-dotnet
 
+      - name: Upload dotnet coverage summary artifact (for badges)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-pages-coverage-dotnet-summary
+          path: coverage-html-dotnet/Summary.json
+
   node-test-and-coverage:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && inputs.include_node_coverage)
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_node_coverage) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     permissions:
       contents: read
       actions: write
@@ -273,11 +302,18 @@ jobs:
           name: github-pages-coverage-node
           path: coverage-html-node
 
+      - name: Upload node Cobertura artifact (for badges)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-pages-coverage-node-cobertura
+          path: ${{ env.NODE_WORKING_DIRECTORY }}/coverage/cobertura-coverage.xml
+
   pull-e2e-allure:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && inputs.include_e2e_allure)
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_e2e_allure) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     permissions:
       contents: read
       packages: read
@@ -321,8 +357,9 @@ jobs:
   pull-e2e-monocart:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && inputs.include_e2e_monocart)
+      (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.include_e2e_monocart) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     permissions:
       contents: read
       packages: read
@@ -386,6 +423,133 @@ jobs:
           name: github-pages-e2e-monocart-coverage
           path: monocart-coverage
 
+  generate-badges:
+    needs:
+      - dotnet-test-and-coverage
+      - node-test-and-coverage
+    runs-on: ubuntu-latest
+    if: |
+      always() &&
+      !cancelled() &&
+      (
+        (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+        (github.event_name == 'workflow_dispatch' && inputs.include_badges) ||
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      ) &&
+      (needs.dotnet-test-and-coverage.result == 'success' || needs.dotnet-test-and-coverage.result == 'skipped') &&
+      (needs.node-test-and-coverage.result == 'success' || needs.node-test-and-coverage.result == 'skipped')
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # workflow_run defaults to the default branch's checkout, but the
+          # head_branch is what triggered us — be explicit so the script
+          # version matches the source workflow's commit.
+          ref: ${{ github.event.workflow_run.head_branch || github.ref }}
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install badge generator deps
+        run: npm ci
+        working-directory: scripts/badges
+
+      - name: Download dotnet coverage summary
+        if: needs.dotnet-test-and-coverage.result == 'success'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages-coverage-dotnet-summary
+          path: dotnet-summary
+
+      - name: Download node Cobertura
+        if: needs.node-test-and-coverage.result == 'success'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages-coverage-node-cobertura
+          path: node-cobertura
+
+      - name: Log in to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Pre-rendered nightly-only badges (e2e coverage %, Lighthouse scores)
+      # are seeded by the nightly E2E workflow into a FROM-scratch image.
+      # Mirrors pull-e2e-allure exactly. Missing image = first deploy before
+      # the nightly seeded it; downstream copy is conditional.
+      - name: Pull and extract badges-e2e image
+        id: pull-badges-e2e
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          IMG="ghcr.io/${REPO}/badges-e2e:latest"
+          if docker pull "$IMG" 2>/dev/null; then
+            cid=$(docker create "$IMG" /badges-e2e)
+            docker cp "$cid:/badges-e2e" ./badges-e2e
+            docker rm "$cid" >/dev/null
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Extracted $(find ./badges-e2e -type f | wc -l) files from $IMG."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::${IMG} not found — the nightly E2E workflow has not seeded it yet. /badges/ will only contain backend + frontend coverage on this deploy."
+          fi
+
+      - name: Render coverage + nightly-status SVGs
+        run: |
+          set -euo pipefail
+          mkdir -p badges
+          # Carry forward nightly-derived SVGs first (e2e coverage, Lighthouse,
+          # last successful nightly status). Backend/frontend overwrites below
+          # are intentional — they're regenerated from this run's coverage.
+          if [ -d badges-e2e ]; then
+            cp -v badges-e2e/*.svg badges/ 2>/dev/null || true
+          fi
+
+          BACKEND_ARG=()
+          if [ -f dotnet-summary/Summary.json ]; then
+            BACKEND_ARG=(--backend-summary-json dotnet-summary/Summary.json)
+          fi
+          FRONTEND_ARG=()
+          if [ -f node-cobertura/cobertura-coverage.xml ]; then
+            FRONTEND_ARG=(--frontend-cobertura node-cobertura/cobertura-coverage.xml)
+          fi
+          # On a workflow_run trigger, the conclusion of the source workflow
+          # is the freshest signal. Otherwise leave the previously-cached
+          # nightly-e2e.svg in place (copied from badges-e2e above).
+          STATUS_ARG=()
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            STATUS_ARG=(--nightly-status "${{ github.event.workflow_run.conclusion }}")
+          fi
+
+          if [ "${#BACKEND_ARG[@]}" -eq 0 ] && [ "${#FRONTEND_ARG[@]}" -eq 0 ] && [ "${#STATUS_ARG[@]}" -eq 0 ]; then
+            echo "Nothing to (re)generate in this run; relying on cached nightly badges."
+          else
+            node scripts/badges/generate-badges.mjs \
+              "${BACKEND_ARG[@]}" \
+              "${FRONTEND_ARG[@]}" \
+              "${STATUS_ARG[@]}" \
+              --out badges/
+          fi
+
+          ls -la badges/
+
+      - name: Upload badges artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-pages-badges
+          path: badges
+          if-no-files-found: warn
+
   assemble-github-pages:
     needs:
       - build-api-docs
@@ -395,13 +559,15 @@ jobs:
       - node-test-and-coverage
       - pull-e2e-allure
       - pull-e2e-monocart
+      - generate-badges
     runs-on: ubuntu-latest
     if: |
       always() &&
       !cancelled() &&
       (
-        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-        github.event_name == 'workflow_dispatch'
+        (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
       ) &&
       (needs.build-api-docs.result == 'success' || needs.build-api-docs.result == 'skipped') &&
       (needs.dotnet-database-docs.result == 'success' || needs.dotnet-database-docs.result == 'skipped') &&
@@ -410,13 +576,15 @@ jobs:
       (needs.node-test-and-coverage.result == 'success' || needs.node-test-and-coverage.result == 'skipped') &&
       (needs.pull-e2e-allure.result == 'success' || needs.pull-e2e-allure.result == 'skipped') &&
       (needs.pull-e2e-monocart.result == 'success' || needs.pull-e2e-monocart.result == 'skipped') &&
+      (needs.generate-badges.result == 'success' || needs.generate-badges.result == 'skipped') &&
       needs.build-api-docs.result != 'failure' &&
       needs.dotnet-database-docs.result != 'failure' &&
       needs.build-project-docs.result != 'failure' &&
       needs.dotnet-test-and-coverage.result != 'failure' &&
       needs.node-test-and-coverage.result != 'failure' &&
       needs.pull-e2e-allure.result != 'failure' &&
-      needs.pull-e2e-monocart.result != 'failure'
+      needs.pull-e2e-monocart.result != 'failure' &&
+      needs.generate-badges.result != 'failure'
     permissions:
       contents: read
       actions: write
@@ -496,6 +664,13 @@ jobs:
           name: github-pages-e2e-monocart-coverage
           path: site/coverage-e2e
 
+      - name: Download badges
+        if: needs.generate-badges.result == 'success'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages-badges
+          path: site/badges
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
@@ -533,3 +708,9 @@ jobs:
           echo "- E2E monocart dashboard: ${base}/e2e-report/" >> "$GITHUB_STEP_SUMMARY"
           echo "- E2E monocart coverage: ${base}/coverage-e2e/" >> "$GITHUB_STEP_SUMMARY"
           echo "- Lighthouse report (latest nightly): ${base}/e2e-report/lighthouse-home.html" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Badges directory: ${base}/badges/" >> "$GITHUB_STEP_SUMMARY"
+          echo "  - Backend coverage: ${base}/badges/coverage-backend.svg" >> "$GITHUB_STEP_SUMMARY"
+          echo "  - Frontend coverage: ${base}/badges/coverage-frontend.svg" >> "$GITHUB_STEP_SUMMARY"
+          echo "  - E2E coverage: ${base}/badges/coverage-e2e.svg" >> "$GITHUB_STEP_SUMMARY"
+          echo "  - Lighthouse perf: ${base}/badges/lighthouse-performance.svg" >> "$GITHUB_STEP_SUMMARY"
+          echo "  - Nightly E2E (cached): ${base}/badges/nightly-e2e.svg" >> "$GITHUB_STEP_SUMMARY"
