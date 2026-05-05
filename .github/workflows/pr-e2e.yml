@@ -25,17 +25,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  api-container:
+  api:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
-      packages: write
+      packages: read
       id-token: write
       attestations: write
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@v1
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -43,21 +43,19 @@ jobs:
       project_file: src/Api/Api.csproj
       container_registry: ghcr.io
       container_image_name_postfix: api
-      cosign_sign_enabled: false
-      cosign_supply_chain_attest_enabled: false
       grype_fail_build: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-grype') }}
 
-  migrator-container:
+  migrator:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
-      packages: write
+      packages: read
       id-token: write
       attestations: write
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@v1
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -65,193 +63,98 @@ jobs:
       project_file: src/Migrator/Migrator.csproj
       container_registry: ghcr.io
       container_image_name_postfix: migrator
-      cosign_sign_enabled: false
-      cosign_supply_chain_attest_enabled: false
       grype_fail_build: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-grype') }}
 
-  frontend-container:
+  frontend:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
-      packages: write
+      packages: read
       id-token: write
       attestations: write
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/docker-container.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-docker.yml@v1
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
       build_context: frontend
       dockerfile: frontend/Dockerfile
-      cosign_sign_enabled: false
-      cosign_supply_chain_attest_enabled: false
       grype_fail_build: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-grype') }}
 
   e2e:
-    needs: [api-container, migrator-container, frontend-container]
+    needs: [api, migrator, frontend]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: ubuntu-latest
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@v1
+    with:
+      compose_file: docker-compose.e2e.yml
+      playwright_working_directory: frontend
+      image_artifacts_json: |
+        {"API_IMAGE":"${{ needs.api.outputs.image_artifact }}",
+         "MIGRATOR_IMAGE":"${{ needs.migrator.outputs.image_artifact }}",
+         "FRONTEND_IMAGE":"${{ needs.frontend.outputs.image_artifact }}"}
+    secrets:
+      e2e_username: ${{ secrets.E2E_USERNAME }}
+      e2e_password: ${{ secrets.E2E_PASSWORD }}
+      e2e_otp_secret: ${{ secrets.E2E_OTP_SECRET }}
+
+  push-api:
+    needs: [api, e2e]
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
     permissions:
       contents: read
-      packages: read
-      pull-requests: write
-    environment: build
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
+      packages: write
+      id-token: write
+      attestations: write
+      actions: read
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@v1
+    with:
+      container_registry: ghcr.io
+      container_image_name_postfix: api
+      artifact_name: ${{ needs.api.outputs.image_artifact }}
+      container_image_tags: ${{ needs.api.outputs.container_image_tags }}
+      image_digest: ${{ needs.api.outputs.image_digest }}
+      version: ${{ needs.api.outputs.version }}
+      sbom_artifact_name: ${{ needs.api.outputs.sbom_artifact }}
+      grype_artifact_name: ${{ needs.api.outputs.grype_artifact }}
 
-      - name: Log in to GHCR
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  push-migrator:
+    needs: [migrator, e2e]
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      actions: read
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@v1
+    with:
+      container_registry: ghcr.io
+      container_image_name_postfix: migrator
+      artifact_name: ${{ needs.migrator.outputs.image_artifact }}
+      container_image_tags: ${{ needs.migrator.outputs.container_image_tags }}
+      image_digest: ${{ needs.migrator.outputs.image_digest }}
+      version: ${{ needs.migrator.outputs.version }}
+      sbom_artifact_name: ${{ needs.migrator.outputs.sbom_artifact }}
+      grype_artifact_name: ${{ needs.migrator.outputs.grype_artifact }}
 
-      - name: Set up Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 24.x
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install frontend deps
-        run: npm ci
-        working-directory: frontend
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-        working-directory: frontend
-
-      - name: Resolve digest-pinned image refs
-        env:
-          API_DIGEST: ${{ needs.api-container.outputs.image_digest }}
-          MIGRATOR_DIGEST: ${{ needs.migrator-container.outputs.image_digest }}
-          FRONTEND_DIGEST: ${{ needs.frontend-container.outputs.image_digest }}
-        run: |
-          set -euo pipefail
-          REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
-          echo "API_IMAGE=ghcr.io/${REPO}/api@${API_DIGEST}"             >> $GITHUB_ENV
-          echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator@${MIGRATOR_DIGEST}" >> $GITHUB_ENV
-          echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend@${FRONTEND_DIGEST}" >> $GITHUB_ENV
-
-      - name: Pull images
-        run: docker compose -f docker-compose.e2e.yml pull
-
-      - name: Start stack
-        run: docker compose -f docker-compose.e2e.yml up -d --wait --wait-timeout 180
-
-      - name: Run Playwright
-        working-directory: frontend
-        env:
-          CI: "true"
-          E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
-          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-          E2E_OTP_SECRET: ${{ secrets.E2E_OTP_SECRET }}
-        run: npx playwright test
-
-      - name: Capture compose logs
-        if: always()
-        run: docker compose -f docker-compose.e2e.yml logs --no-color > compose-logs.txt
-
-      - name: Build PR comment from Playwright report
-        if: always() && github.event_name == 'pull_request'
-        id: e2e-comment
-        env:
-          REPORT_JSON: frontend/playwright-report/results.json
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          set -euo pipefail
-          out=/tmp/comment.md
-          if [ ! -f "$REPORT_JSON" ]; then
-            {
-              echo "### 🎭 Playwright E2E"
-              echo
-              echo "The Playwright run did not produce a report — check the [workflow logs](${RUN_URL}) for setup or compose failures."
-            } > "$out"
-          else
-            passed=$(jq -r '.stats.expected // 0' "$REPORT_JSON")
-            failed=$(jq -r '.stats.unexpected // 0' "$REPORT_JSON")
-            flaky=$(jq -r '.stats.flaky // 0' "$REPORT_JSON")
-            skipped=$(jq -r '.stats.skipped // 0' "$REPORT_JSON")
-            duration_ms=$(jq -r '.stats.duration // 0' "$REPORT_JSON")
-            duration=$(awk -v ms="$duration_ms" 'BEGIN { s=int(ms/1000); m=int(s/60); s=s%60; printf "%dm %ds", m, s }')
-            total=$((passed + failed + flaky + skipped))
-            if [ "$failed" -eq 0 ]; then
-              header="✅ All tests passed"
-            else
-              header="❌ ${failed} test(s) failed"
-            fi
-            {
-              echo "### 🎭 Playwright E2E — ${header}"
-              echo
-              echo "| Result | Count |"
-              echo "|--------|------:|"
-              echo "| ✅ Passed | ${passed} |"
-              echo "| ❌ Failed | ${failed} |"
-              echo "| ⚠️ Flaky | ${flaky} |"
-              echo "| ⏭️ Skipped | ${skipped} |"
-              echo "| **Total** | **${total}** |"
-              echo
-              echo "Duration: ${duration}"
-              echo
-              if [ "$failed" -gt 0 ] || [ "$flaky" -gt 0 ]; then
-                echo "<details><summary>Failed and flaky tests</summary>"
-                echo
-                jq -r '
-                  [ .suites[] | recurse(.suites[]?) | .specs[]? as $s
-                    | $s.tests[]
-                    | select(.status != "expected" and .status != "skipped")
-                    | "- `\($s.file // "")` — \($s.title) [\(.projectName // "")] (\(.status))"
-                  ] | unique[]
-                ' "$REPORT_JSON"
-                echo
-                echo "</details>"
-                echo
-              fi
-              echo "Full report and traces: [download the \`playwright-report\` artifact](${RUN_URL}#artifacts)."
-            } > "$out"
-          fi
-          {
-            echo "comment<<__EOM__"
-            cat "$out"
-            echo "__EOM__"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Post or update PR comment
-        if: always() && github.event_name == 'pull_request'
-        uses: im-open/update-pr-comment@b782531000dfcf02162c0bd9e78639d82a13c3b5 # v1.2.2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          comment-identifier: "e2e-results"
-          comment-content: ${{ steps.e2e-comment.outputs.comment }}
-
-      - name: Upload Playwright report and compose logs
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-report
-          path: |
-            frontend/playwright-report/
-            frontend/test-results/
-            compose-logs.txt
-          retention-days: 14
-          if-no-files-found: warn
-
-      - name: Upload monocart e2e coverage
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: e2e-coverage
-          path: |
-            frontend/monocart-report/
-            frontend/monocart-coverage/
-          retention-days: 14
-          if-no-files-found: warn
-
-      - name: Tear down stack
-        if: always()
-        run: docker compose -f docker-compose.e2e.yml down -v
+  push-frontend:
+    needs: [frontend, e2e]
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      actions: read
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@v1
+    with:
+      container_registry: ghcr.io
+      container_image_name_postfix: frontend
+      artifact_name: ${{ needs.frontend.outputs.image_artifact }}
+      container_image_tags: ${{ needs.frontend.outputs.container_image_tags }}
+      image_digest: ${{ needs.frontend.outputs.image_digest }}
+      version: ${{ needs.frontend.outputs.version }}
+      sbom_artifact_name: ${{ needs.frontend.outputs.sbom_artifact }}
+      grype_artifact_name: ${{ needs.frontend.outputs.grype_artifact }}
