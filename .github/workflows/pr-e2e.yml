@@ -86,6 +86,10 @@ jobs:
   e2e:
     needs: [api, migrator, frontend]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    permissions:
+      contents: read
+      packages: read
+      pull-requests: write
     uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@v1
     with:
       compose_file: docker-compose.e2e.yml
