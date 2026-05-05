@@ -94,6 +94,7 @@ jobs:
     with:
       compose_file: docker-compose.e2e.yml
       playwright_working_directory: frontend
+      environment: build
       image_artifacts_json: |
         {"API_IMAGE":"${{ needs.api.outputs.image_artifact }}",
          "MIGRATOR_IMAGE":"${{ needs.migrator.outputs.image_artifact }}",
