@@ -11,83 +11,22 @@ concurrency:
   group: "${{ github.workflow }} @ ${{ github.ref }}"
   cancel-in-progress: false
 
-env:
-  DOTNET_VERSION: "10.0.x"
-  DOTNET_WORKING_DIRECTORY: "backend"
-  DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
-  NODE_VERSION: "24.x"
-  NODE_WORKING_DIRECTORY: "frontend"
-  STRYKER_MUTATION_LEVEL: "Standard"
-  STRYKER_EXTRA_ARGUMENTS: "--diag"
-
 jobs:
-  dotnet-stryker:
-    runs-on: ubuntu-latest
-    if: false # Does not seem to work with MTP as of 4.14.0 - the process never completes
+  stryker:
+    uses: hwinther/reusable-workflows/.github/workflows/stryker.yml@v1
     permissions:
       contents: read
       actions: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-          cache: true
-          cache-dependency-path: "${{ env.DOTNET_WORKING_DIRECTORY }}/**/packages.lock.json"
-
-      - name: Restore
-        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
-        run: dotnet restore --locked-mode "${{ env.DOTNET_SOLUTION_FILE }}"
-
-      - name: Test with Stryker
-        working-directory: ${{ env.DOTNET_WORKING_DIRECTORY }}
-        run: |
-          dotnet tool restore
-          # dotnet tool install -g dotnet-stryker # For now relying on the local tool
-          dotnet stryker --solution "${{ env.DOTNET_SOLUTION_FILE }}" --test-runner mtp --mutation-level ${{ env.STRYKER_MUTATION_LEVEL }} -r html -r json -r cleartext ${{ env.STRYKER_EXTRA_ARGUMENTS }}
-
-          # TODO: Remove this
-          ls -la
-
-      - name: Upload dotnet stryker report artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: github-pages-stryker-dotnet
-          path: stryker-report-dotnet
-
-  node-stryker:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: "${{ env.NODE_WORKING_DIRECTORY }}/package-lock.json"
-
-      - name: Install dependencies
-        working-directory: ${{ env.NODE_WORKING_DIRECTORY }}
-        run: npm ci
-
-      - name: Run Stryker
-        working-directory: ${{ env.NODE_WORKING_DIRECTORY }}
-        run: npm run stryker
-
-      - name: Upload frontend Stryker report artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: github-pages-stryker-node
-          path: "${{ env.NODE_WORKING_DIRECTORY }}/reports/mutation"
+    with:
+      # Does not seem to work with MTP as of dotnet-stryker 4.14.0 - the process never completes
+      run_dotnet_stryker: false
+      run_node_stryker: true
+      dotnet_version: 10.0.x
+      solution_path: backend
+      solution_name: ClutterStock.slnx
+      node_version: 24.x
+      node_working_directory: frontend
+      mutation_level: Standard
+      extra_arguments: "--diag"
+      dotnet_artifact_name: github-pages-stryker-dotnet
+      node_artifact_name: github-pages-stryker-node
