@@ -26,9 +26,17 @@ on:
         type: boolean
         default: true
       images:
-        description: "Comma-separated GHCR package names to prune. Edit the default below when a new image joins the build pipeline."
+        description: "GHCR package names to prune, one per line. Edit the default when a new image joins the build pipeline."
         type: string
-        default: "clutterstock/api,clutterstock/migrator,clutterstock/frontend,clutterstock/allure-report,clutterstock/allure-history,clutterstock/badges-e2e,clutterstock/monocart-report,clutterstock/monocart-coverage"
+        default: |
+          clutterstock/api
+          clutterstock/migrator
+          clutterstock/frontend
+          clutterstock/allure-report
+          clutterstock/allure-history
+          clutterstock/badges-e2e
+          clutterstock/monocart-report
+          clutterstock/monocart-coverage
   schedule:
     # Sundays 03:00 UTC. Cron always runs live (dry_run forced to false).
     - cron: '0 3 * * 0'
@@ -49,7 +57,8 @@ jobs:
       REPO: ${{ github.repository }}
       DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
       # Schedule events don't expose `inputs`, so mirror the workflow_dispatch
-      # default here. Keep the two lists in sync if you add a new image.
+      # default here as a comma-list (single-line for expression safety).
+      # Keep this in sync with the `images` input default if you add a new image.
       IMAGES_INPUT: ${{ inputs.images || 'clutterstock/api,clutterstock/migrator,clutterstock/frontend,clutterstock/allure-report,clutterstock/allure-history,clutterstock/badges-e2e,clutterstock/monocart-report,clutterstock/monocart-coverage' }}
       GH_TOKEN: ${{ secrets.GHCR_PRUNE_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
@@ -88,6 +97,9 @@ jobs:
           # packages` was tried but returns HTTP 400 from a repo-scoped
           # GITHUB_TOKEN — listing user-namespace packages requires user auth,
           # while DELETE works because the package is repo-linked.
+          # Tolerate either newline- or comma-separated input. The workflow_dispatch
+          # default uses newlines (renders as a list in the UI); the schedule
+          # fallback uses commas (single-line for expression safety).
           echo "$IMAGES_INPUT" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' > /tmp/packages.txt
           echo "Packages in scope:"; cat /tmp/packages.txt
 
