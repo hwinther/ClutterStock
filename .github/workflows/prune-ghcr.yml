@@ -26,9 +26,22 @@ on:
         type: boolean
         default: true
       images:
-        description: "Comma-separated package names to prune (e.g. 'clutterstock/api,clutterstock/migrator'). Blank = auto-discover all clutterstock/* packages."
+        # Folded scalar (>-) so the source reads as a list but YAML resolves
+        # to a single-line comma string. The workflow_dispatch UI flattens
+        # `|` literal-block defaults and drops the newlines without inserting
+        # a separator, so a `|` default becomes one giant concatenated token.
+        # Folding avoids that — the value the UI submits is already well-formed.
+        description: "Comma-separated GHCR package names to prune. Edit the default when a new image joins the build pipeline."
         type: string
-        default: ""
+        default: >-
+          clutterstock/api,
+          clutterstock/migrator,
+          clutterstock/frontend,
+          clutterstock/allure-report,
+          clutterstock/allure-history,
+          clutterstock/badges-e2e,
+          clutterstock/monocart-report,
+          clutterstock/monocart-coverage
   schedule:
     # Sundays 03:00 UTC. Cron always runs live (dry_run forced to false).
     - cron: '0 3 * * 0'
@@ -48,7 +61,9 @@ jobs:
       OWNER: ${{ github.repository_owner }}
       REPO: ${{ github.repository }}
       DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
-      IMAGES_INPUT: ${{ inputs.images }}
+      # Schedule events don't expose `inputs`. Mirror the workflow_dispatch
+      # default verbatim. Keep this in sync with the `images` input default.
+      IMAGES_INPUT: ${{ inputs.images || 'clutterstock/api,clutterstock/migrator,clutterstock/frontend,clutterstock/allure-report,clutterstock/allure-history,clutterstock/badges-e2e,clutterstock/monocart-report,clutterstock/monocart-coverage' }}
       GH_TOKEN: ${{ secrets.GHCR_PRUNE_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - name: Show config
@@ -57,7 +72,6 @@ jobs:
           echo "owner=$OWNER"
           echo "repo=$REPO"
           echo "dry_run=$DRY_RUN"
-          echo "images_input=$IMAGES_INPUT"
           echo "token_source=${{ secrets.GHCR_PRUNE_TOKEN != '' && 'GHCR_PRUNE_TOKEN' || 'GITHUB_TOKEN' }}"
 
       - name: Compute live branch labels
@@ -78,21 +92,17 @@ jobs:
           echo "Live labels:";   cat /tmp/live-labels.txt
           echo "owner_lc=$OWNER_LC" >> "$GITHUB_OUTPUT"
 
-      - name: Discover packages
+      - name: Resolve package list
         run: |
           set -euo pipefail
-          if [ -n "$IMAGES_INPUT" ]; then
-            echo "$IMAGES_INPUT" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' > /tmp/packages.txt
-          else
-            gh api "/users/$OWNER/packages?package_type=container" --paginate \
-              --jq '.[].name' \
-              | grep '^clutterstock/' > /tmp/packages.txt || true
-          fi
-          if [ ! -s /tmp/packages.txt ]; then
-            echo "No packages in scope. Nothing to do."
-          else
-            echo "Packages in scope:"; cat /tmp/packages.txt
-          fi
+          echo "Raw IMAGES_INPUT:"
+          printf '%s\n' "$IMAGES_INPUT" | cat -An
+          # Split on commas (the input default is a YAML folded scalar that
+          # produces a single line with commas), trim whitespace per item,
+          # drop blanks.
+          echo "$IMAGES_INPUT" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' > /tmp/packages.txt
+          echo "Packages in scope ($(wc -l < /tmp/packages.txt) total):"
+          cat /tmp/packages.txt
 
       - name: Prune
         env:
@@ -162,9 +172,17 @@ jobs:
             echo "=== $pkg ==="
             enc=$(jq -rn --arg s "$pkg" '$s|@uri')
 
-            gh api "/users/$OWNER/packages/container/$enc/versions" --paginate \
-              --jq '.[] | {id, name, tags: (.metadata.container.tags // [])}' \
-              > /tmp/versions.json
+            if ! gh api "/users/$OWNER/packages/container/$enc/versions" --paginate \
+                --jq '.[] | {id, name, tags: (.metadata.container.tags // [])}' \
+                > /tmp/versions.json 2>/tmp/versions.err; then
+              if grep -q 'HTTP 404' /tmp/versions.err; then
+                echo "  Package not found — skipping."
+                continue
+              fi
+              echo "  Error listing versions:" >&2
+              cat /tmp/versions.err >&2
+              exit 1
+            fi
             COUNT=$(wc -l < /tmp/versions.json | tr -d ' ')
             echo "  $COUNT versions"
 
