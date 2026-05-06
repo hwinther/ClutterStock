@@ -6,50 +6,14 @@ on:
       - labeled
       - synchronize
 
-env:
-  SOLUTION_PATH: "backend"
-  SOLUTION_NAME: "ClutterStock.slnx"
-  DOTNET_VERSION: "10.0.x"
-
 jobs:
   update-lockfiles:
-    runs-on: ubuntu-latest
+    uses: hwinther/reusable-workflows/.github/workflows/dependabot-update-dotnet-lockfiles.yml@v1
     permissions:
       contents: read
-    if: >-
-      github.event.pull_request.user.login == 'dependabot[bot]' &&
-      (
-        (github.event.action == 'labeled' && github.event.label.name == 'update-dotnet-lockfiles') ||
-        (github.event.action == 'synchronize' &&
-          contains(join(github.event.pull_request.labels.*.name, ','), 'update-dotnet-lockfiles'))
-      )
-    steps:
-      - name: Checkout ${{ github.head_ref }}
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.head_ref }}
-          token: ${{ secrets.WORKFLOW_TOKEN }}
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Setup git user
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Update lockfiles
-        working-directory: ${{ env.SOLUTION_PATH }}
-        run: |
-          dotnet restore ${{ env.SOLUTION_NAME }}
-          git status
-          if output=$(git status --porcelain) && [ -z "$output" ]; then
-            echo "Working directory clean"
-            exit 0
-          else
-            echo "Add and commit changes"
-            git commit -a -m "Update lockfiles"
-            git push
-          fi
+    with:
+      solution_path: backend
+      solution_name: ClutterStock.slnx
+      dotnet_version: 10.0.x
+    secrets:
+      WORKFLOW_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
