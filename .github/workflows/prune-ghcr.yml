@@ -26,9 +26,9 @@ on:
         type: boolean
         default: true
       images:
-        description: "Comma-separated package names to prune (e.g. 'clutterstock/api,clutterstock/migrator'). Blank = auto-discover all clutterstock/* packages."
+        description: "Comma-separated GHCR package names to prune. Edit the default below when a new image joins the build pipeline."
         type: string
-        default: ""
+        default: "clutterstock/api,clutterstock/migrator,clutterstock/frontend,clutterstock/allure-report,clutterstock/allure-history,clutterstock/badges-e2e,clutterstock/monocart-report,clutterstock/monocart-coverage"
   schedule:
     # Sundays 03:00 UTC. Cron always runs live (dry_run forced to false).
     - cron: '0 3 * * 0'
@@ -48,7 +48,9 @@ jobs:
       OWNER: ${{ github.repository_owner }}
       REPO: ${{ github.repository }}
       DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
-      IMAGES_INPUT: ${{ inputs.images }}
+      # Schedule events don't expose `inputs`, so mirror the workflow_dispatch
+      # default here. Keep the two lists in sync if you add a new image.
+      IMAGES_INPUT: ${{ inputs.images || 'clutterstock/api,clutterstock/migrator,clutterstock/frontend,clutterstock/allure-report,clutterstock/allure-history,clutterstock/badges-e2e,clutterstock/monocart-report,clutterstock/monocart-coverage' }}
       GH_TOKEN: ${{ secrets.GHCR_PRUNE_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - name: Show config
@@ -78,21 +80,16 @@ jobs:
           echo "Live labels:";   cat /tmp/live-labels.txt
           echo "owner_lc=$OWNER_LC" >> "$GITHUB_OUTPUT"
 
-      - name: Discover packages
+      - name: Resolve package list
         run: |
           set -euo pipefail
-          if [ -n "$IMAGES_INPUT" ]; then
-            echo "$IMAGES_INPUT" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' > /tmp/packages.txt
-          else
-            gh api "/users/$OWNER/packages?package_type=container" --paginate \
-              --jq '.[].name' \
-              | grep '^clutterstock/' > /tmp/packages.txt || true
-          fi
-          if [ ! -s /tmp/packages.txt ]; then
-            echo "No packages in scope. Nothing to do."
-          else
-            echo "Packages in scope:"; cat /tmp/packages.txt
-          fi
+          # Source of truth for the list of images is the `images` workflow
+          # input (default seeded above). Auto-discovery via `/users/$OWNER/
+          # packages` was tried but returns HTTP 400 from a repo-scoped
+          # GITHUB_TOKEN — listing user-namespace packages requires user auth,
+          # while DELETE works because the package is repo-linked.
+          echo "$IMAGES_INPUT" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' > /tmp/packages.txt
+          echo "Packages in scope:"; cat /tmp/packages.txt
 
       - name: Prune
         env:
@@ -162,9 +159,17 @@ jobs:
             echo "=== $pkg ==="
             enc=$(jq -rn --arg s "$pkg" '$s|@uri')
 
-            gh api "/users/$OWNER/packages/container/$enc/versions" --paginate \
-              --jq '.[] | {id, name, tags: (.metadata.container.tags // [])}' \
-              > /tmp/versions.json
+            if ! gh api "/users/$OWNER/packages/container/$enc/versions" --paginate \
+                --jq '.[] | {id, name, tags: (.metadata.container.tags // [])}' \
+                > /tmp/versions.json 2>/tmp/versions.err; then
+              if grep -q 'HTTP 404' /tmp/versions.err; then
+                echo "  Package not found — skipping."
+                continue
+              fi
+              echo "  Error listing versions:" >&2
+              cat /tmp/versions.err >&2
+              exit 1
+            fi
             COUNT=$(wc -l < /tmp/versions.json | tr -d ' ')
             echo "  $COUNT versions"
 
