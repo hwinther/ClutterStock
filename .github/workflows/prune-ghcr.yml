@@ -26,16 +26,21 @@ on:
         type: boolean
         default: true
       images:
-        description: "GHCR package names to prune, one per line. Edit the default when a new image joins the build pipeline."
+        # Folded scalar (>-) so the source reads as a list but YAML resolves
+        # to a single-line comma string. The workflow_dispatch UI flattens
+        # `|` literal-block defaults and drops the newlines without inserting
+        # a separator, so a `|` default becomes one giant concatenated token.
+        # Folding avoids that — the value the UI submits is already well-formed.
+        description: "Comma-separated GHCR package names to prune. Edit the default when a new image joins the build pipeline."
         type: string
-        default: |
-          clutterstock/api
-          clutterstock/migrator
-          clutterstock/frontend
-          clutterstock/allure-report
-          clutterstock/allure-history
-          clutterstock/badges-e2e
-          clutterstock/monocart-report
+        default: >-
+          clutterstock/api,
+          clutterstock/migrator,
+          clutterstock/frontend,
+          clutterstock/allure-report,
+          clutterstock/allure-history,
+          clutterstock/badges-e2e,
+          clutterstock/monocart-report,
           clutterstock/monocart-coverage
   schedule:
     # Sundays 03:00 UTC. Cron always runs live (dry_run forced to false).
@@ -56,6 +61,9 @@ jobs:
       OWNER: ${{ github.repository_owner }}
       REPO: ${{ github.repository }}
       DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+      # Schedule events don't expose `inputs`. Mirror the workflow_dispatch
+      # default verbatim. Keep this in sync with the `images` input default.
+      IMAGES_INPUT: ${{ inputs.images || 'clutterstock/api,clutterstock/migrator,clutterstock/frontend,clutterstock/allure-report,clutterstock/allure-history,clutterstock/badges-e2e,clutterstock/monocart-report,clutterstock/monocart-coverage' }}
       GH_TOKEN: ${{ secrets.GHCR_PRUNE_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - name: Show config
