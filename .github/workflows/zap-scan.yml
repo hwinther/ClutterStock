@@ -63,7 +63,7 @@ jobs:
       # service exposed by docker-compose.e2e.yml.
       - name: Run ZAP baseline scan
         if: ${{ github.event_name == 'schedule' || inputs.scan_type == 'baseline' }}
-        uses: zaproxy/action-baseline@7c4deb10e6261301961c86d65d54a516394f9aed # v0.14.0
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
           target: "http://localhost:5173"
           rules_file_name: ".zap/rules.tsv"
