@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   cleanupcode:
-    uses: hwinther/reusable-workflows/.github/workflows/resharper-cleanupcode.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/format-and-create-pr.yml@v1
     permissions:
       contents: write
       pull-requests: write
