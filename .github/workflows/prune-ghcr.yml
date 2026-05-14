@@ -35,6 +35,10 @@ on:
           clutterstock/badges-e2e,
           clutterstock/monocart-report,
           clutterstock/monocart-coverage
+      nuke_package:
+        description: "DESTRUCTIVE. Package name (e.g. 'clutterstock/allure-history') to delete entirely — leave blank for normal smart prune."
+        type: string
+        default: ""
   schedule:
     # Sundays 03:00 UTC. Cron always runs live (dry_run forced to false).
     - cron: "0 3 * * 0"
@@ -52,7 +56,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: hwinther/reusable-workflows/.github/workflows/prune-ghcr.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/prune-ghcr.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     with:
       dry_run: ${{ github.event_name == 'schedule' && false || inputs.dry_run }}
       # Schedule events don't expose `inputs`, so mirror the workflow_dispatch
@@ -60,4 +64,9 @@ jobs:
       # `images` input default above.
       images: ${{ inputs.images || 'clutterstock/api,clutterstock/migrator,clutterstock/frontend,clutterstock/allure-report,clutterstock/allure-history,clutterstock/badges-e2e,clutterstock/monocart-report,clutterstock/monocart-coverage' }}
       package_namespace_prefix: clutterstock/
+      # When set on a manual run, bypasses the smart prune and deletes the
+      # entire named package via the GHCR package DELETE API. Cron runs leave
+      # inputs.nuke_package null so this resolves to '' and the smart prune
+      # runs as usual.
+      nuke_package: ${{ inputs.nuke_package || '' }}
     secrets: inherit

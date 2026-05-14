@@ -1,4 +1,4 @@
-name: "Opprett tag og release"
+name: "Create tag and release"
 
 on:
   workflow_dispatch:
