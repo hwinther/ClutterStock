@@ -25,12 +25,11 @@ jobs:
     permissions:
       contents: write
       actions: write
-    uses: hwinther/reusable-workflows/.github/workflows/tag-and-release.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/tag-and-release.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     with:
       tag_name: ${{ inputs.tag_name }}
       release_notes: ${{ inputs.release_notes }}
       create_release: ${{ inputs.create_release }}
-    secrets: inherit
 
   # GitHub does not run tag-push workflows when the tag was created with GITHUB_TOKEN; dispatch the same jobs explicitly.
   trigger-container-builds:

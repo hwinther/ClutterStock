@@ -35,7 +35,7 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -55,7 +55,7 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -75,7 +75,7 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-docker.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-docker.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
@@ -90,7 +90,7 @@ jobs:
       contents: read
       packages: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     with:
       compose_file: docker-compose.e2e.yml
       playwright_working_directory: frontend
@@ -113,7 +113,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: api
@@ -133,7 +133,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: migrator
@@ -153,7 +153,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@v1
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
