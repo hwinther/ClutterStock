@@ -30,7 +30,6 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       release_notes: ${{ inputs.release_notes }}
       create_release: ${{ inputs.create_release }}
-    secrets: inherit
 
   # GitHub does not run tag-push workflows when the tag was created with GITHUB_TOKEN; dispatch the same jobs explicitly.
   trigger-container-builds:

@@ -20,7 +20,6 @@ jobs:
       packages: read
     uses: hwinther/reusable-workflows/.github/workflows/pr-build.yml@25185e2df48cbdd90df1a8ec70b01e9911aaadbc # v1.56.0
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    secrets: inherit
     with:
       node_enabled: true
       node_version: "24.x"
