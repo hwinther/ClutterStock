@@ -79,7 +79,7 @@
     "otpauth": "9.5.1",
     "playwright-lighthouse": "4.0.0",
     "tailwindcss": "4.3.0",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "typescript-eslint": "^8.57.0",
     "vite": "8.0.10",
     "vitest": "4.1.5"
