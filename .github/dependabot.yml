@@ -16,6 +16,10 @@ updates:
     day: "sunday"
   assignees:
   - "hwinther"
+  groups:
+    reusable-workflows:
+      patterns:
+      - "hwinther/reusable-workflows/*"
 
 - package-ecosystem: "docker"
   directories:
