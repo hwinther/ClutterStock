@@ -182,7 +182,7 @@ jobs:
       target_repo: hwinther/proxmox
       preview_base_path: clusters/production/apps/previews/clutterstock
       pr_number: ${{ github.event.pull_request.number }}
-      host: clutterstock-pr-${{ github.event.pull_request.number }}.test.wsh.no
+      host: clutterstock-${{ github.event.pull_request.number }}.preview.wsh.no
       db_name: clutterstock_pr${{ github.event.pull_request.number }}
       image_api_tag: ${{ needs.api.outputs.version }}
       image_api_digest: ${{ needs.push-api.outputs.pushed_digest }}
