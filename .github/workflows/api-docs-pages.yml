@@ -328,7 +328,7 @@ jobs:
       available: ${{ steps.pull-allure.outputs.available }}
     steps:
       - name: Log in to GHCR
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -375,7 +375,7 @@ jobs:
       coverage_available: ${{ steps.pull-coverage.outputs.available }}
     steps:
       - name: Log in to GHCR
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -443,7 +443,7 @@ jobs:
       available: ${{ steps.pull-zap.outputs.available }}
     steps:
       - name: Log in to GHCR
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -535,7 +535,7 @@ jobs:
           path: zap-report
 
       - name: Log in to GHCR
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
