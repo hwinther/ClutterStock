@@ -163,3 +163,57 @@ jobs:
       version: ${{ needs.frontend.outputs.version }}
       sbom_artifact_name: ${{ needs.frontend.outputs.sbom_artifact }}
       grype_artifact_name: ${{ needs.frontend.outputs.grype_artifact }}
+
+  # Deploys an ephemeral preview env to the homelab cluster via GitOps. The reusable workflow
+  # mints a GitHub App installation token, clones hwinther/proxmox, renders the per-PR overlay
+  # under clusters/production/apps/previews/clutterstock/, and pushes one commit. Flux reconciles
+  # within ~1 min.
+  #
+  # Same `deploy-feature` label gate as the push-* jobs so a PR opts into push + deploy together.
+  # `needs:` on the push-* jobs ensures we deploy the exact digests that just landed in GHCR.
+  deploy-preview:
+    needs: [api, migrator, frontend, push-api, push-migrator, push-frontend]
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-upsert.yml@81d8764d1f0c6a18d1e22452f137376c0ec6d023 # v1.59.0
+    with:
+      target_repo: hwinther/proxmox
+      preview_base_path: clusters/production/apps/previews/clutterstock
+      pr_number: ${{ github.event.pull_request.number }}
+      host: clutterstock-pr-${{ github.event.pull_request.number }}.test.wsh.no
+      db_name: clutterstock_pr${{ github.event.pull_request.number }}
+      image_api_tag: ${{ needs.api.outputs.version }}
+      image_api_digest: ${{ needs.push-api.outputs.pushed_digest }}
+      image_frontend_tag: ${{ needs.frontend.outputs.version }}
+      image_frontend_digest: ${{ needs.push-frontend.outputs.pushed_digest }}
+      image_migrator_tag: ${{ needs.migrator.outputs.version }}
+      image_migrator_digest: ${{ needs.push-migrator.outputs.pushed_digest }}
+    secrets:
+      app_id: ${{ secrets.PROXMOX_GITOPS_APP_ID }}
+      app_private_key: ${{ secrets.PROXMOX_GITOPS_APP_PRIVATE_KEY }}
+
+  # Single sticky PR comment with the preview URL once the GitOps commit has landed. Flux still
+  # needs ~1 min to reconcile after this comment appears.
+  comment-preview-url:
+    needs: [deploy-preview]
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post or update preview-URL sticky comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: clutterstock-preview-env
+          message: |
+            ### Preview environment
+
+            Deployed via Flux (reconciles within ~1 min).
+
+            - Preview URL: ${{ needs.deploy-preview.outputs.preview_url }}
+            - Database: `clutterstock_pr${{ github.event.pull_request.number }}` on `cluttertestdb.postgres-test`
+            - Image digests are pinned to the build that just passed e2e + grype.
+
+            Closing the PR auto-removes the env via `pr-preview-cleanup.yml`.
