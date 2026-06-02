@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   stryker:
-    uses: hwinther/reusable-workflows/.github/workflows/stryker.yml@81d8764d1f0c6a18d1e22452f137376c0ec6d023 # v1.59.0
+    uses: hwinther/reusable-workflows/.github/workflows/stryker.yml@f72dbfff5f226a3fc3035daa2eb29dde3464582e # v1.62.0
     permissions:
       contents: read
       actions: write
