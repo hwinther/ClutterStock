@@ -1,15 +1,13 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
-  <!--
-    Coverage exclusions consumed by coverlet.MTP via the MTP CLI args MSBuild hook.
-    Filter syntax is [AssemblyName]TypeName, '*' is a wildcard. ExcludeFromCodeCoverage,
-    GeneratedCodeAttribute, and CompilerGeneratedAttribute are honored by default.
-      - Entities.SeedData / EntityRecordGenerator: scaffolding, not product code under test
-      - Docker.DotNet* / Testcontainers*: external test infrastructure pulled in transitively
-    coverlet.MTP does NOT read the classic <Exclude> MSBuild property (that's coverlet.msbuild).
-  -->
+  <!-- Mark every project under tests/ as a test project. The csprojs don't set this explicitly, and unlike Microsoft.NET.Test.Sdk, the MTP packages don't inject it — without this the IsTestProject condition below never matches. -->
   <PropertyGroup>
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet-exclude [Entities.SeedData]* --coverlet-exclude [EntityRecordGenerator]* --coverlet-exclude [Docker.DotNet*]* --coverlet-exclude [Testcontainers*]*</TestingPlatformCommandLineArguments>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
+
+  <!-- coverlet.MTP picks up testconfig.json next to the test assembly (authoritative; see the package's Coverlet.MTP.Integration.md). The shared file lives in backend/tests/ and is linked into each test project's output. -->
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)testconfig.json" Link="testconfig.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
