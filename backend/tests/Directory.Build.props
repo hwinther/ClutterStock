@@ -2,14 +2,18 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <!--
-    Coverage exclusions consumed by coverlet.MTP via the MTP CLI args MSBuild hook.
+    Coverage filters consumed by coverlet.MTP via the MTP CLI args MSBuild hook.
     Filter syntax is [AssemblyName]TypeName, '*' is a wildcard. ExcludeFromCodeCoverage,
     GeneratedCodeAttribute, and CompilerGeneratedAttribute are honored by default.
-      - Entities.SeedData / EntityRecordGenerator: scaffolding, not product code under test
-      - Docker.DotNet* / Testcontainers*: external test infrastructure pulled in transitively
+
+    Whitelist product assemblies so transitive test deps (Docker.DotNet*, Testcontainers*,
+    Moq, etc.) and codegen scaffolding (Entities.SeedData, EntityRecordGenerator,
+    EndpointGenerator) drop out automatically — a blacklist would have to enumerate every
+    new transitive dep that gets pulled in.
+
     coverlet.MTP does NOT read the classic <Exclude> MSBuild property (that's coverlet.msbuild).
   -->
-  <PropertyGroup>
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet-exclude [Entities.SeedData]* --coverlet-exclude [EntityRecordGenerator]* --coverlet-exclude [Docker.DotNet*]* --coverlet-exclude [Testcontainers*]*</TestingPlatformCommandLineArguments>
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --coverlet-include [Api]* --coverlet-include [Contracts]* --coverlet-include [Domain]* --coverlet-include [Entities]* --coverlet-include [Infrastructure]* --coverlet-include [Migrator]*</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 </Project>
