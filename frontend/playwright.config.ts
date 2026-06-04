@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { authFile } from "./e2e/auth-paths";
 
 dotenv.config({
   path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".env.test"),
@@ -66,7 +67,7 @@ export default defineConfig({
       testIgnore: [/signout\.spec\.ts/, /perf\..*\.spec\.ts/],
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/user.json",
+        storageState: authFile,
       },
       dependencies: ["setup"],
     },
@@ -75,7 +76,7 @@ export default defineConfig({
       testMatch: /signout\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/user.json",
+        storageState: authFile,
       },
       dependencies: ["chromium"],
     },
@@ -89,7 +90,7 @@ export default defineConfig({
       // unique ports per worker.
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/user.json",
+        storageState: authFile,
         launchOptions: {
           args: ["--remote-debugging-port=9222"],
         },
