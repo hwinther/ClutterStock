@@ -34,7 +34,8 @@ builder.Services.AddAuthorization(options =>
         .Build());
 
 builder.Services.AddInfrastructure(
-    builder.Configuration.GetConnectionString("ClutterStock") ?? throw new InvalidOperationException("Missing connection string for ClutterStock in the configuration"));
+    builder.Configuration.GetConnectionString("ClutterStock") ?? throw new InvalidOperationException("Missing connection string for ClutterStock in the configuration"),
+    builder.Configuration["Redis:ConnectionString"]);
 
 builder.Services.AddHealthChecks()
        .AddDbContextCheck<ApplicationContext>(tags: ["ready"]);

@@ -13,6 +13,7 @@ export default [
   route("debug/config", "routes/debug.config.tsx"),
   route("debug/connectivity", "routes/debug.connectivity.tsx"),
   route("debug/sse-ping", "routes/debug.sse-ping.tsx"),
+  route("sse/items", "routes/sse.items.tsx"),
   route("locations", "routes/locations.tsx", [
     index("routes/locations.index.tsx"),
     route("new", "routes/locations.new.tsx"),

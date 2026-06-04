@@ -61,13 +61,12 @@ export function loader(_args: Route.LoaderArgs) {
     headers: {
       "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
       // Hint to nginx/ingress not to buffer the stream.
       "X-Accel-Buffering": "no",
     },
   });
 }
 
-export default function DebugSsePing() {
-  return null;
-}
+// NOTE: no default export — this is a React Router *resource route*. Exporting a
+// component would make RR render HTML (text/html) for the request instead of
+// returning the streaming text/event-stream Response, which breaks EventSource.
