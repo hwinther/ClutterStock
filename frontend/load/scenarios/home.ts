@@ -22,7 +22,10 @@ export async function homeFlow(
   await applyAuth(page);
 
   const t0 = Date.now();
-  await page.goto("/", { waitUntil: "networkidle" });
+  // Not "networkidle": the live-updates EventSource (/sse/items) keeps a
+  // connection open indefinitely, so the network never goes idle. The
+  // account-button wait below is the hydration gate.
+  await page.goto("/", { waitUntil: "load" });
   events.emit("histogram", "clutterstock.home.goto_ms", Date.now() - t0);
 
   // Auth-confirmed gate: if this fails the cached session was rejected and the

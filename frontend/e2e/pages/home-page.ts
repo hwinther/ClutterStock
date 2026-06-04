@@ -58,10 +58,17 @@ export class HomePage {
     });
     await this.page.goto(path);
     // SSR sends fully-rendered HTML, so visible elements appear instantly — but
-    // their click handlers don't fire until React Router hydrates. Wait for the
-    // network to settle as a hydration proxy; without this, the first click
-    // after goto is a no-op.
-    await this.page.waitForLoadState("networkidle");
+    // their click handlers don't fire until React Router hydrates. We can't wait
+    // for "networkidle" as a hydration proxy: the live-updates EventSource
+    // (/sse/items) holds a connection open indefinitely, so the network never
+    // goes idle. Instead wait for the header's account / sign-in control, which
+    // is rendered only after a client-only `mounted` flag flips true — a
+    // reliable signal that hydration has run and handlers are attached.
+    await this.page.waitForLoadState("domcontentloaded");
+    await this.accountButton
+      .or(this.page.getByRole("button", { name: "Sign in" }))
+      .first()
+      .waitFor({ state: "visible" });
   }
 
   // Click "+ New item" and walk through whichever panel chain shows up: when
