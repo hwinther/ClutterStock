@@ -40,16 +40,49 @@ function protocolLabel(token: string): { name: string; verdict: Verdict } {
 }
 
 /**
- * Read the negotiated protocol for a URL from the Resource Timing buffer.
- * Only reliable same-origin: cross-origin entries hide `nextHopProtocol`
- * unless the server sends `Timing-Allow-Origin`.
+ * Resolve the negotiated protocol for a just-issued request by waiting for its
+ * PerformanceResourceTiming entry — it lands a tick *after* fetch() resolves, so
+ * a synchronous read races and usually misses it. Matches on the unique token in
+ * the URL (looser than exact-equality, survives URL normalization) and falls
+ * back to whatever the buffer holds at timeout.
+ *
+ * Only reliable same-origin: cross-origin entries hide `nextHopProtocol` unless
+ * the server sends `Timing-Allow-Origin`.
  */
-function negotiatedProtocolFor(url: string): string | undefined {
-  const entries = performance.getEntriesByType(
-    "resource",
-  ) as PerformanceResourceTiming[];
-  const match = entries.filter((e) => e.name === url).at(-1);
-  return match?.nextHopProtocol;
+function awaitNegotiatedProtocol(token: string, timeoutMs = 2000): Promise<string | undefined> {
+  const fromBuffer = () =>
+    (performance.getEntriesByType("resource") as PerformanceResourceTiming[])
+      .filter((e) => e.name.includes(token))
+      .at(-1)?.nextHopProtocol;
+
+  const existing = fromBuffer();
+  if (existing) return Promise.resolve(existing);
+  if (typeof PerformanceObserver === "undefined") return Promise.resolve(undefined);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value: string | undefined) => {
+      if (settled) return;
+      settled = true;
+      observer.disconnect();
+      clearTimeout(timer);
+      resolve(value);
+    };
+    const observer = new PerformanceObserver(() => {
+      const proto = fromBuffer();
+      if (proto) finish(proto);
+    });
+    observer.observe({ type: "resource", buffered: true });
+    const timer = setTimeout(() => finish(fromBuffer()), timeoutMs);
+  });
+}
+
+/** Protocol the document itself was served over — always present after load. */
+function documentProtocol(): string {
+  const nav = performance.getEntriesByType("navigation")[0] as
+    | PerformanceNavigationTiming
+    | undefined;
+  return nav?.nextHopProtocol ?? "";
 }
 
 function capabilityChecks(): Check[] {
@@ -166,29 +199,45 @@ export default function DebugConnectivityRoute(_props: Route.ComponentProps) {
 
   // Probe the SSR edge's negotiated protocol via a real same-origin fetch.
   const runProtocolProbe = useCallback(async () => {
-    setApiProto({
-      label: "Edge negotiated protocol (live fetch)",
-      verdict: "pending",
-      detail: `Fetching ${HEALTH_PROBE_URL}…`,
-    });
-    const url = `${HEALTH_PROBE_URL}?_=${Date.now()}`;
+    const label = "Edge negotiated protocol (live fetch)";
+    setApiProto({ label, verdict: "pending", detail: `Fetching ${HEALTH_PROBE_URL}…` });
+
+    const token = `_=${Date.now()}`;
     try {
-      await fetch(url, { cache: "no-store" });
+      await fetch(`${HEALTH_PROBE_URL}?${token}`, { cache: "no-store" });
     } catch {
+      setApiProto({ label, verdict: "fail", detail: `Could not reach ${HEALTH_PROBE_URL}.` });
+      return;
+    }
+
+    const fetched = await awaitNegotiatedProtocol(token);
+    if (fetched) {
+      const proto = protocolLabel(fetched);
       setApiProto({
-        label: "Edge negotiated protocol (live fetch)",
-        verdict: "fail",
-        detail: `Could not reach ${HEALTH_PROBE_URL}.`,
+        label,
+        verdict: proto.verdict,
+        detail: `Same-origin request to ${HEALTH_PROBE_URL} was served over ${proto.name}.`,
       });
       return;
     }
-    // Resource Timing entry uses the absolute URL.
-    const absolute = new URL(url, window.location.origin).toString();
-    const proto = protocolLabel(negotiatedProtocolFor(absolute) ?? "");
+
+    // Resource Timing didn't expose the fetch's protocol — fall back to the
+    // document's negotiated protocol, which traverses the same edge/hop.
+    const navProto = documentProtocol();
+    if (navProto) {
+      const proto = protocolLabel(navProto);
+      setApiProto({
+        label,
+        verdict: proto.verdict,
+        detail: `Resource Timing didn't expose the fetch protocol; using the document's negotiated protocol instead (${proto.name}, same edge).`,
+      });
+      return;
+    }
+
     setApiProto({
-      label: "Edge negotiated protocol (live fetch)",
-      verdict: proto.verdict,
-      detail: `Same-origin request to ${HEALTH_PROBE_URL} was served over ${proto.name}.`,
+      label,
+      verdict: "warn",
+      detail: "Resource Timing unavailable — protocol could not be determined.",
     });
   }, []);
 
