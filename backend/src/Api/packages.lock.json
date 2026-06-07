@@ -48,9 +48,9 @@
       },
       "Microsoft.OpenApi": {
         "type": "Direct",
-        "requested": "[2.4.1, )",
-        "resolved": "2.4.1",
-        "contentHash": "u7QhXCISMQuab3flasb1hoaiERmUqyWsW7tmQODyILoQ7mJV5IRGM+2KKZYo0QUfC13evEOcHAb6TPWgqEQtrw=="
+        "requested": "[3.6.0, )",
+        "resolved": "3.6.0",
+        "contentHash": "7iCo00kReXXXxESJMdFBV2LLUYiAa2n/3uIpgTWw1TxUfswUp/0O/QMn0Itp+58Be7H4cuPtPLAGvfwTYQ6BhA=="
       },
       "Npgsql.OpenTelemetry": {
         "type": "Direct",
