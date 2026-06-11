@@ -10,7 +10,7 @@ public interface IAddItemCommandHandler : ICommandHandler
     record Command(int RoomId, string Name, string? Description, string? Category, string? Notes);
 }
 
-public class AddItemCommandHandler(IAppDbContext context) : IAddItemCommandHandler
+public class AddItemCommandHandler(IAppDbContext context, IItemChangeNotifier notifier) : IAddItemCommandHandler
 {
     public async Task<Item> HandleAsync(IAddItemCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
@@ -27,6 +27,7 @@ public class AddItemCommandHandler(IAppDbContext context) : IAddItemCommandHandl
 
         context.Items.Add(item);
         await context.SaveChangesAsync(cancellationToken);
+        await notifier.PublishAsync(new ItemChange("item.created", item.Id, item.RoomId), cancellationToken);
         return item;
     }
 }

@@ -14,7 +14,7 @@ public interface IUpdateItemCommandHandler : ICommandHandler
     record Command(int Id, int RoomId, string Name, string? Description, string? Category, string? Notes);
 }
 
-public class UpdateItemCommandHandler(IAppDbContext context) : IUpdateItemCommandHandler
+public class UpdateItemCommandHandler(IAppDbContext context, IItemChangeNotifier notifier) : IUpdateItemCommandHandler
 {
     public async Task<Results<Ok<ItemResponse>, NotFound>> HandleAsync(IUpdateItemCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
@@ -30,6 +30,7 @@ public class UpdateItemCommandHandler(IAppDbContext context) : IUpdateItemComman
         item.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
+        await notifier.PublishAsync(new ItemChange("item.updated", item.Id, item.RoomId), cancellationToken);
         return TypedResults.Ok(item.ToResponse());
     }
 }

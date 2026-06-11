@@ -10,7 +10,7 @@ public interface IDeleteItemCommandHandler : ICommandHandler
     record Command(int Id);
 }
 
-public class DeleteItemCommandHandler(IAppDbContext context) : IDeleteItemCommandHandler
+public class DeleteItemCommandHandler(IAppDbContext context, IItemChangeNotifier notifier) : IDeleteItemCommandHandler
 {
     public async Task<bool> HandleAsync(IDeleteItemCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
@@ -18,8 +18,10 @@ public class DeleteItemCommandHandler(IAppDbContext context) : IDeleteItemComman
         if (item is null)
             return false;
 
+        var roomId = item.RoomId;
         context.Items.Remove(item);
         await context.SaveChangesAsync(cancellationToken);
+        await notifier.PublishAsync(new ItemChange("item.deleted", command.Id, roomId), cancellationToken);
         return true;
     }
 }

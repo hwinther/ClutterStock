@@ -30,4 +30,8 @@ COPY ./package.json /app/
 COPY --from=production-dependencies-env /app/node_modules /app/node_modules
 COPY --from=build-env /app/build /app/build
 ENV NODE_ENV=production
+# BRANCH-SCOPED (fix/coverage): exposes the gated /debug/* pages so SSE can be
+# tested through the real preview proxy layers. REVERT before merging to main —
+# otherwise the debug pages become reachable in production.
+ENV ENABLE_DEBUG_CONFIG=true
 CMD ["./node_modules/@react-router/serve/bin.js", "./build/server/index.js"]

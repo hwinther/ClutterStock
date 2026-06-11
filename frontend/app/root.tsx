@@ -8,6 +8,7 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { LiveUpdates } from "~/components/live-updates";
 import { ProblemBoundary } from "~/components/problem-boundary";
 import { SiteFooter } from "~/components/site-footer";
 import { SiteHeader } from "~/components/site-header";
@@ -121,6 +122,7 @@ export function Layout({
       </head>
       <body className="min-h-screen flex flex-col">
         <ToastProvider>
+          <LiveUpdates enabled={Boolean(data?.user)} />
           <FlashToasts flashes={initialFlashes} />
           <SiteHeader />
           <div className="flex-1 flex flex-col">{children}</div>
