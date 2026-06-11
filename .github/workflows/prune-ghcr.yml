@@ -56,7 +56,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: hwinther/reusable-workflows/.github/workflows/prune-ghcr.yml@f72dbfff5f226a3fc3035daa2eb29dde3464582e # v1.62.0
+    uses: hwinther/reusable-workflows/.github/workflows/prune-ghcr.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
     with:
       dry_run: ${{ github.event_name == 'schedule' && false || inputs.dry_run }}
       # Schedule events don't expose `inputs`, so mirror the workflow_dispatch
