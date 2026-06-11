@@ -45,7 +45,7 @@
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "react-router": "7.17.0",
-    "redis": "5.12.1"
+    "redis": "6.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.3",
