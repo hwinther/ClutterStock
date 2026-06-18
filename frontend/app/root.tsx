@@ -8,6 +8,7 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { DemoBanner } from "~/components/demo-banner";
 import { LiveUpdates } from "~/components/live-updates";
 import { ProblemBoundary } from "~/components/problem-boundary";
 import { SiteFooter } from "~/components/site-footer";
@@ -124,6 +125,7 @@ export function Layout({
         <ToastProvider>
           <LiveUpdates enabled={Boolean(data?.user)} />
           <FlashToasts flashes={initialFlashes} />
+          <DemoBanner />
           <SiteHeader />
           <div className="flex-1 flex flex-col">{children}</div>
           <SiteFooter />
