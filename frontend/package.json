@@ -62,7 +62,7 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitest/coverage-v8": "4.1.5",
-    "allure": "3.9.0",
+    "allure": "3.12.0",
     "allure-playwright": "3.10.0",
     "dotenv": "17.4.2",
     "eslint": "^9.39.3",
