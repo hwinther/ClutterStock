@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "badge-maker": "5.0.2",
-    "fast-xml-parser": "5.8.0"
+    "fast-xml-parser": "5.9.3"
   }
 }
