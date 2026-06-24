@@ -34,7 +34,7 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
+    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@a0e722a6a3002b2095899c71861906262160b125 # v2.0.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -42,4 +42,4 @@ jobs:
       project_file: src/Api/Api.csproj
       container_registry: ghcr.io
       container_image_name_postfix: api
-      grype_fail_build: ${{ github.event_name != 'workflow_dispatch' || fromJSON(github.event.inputs.grype_fail_build || 'true') }}
+      grype_fail_build: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.grype_fail_build == 'false' && 'never' || 'auto' }}
