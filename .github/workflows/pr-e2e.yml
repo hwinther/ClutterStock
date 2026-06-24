@@ -35,7 +35,7 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
+    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@a0e722a6a3002b2095899c71861906262160b125 # v2.0.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -43,7 +43,7 @@ jobs:
       project_file: src/Api/Api.csproj
       container_registry: ghcr.io
       container_image_name_postfix: api
-      grype_fail_build: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-grype') }}
+      grype_fail_build: auto
 
   migrator:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
@@ -55,7 +55,7 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
+    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@a0e722a6a3002b2095899c71861906262160b125 # v2.0.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -63,7 +63,7 @@ jobs:
       project_file: src/Migrator/Migrator.csproj
       container_registry: ghcr.io
       container_image_name_postfix: migrator
-      grype_fail_build: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-grype') }}
+      grype_fail_build: auto
 
   frontend:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
@@ -75,13 +75,13 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-docker.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
+    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-docker.yml@a0e722a6a3002b2095899c71861906262160b125 # v2.0.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
       build_context: frontend
       dockerfile: frontend/Dockerfile
-      grype_fail_build: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-grype') }}
+      grype_fail_build: auto
 
   e2e:
     needs: [api, migrator, frontend]
@@ -91,7 +91,7 @@ jobs:
       packages: read
       actions: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@a0e722a6a3002b2095899c71861906262160b125 # v2.0.0
     with:
       compose_file: docker-compose.e2e.yml
       playwright_working_directory: frontend
@@ -114,7 +114,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@a0e722a6a3002b2095899c71861906262160b125 # v2.0.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: api
@@ -134,7 +134,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@a0e722a6a3002b2095899c71861906262160b125 # v2.0.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: migrator
@@ -154,7 +154,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@a0e722a6a3002b2095899c71861906262160b125 # v2.0.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
@@ -178,7 +178,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-upsert.yml@f65228ea4276b3ff26409146ccd1191c728c811a # v1.65.0
+    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-upsert.yml@a0e722a6a3002b2095899c71861906262160b125 # v2.0.0
     with:
       target_repo: hwinther/proxmox
       preview_base_path: clusters/production/apps/previews/clutterstock
@@ -186,11 +186,11 @@ jobs:
       host: clutterstock-${{ github.event.pull_request.number }}.preview.wsh.no
       db_name: clutterstock_pr${{ github.event.pull_request.number }}
       image_api_tag: ${{ needs.api.outputs.version }}
-      image_api_digest: ${{ needs.push-api.outputs.pushed_digest }}
+      image_api_digest: ${{ needs.push-api.outputs.image_digest }}
       image_frontend_tag: ${{ needs.frontend.outputs.version }}
-      image_frontend_digest: ${{ needs.push-frontend.outputs.pushed_digest }}
+      image_frontend_digest: ${{ needs.push-frontend.outputs.image_digest }}
       image_migrator_tag: ${{ needs.migrator.outputs.version }}
-      image_migrator_digest: ${{ needs.push-migrator.outputs.pushed_digest }}
+      image_migrator_digest: ${{ needs.push-migrator.outputs.image_digest }}
     secrets:
       app_id: ${{ secrets.PROXMOX_GITOPS_APP_ID }}
       app_private_key: ${{ secrets.PROXMOX_GITOPS_APP_PRIVATE_KEY }}
