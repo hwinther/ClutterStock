@@ -14,6 +14,8 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
+  cooldown:
+    default-days: 7
   assignees:
   - "hwinther"
   groups:
@@ -30,6 +32,8 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
+  cooldown:
+    default-days: 7
   assignees:
   - "hwinther"
 
@@ -40,6 +44,8 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
+  cooldown:
+    default-days: 7
   assignees:
   - "hwinther"
   groups:
@@ -75,6 +81,8 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
+  cooldown:
+    default-days: 7
   assignees:
   - "hwinther"
   ignore:
@@ -136,6 +144,8 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
+  cooldown:
+    default-days: 7
   assignees:
   - "hwinther"
   ignore:
