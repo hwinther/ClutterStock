@@ -27,9 +27,9 @@
       },
       "Microsoft.Testing.Platform": {
         "type": "Direct",
-        "requested": "[2.2.3, )",
-        "resolved": "2.2.3",
-        "contentHash": "LhM1/Qoi8Ams5QcD4r3f09CSOono9iQr3NEJQItFtyzWB55nWTgEOsVqXqMWWWIwk3nkPqc+XfnlJmp8xUI5fg=="
+        "requested": "[2.3.2, )",
+        "resolved": "2.3.2",
+        "contentHash": "FuJgIEfNU+rFHJYGhuqA8uup+3cryJ1N67Tijqo01Jd5xAr28ptz0aXkFfSqK3MhAUmGsrPpgQ92+3+0oXv8AA=="
       },
       "Testcontainers.PostgreSql": {
         "type": "Direct",
@@ -147,6 +147,28 @@
         "type": "Transitive",
         "resolved": "6.0.0",
         "contentHash": "UcSjPsst+DfAdJGVDsu346FX0ci0ah+lw3WRtn18NUwEqRt70HaOQ7lI72vy3+1LxtqI3T5GWwV39rQSrCzAeg=="
+      },
+      "Microsoft.CodeAnalysis.Analyzers": {
+        "type": "Transitive",
+        "resolved": "5.6.0",
+        "contentHash": "30ffAcvc+M4xXFN06dg2bKyH5eXgJQmyuB5H5cpC47559rQV5x7vZRyyC/YakNLQtBG3IdW/ZAyLCMeDBGDxXg=="
+      },
+      "Microsoft.CodeAnalysis.Common": {
+        "type": "Transitive",
+        "resolved": "5.6.0",
+        "contentHash": "eWYNB5e92PSdkQ0xcmy2aLtrvBXNydnVi0Hj/VjaAely6XBqA3By+ClGAJaj4d16pzQmrXPLLK9RDVuS1Ec9xQ==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "5.3.0"
+        }
+      },
+      "Microsoft.CodeAnalysis.CSharp": {
+        "type": "Transitive",
+        "resolved": "5.6.0",
+        "contentHash": "r1DrKQ/L0xTw03wJrLr36AMQNslyaeEKBFyFmQcOKa8HX3YvmhY//JEUafb6IR/m0gmaUVCfBTWitKJRNb7YAA==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "5.3.0",
+          "Microsoft.CodeAnalysis.Common": "[5.6.0]"
+        }
       },
       "Microsoft.EntityFrameworkCore": {
         "type": "Transitive",
@@ -862,6 +884,8 @@
           "Infrastructure": "[1.0.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.9, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.9, )",
+          "Microsoft.CodeAnalysis.Analyzers": "[5.6.0, )",
+          "Microsoft.CodeAnalysis.CSharp": "[5.6.0, )",
           "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "[10.0.9, )",
           "Npgsql.OpenTelemetry": "[10.0.3, )",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "[1.16.0, )",
