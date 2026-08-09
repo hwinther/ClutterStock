@@ -244,7 +244,7 @@ jobs:
           --configuration Release
 
       - name: Generate coverage HTML + JSON summary (ReportGenerator)
-        uses: danielpalme/ReportGenerator-GitHub-Action@049f7ec958c672fd31d5cc1cb01622dc8d2e23ab # v5.5.10
+        uses: danielpalme/ReportGenerator-GitHub-Action@d3ebf1f760f7d8ab92cc44d9bcfee7ad73722a31 # v5.5.11
         with:
           reports: "${{ github.workspace }}/${{ env.DOTNET_WORKING_DIRECTORY }}/**/TestResults/**/coverage.cobertura.*.xml"
           targetdir: "${{ github.workspace }}/coverage-html-dotnet"
@@ -296,7 +296,7 @@ jobs:
         run: npm run coverage:ci -- --coverage.include=app/**/*.ts --coverage.include=app/**/*.tsx
 
       - name: Generate coverage HTML (ReportGenerator)
-        uses: danielpalme/ReportGenerator-GitHub-Action@049f7ec958c672fd31d5cc1cb01622dc8d2e23ab # v5.5.10
+        uses: danielpalme/ReportGenerator-GitHub-Action@d3ebf1f760f7d8ab92cc44d9bcfee7ad73722a31 # v5.5.11
         with:
           reports: "${{ github.workspace }}/${{ env.NODE_WORKING_DIRECTORY }}/coverage/cobertura-coverage.xml"
           targetdir: "${{ github.workspace }}/coverage-html-node"
