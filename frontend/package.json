@@ -53,7 +53,7 @@
     "artillery": "2.0.32",
     "@react-router/dev": "7.17.0",
     "@stryker-mutator/core": "9.6.1",
-    "@stryker-mutator/typescript-checker": "9.6.1",
+    "@stryker-mutator/typescript-checker": "10.0.0",
     "@stryker-mutator/vitest-runner": "9.6.1",
     "@tailwindcss/vite": "4.3.0",
     "@testing-library/jest-dom": "6.9.1",
