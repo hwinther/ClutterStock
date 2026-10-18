@@ -117,7 +117,7 @@ jobs:
           npx --yes @redocly/cli build-docs ${{ env.API_OPENAPI_JSON }} --output=api-docs/index.html
 
       - name: Upload API docs artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-api-docs
           path: ${{ env.DOTNET_WORKING_DIRECTORY }}/api-docs
@@ -179,7 +179,7 @@ jobs:
           connection_string: ${{ env.SCHEMASPY_PG_CONN }}
 
       - name: Upload database docs artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-database-docs
           path: api-docs/database
@@ -203,7 +203,7 @@ jobs:
         run: python3 .github/scripts/render_project_docs.py
 
       - name: Upload project docs artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-project-docs
           path: api-docs/project-docs
@@ -254,13 +254,13 @@ jobs:
           reporttypes: Html;JsonSummary
 
       - name: Upload dotnet coverage report artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-coverage-dotnet
           path: coverage-html-dotnet
 
       - name: Upload dotnet coverage summary artifact (for badges)
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-coverage-dotnet-summary
           path: coverage-html-dotnet/Summary.json
@@ -303,13 +303,13 @@ jobs:
           reporttypes: Html
 
       - name: Upload node coverage report artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-coverage-node
           path: coverage-html-node
 
       - name: Upload node Cobertura artifact (for badges)
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-coverage-node-cobertura
           path: ${{ env.NODE_WORKING_DIRECTORY }}/coverage/cobertura-coverage.xml
@@ -355,7 +355,7 @@ jobs:
 
       - name: Upload e2e Allure report artifact
         if: steps.pull-allure.outputs.available == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-e2e-allure
           path: allure-report
@@ -417,14 +417,14 @@ jobs:
 
       - name: Upload monocart report artifact
         if: steps.pull-report.outputs.available == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-e2e-monocart-report
           path: monocart-report
 
       - name: Upload monocart coverage artifact
         if: steps.pull-coverage.outputs.available == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-e2e-monocart-coverage
           path: monocart-coverage
@@ -468,7 +468,7 @@ jobs:
 
       - name: Upload zap-report artifact
         if: steps.pull-zap.outputs.available == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-zap-report
           path: zap-report
@@ -613,7 +613,7 @@ jobs:
           ls -la badges/
 
       - name: Upload badges artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: github-pages-badges
           path: badges
