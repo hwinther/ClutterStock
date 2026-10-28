@@ -72,7 +72,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "jsdom": "30.0.1",
     "lighthouse": "13.4.0",
-    "monocart-reporter": "2.11.2",
+    "monocart-reporter": "2.15.1",
     "msw": "2.15.0",
     "openapi-msw": "2.0.0",
     "openapi-typescript": "7.13.0",
