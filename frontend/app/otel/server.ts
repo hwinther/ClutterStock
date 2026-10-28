@@ -30,7 +30,7 @@ export function startNodeOpenTelemetry(): void {
       }),
     ],
     logRecordProcessors: [
-      new BatchLogRecordProcessor(new OTLPLogExporter()),
+      new BatchLogRecordProcessor({ exporter: new OTLPLogExporter() }),
     ],
     instrumentations: [
       getNodeAutoInstrumentations({
