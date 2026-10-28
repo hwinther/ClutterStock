@@ -38,13 +38,15 @@ setup("authenticate", async ({ page }) => {
     digits: 6,
     period: 30,
   });
-  const digits = totp.generate().split("");
+  const code = totp.generate();
 
-  // Authelia renders 6 individual digit inputs; fills auto-advance and submit
-  const otpInputs = page.getByRole("textbox", { name: /digit/i });
-  for (let i = 0; i < digits.length; i++) {
-    await otpInputs.nth(i).fill(digits[i]!);
-  }
+  // Authelia (4.39.24+) renders one input per digit inside #otp-input (Base UI OTPField). The
+  // inputs have no stable accessible names, so locate them by the wrapper and type the code like a
+  // user: the field auto-advances between inputs and submits once all digits are in.
+  const otpInputs = page.locator("#otp-input input");
+  await expect(otpInputs).toHaveCount(code.length);
+  await otpInputs.first().click();
+  await page.keyboard.type(code);
 
   // After OTP, Authelia redirects to either consent or directly back to the app
   await page.waitForURL(
