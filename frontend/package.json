@@ -62,7 +62,7 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitest/coverage-v8": "4.1.5",
-    "allure": "3.12.0",
+    "allure": "3.22.1",
     "allure-playwright": "3.10.0",
     "dotenv": "17.4.2",
     "eslint": "^9.39.3",
@@ -72,7 +72,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "jsdom": "30.0.1",
     "lighthouse": "13.4.0",
-    "monocart-reporter": "2.11.2",
+    "monocart-reporter": "2.15.1",
     "msw": "2.15.0",
     "openapi-msw": "2.0.0",
     "openapi-typescript": "7.13.0",
@@ -81,8 +81,8 @@
     "tailwindcss": "4.3.0",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.57.0",
-    "vite": "8.0.16",
-    "vitest": "4.1.5"
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
   },
   "overrides": {
     "playwright-core": "1.60.0",
