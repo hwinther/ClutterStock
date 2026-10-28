@@ -16,3 +16,38 @@ ignore:
       Grype additionally mis-matches this CVE against the OpenTelemetry .NET
       SDK (UnknownPackage type) which has no code path to the affected
       function. Doubly inapplicable.
+  # The rest are the same kind of false positive. NVD tags these CVEs with the generic
+  # cpe:2.3:a:opentelemetry:opentelemetry CPE plus a target_sw naming another language; Grype's CPE
+  # matcher ignores target_sw and hits the .NET OpenTelemetry NuGet package. The "fixed in"
+  # versions belong to that other project (several are below the .NET 1.20.x we run).
+  - vulnerability: CVE-2026-59892
+    package:
+      name: OpenTelemetry
+    reason: >-
+      OpenTelemetry JavaScript (@opentelemetry/propagator-jaeger, target_sw node.js), fixed in
+      2.9.0; not the .NET SDK. The frontend's JS OpenTelemetry packages are matched by their own
+      npm entries, not this CPE.
+  - vulnerability: CVE-2026-54285
+    package:
+      name: OpenTelemetry
+    reason: OpenTelemetry JavaScript (target_sw node.js), "fixed in" 2.8.0; not the .NET SDK.
+  - vulnerability: CVE-2026-41178
+    package:
+      name: OpenTelemetry
+    reason: OpenTelemetry-Go (target_sw go), "fixed in" 1.42.0; not the .NET SDK.
+  - vulnerability: CVE-2026-39882
+    package:
+      name: OpenTelemetry
+    reason: OpenTelemetry-Go (target_sw go), "fixed in" 1.43.0; not the .NET SDK.
+  - vulnerability: CVE-2026-81869
+    package:
+      name: OpenTelemetry
+    reason: OpenTelemetry-Go (target_sw go), "fixed in" 1.33.0; not the .NET SDK.
+  - vulnerability: CVE-2026-81870
+    package:
+      name: OpenTelemetry
+    reason: OpenTelemetry-Go (target_sw go), "fixed in" 1.45.0; not the .NET SDK.
+  - vulnerability: CVE-2026-44967
+    package:
+      name: OpenTelemetry
+    reason: OpenTelemetry C++ (target_sw c++), "fixed in" 1.27.0; not the .NET SDK.
