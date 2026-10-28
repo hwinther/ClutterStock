@@ -34,4 +34,5 @@ ENV NODE_ENV=production
 # tested through the real preview proxy layers. REVERT before merging to main —
 # otherwise the debug pages become reachable in production.
 ENV ENABLE_DEBUG_CONFIG=true
-CMD ["./node_modules/@react-router/serve/bin.js", "./build/server/index.js"]
+# @react-router/serve 8 is an ES module package; its CLI launcher is bin.cjs (was bin.js in 7).
+CMD ["./node_modules/@react-router/serve/bin.cjs", "./build/server/index.js"]
