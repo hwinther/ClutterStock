@@ -48,26 +48,43 @@ updates:
     default-days: 7
   assignees:
   - "hwinther"
+  # update-dotnet-lockfiles triggers dependabot-update-dotnet-lockfiles.yml, which regenerates the
+  # lock files of every project in the solution. Dependabot only rewrites the bumped project's own
+  # packages.lock.json, so projects referencing it fail the locked-mode restore (NU1004) without it.
+  # Setting labels replaces Dependabot's defaults, so those are listed too.
+  labels:
+  - "dependencies"
+  - ".NET"
+  - "update-dotnet-lockfiles"
   groups:
     microsoft:
       patterns:
       - "Microsoft.*"
       exclude-patterns:
       - "Microsoft.OpenApi"
+      - "Microsoft.CodeAnalysis.*"
+      - "Microsoft.Testing.*"
+    # The source generators' Roslyn version must not exceed the compiler in the SDK that builds
+    # them (SDK 10.0.4xx ships Roslyn 5.9; backend/global.json sets the minimum). Kept apart so a
+    # Roslyn bump that needs a newer SDK doesn't block the rest of the Microsoft group.
+    roslyn:
+      patterns:
+      - "Microsoft.CodeAnalysis.*"
     swashbuckle:
       patterns:
       - "Swashbuckle.*"
-    xunit:
+    # xunit.v3 and coverlet.MTP both run on Microsoft.Testing.Platform and require a minimum
+    # version of it, so they move together (a lone xunit bump fails with NU1605).
+    test-platform:
       patterns:
       - "xunit"
       - "xunit.*"
+      - "coverlet.*"
+      - "Microsoft.Testing.*"
     nunit:
       patterns:
       - "nunit"
       - "nunit.*"
-    coverlet:
-      patterns:
-      - "coverlet.*"
     opentelemetry:
       patterns:
       - "OpenTelemetry.*"
