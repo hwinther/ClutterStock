@@ -1,0 +1,20 @@
+# Workload manifests for ClutterStock, shipped as a signed OCI artifact
+# (ghcr.io/hwinther/clutterstock/manifests:<version>) by the `manifests` job in container.yml.
+# The cluster side (namespace, network policies, database, Secrets, values for the ${VARS}) lives
+# in hwinther/proxmox. See README.md for the contract.
+#
+# Never commit rendered output. CI pins the images to tag@digest at release time; the tags here are
+# only placeholders so `kubectl kustomize deploy` renders locally.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- api.yaml
+- frontend.yaml
+- ingress.yaml
+images:
+- name: ghcr.io/hwinther/clutterstock/api
+  newTag: 0.0.0-dev
+- name: ghcr.io/hwinther/clutterstock/migrator
+  newTag: 0.0.0-dev
+- name: ghcr.io/hwinther/clutterstock/frontend
+  newTag: 0.0.0-dev

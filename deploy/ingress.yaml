@@ -1,0 +1,44 @@
+# One host: /api and /swagger go to the API, everything else to the SSR frontend. The
+# gethomepage.dev annotations are inert on clusters without homepage.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: clutterstock
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    # Homepage otherwise derives the link from the first path (/api); pin the frontend root.
+    gethomepage.dev/href: "https://${APP_HOST}/"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: "${HOMEPAGE_NAME:=Clutterstock}"
+    gethomepage.dev/siteMonitor: "https://${APP_HOST}"
+    gethomepage.dev/icon: mdi-image-multiple-outline
+    gethomepage.dev/description: Clutterstock web app (API under /api/; Swagger under /swagger)
+    # Both Deployments back this host.
+    gethomepage.dev/pod-selector: app in (clutterstock-frontend, clutterstock-api)
+spec:
+  rules:
+  - host: "${APP_HOST}"
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: clutterstock-api
+            port:
+              number: 8080
+      - path: /swagger
+        pathType: Prefix
+        backend:
+          service:
+            name: clutterstock-api
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: clutterstock-frontend
+            port:
+              number: 8080

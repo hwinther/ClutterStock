@@ -1,9 +1,7 @@
 # ClutterStock
 [![Poutine - GitHub Actions SAST](https://github.com/hwinther/ClutterStock/actions/workflows/poutine.yml/badge.svg?branch=main)](https://github.com/hwinther/ClutterStock/actions/workflows/poutine.yml)
 [![API Docs (GitHub Pages)](https://github.com/hwinther/ClutterStock/actions/workflows/api-docs-pages.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/api-docs-pages.yml)
-[![Publish api container to GHCR](https://github.com/hwinther/ClutterStock/actions/workflows/api-container.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/api-container.yml)
-[![Publish frontend container to GHCR](https://github.com/hwinther/ClutterStock/actions/workflows/frontend-container.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/frontend-container.yml)
-[![Publish migrator container to GHCR](https://github.com/hwinther/ClutterStock/actions/workflows/migrator-container.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/migrator-container.yml)
+[![Publish containers and manifests to GHCR](https://github.com/hwinther/ClutterStock/actions/workflows/container.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/container.yml)
 [![Create tag and release](https://github.com/hwinther/ClutterStock/actions/workflows/tag-and-release.yml/badge.svg)](https://github.com/hwinther/ClutterStock/actions/workflows/tag-and-release.yml)
 [![Nightly E2E (Allure)](https://github.com/hwinther/ClutterStock/actions/workflows/nightly-e2e.yml/badge.svg?branch=main)](https://github.com/hwinther/ClutterStock/actions/workflows/nightly-e2e.yml)
 [![OWASP ZAP Scan](https://github.com/hwinther/ClutterStock/actions/workflows/zap-scan.yml/badge.svg?branch=main)](https://github.com/hwinther/ClutterStock/actions/workflows/zap-scan.yml)

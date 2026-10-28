@@ -84,6 +84,16 @@ The backend OpenAPI spec is the source of truth for the frontend's API types. Af
 cd frontend && npm run openapi-typescript
 ```
 
+## Deployment
+
+`deploy/` holds the Kubernetes workload manifests (API with the migrator as its initContainer,
+frontend, Ingress). Release builds (`container.yml`, dispatched by `tag-and-release.yml`) build the
+three images, render `deploy/` with them pinned to `tag@digest`, and push a signed OCI artifact
+`ghcr.io/hwinther/clutterstock/manifests:<version>` that Flux in hwinther/proxmox deploys. Env values
+come from the cluster via `${VAR}` substitution; `deploy/README.md` is the contract, and CI fails on
+an undocumented variable. Migrations must stay backward compatible with the previous release
+(expand/contract): the migrator runs before the new API starts, while old pods may still serve.
+
 ## Testing
 
 **Backend tests** run on **xUnit v3** with **Microsoft.Testing.Platform (MTP)** — coverage is collected via **`coverlet.MTP`** (no `coverlet.collector` / VSTest needed). Filter syntax is the MTP form, e.g. `dotnet test --project ... -- --filter-method "*ItemsApiTests*"` (note the `--` separator and `--filter-method` flag, not `--filter "FullyQualifiedName~..."`).
