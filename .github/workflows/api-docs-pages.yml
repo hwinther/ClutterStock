@@ -515,21 +515,21 @@ jobs:
 
       - name: Download dotnet coverage summary
         if: needs.dotnet-test-and-coverage.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-coverage-dotnet-summary
           path: dotnet-summary
 
       - name: Download node Cobertura
         if: needs.node-test-and-coverage.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-coverage-node-cobertura
           path: node-cobertura
 
       - name: Download zap-report (for security-zap.svg)
         if: needs.pull-zap-report.result == 'success' && needs.pull-zap-report.outputs.available == 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-zap-report
           path: zap-report
@@ -682,70 +682,70 @@ jobs:
 
       - name: Download API docs
         if: needs.build-api-docs.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-api-docs
           path: site/api
 
       - name: Download dotnet database docs
         if: needs.dotnet-database-docs.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-database-docs
           path: site/database
 
       - name: Download project docs
         if: needs.build-project-docs.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-project-docs
           path: site/project-docs
 
       - name: Download dotnet coverage report
         if: needs.dotnet-test-and-coverage.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-coverage-dotnet
           path: site/coverage-dotnet
 
       - name: Download node coverage report
         if: needs.node-test-and-coverage.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-coverage-node
           path: site/coverage-node
 
       - name: Download e2e Allure report
         if: needs.pull-e2e-allure.result == 'success' && needs.pull-e2e-allure.outputs.available == 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-e2e-allure
           path: site/e2e-allure
 
       - name: Download e2e monocart report
         if: needs.pull-e2e-monocart.result == 'success' && needs.pull-e2e-monocart.outputs.report_available == 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-e2e-monocart-report
           path: site/e2e-report
 
       - name: Download e2e monocart coverage
         if: needs.pull-e2e-monocart.result == 'success' && needs.pull-e2e-monocart.outputs.coverage_available == 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-e2e-monocart-coverage
           path: site/coverage-e2e
 
       - name: Download badges
         if: needs.generate-badges.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-badges
           path: site/badges
 
       - name: Download ZAP report
         if: needs.pull-zap-report.result == 'success' && needs.pull-zap-report.outputs.available == 'true'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: github-pages-zap-report
           path: site/security
