@@ -74,7 +74,7 @@ env:
   DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
   API_PROJECT: "src/Api/Api.csproj"
   API_OPENAPI_JSON: "src/Api/openapi.json"
-  NODE_VERSION: "24.x"
+  NODE_VERSION: "26.x"
   NODE_WORKING_DIRECTORY: "frontend"
   # Pin Docker images used by build-project-docs (render_project_docs.py).
   PANDOC_DOCKER_IMAGE: "pandoc/minimal:3.7"

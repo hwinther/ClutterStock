@@ -22,7 +22,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     with:
       node_enabled: true
-      node_version: "24.x"
+      node_version: "26.x"
       node_working_directory: "frontend"
       node_changes_regex: "frontend/.*|backend/src/Api/openapi.json"
       node_extra_command: "npm run openapi-typescript"

@@ -24,7 +24,7 @@ jobs:
       dotnet_version: 10.0.x
       solution_path: backend
       solution_name: ClutterStock.slnx
-      node_version: 24.x
+      node_version: 26.x
       node_working_directory: frontend
       mutation_level: Standard
       extra_arguments: "--diag"

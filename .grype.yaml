@@ -12,7 +12,7 @@ ignore:
     reason: >-
       Upstream CVE is a gopsutil PATH-hijack via the BSD `kenv` lookup. Our
       images run on Linux only (mcr.microsoft.com/dotnet/aspnet:10.0-noble-
-      chiseled, gcr.io/distroless/nodejs24-debian13) and ship no gopsutil.
+      chiseled, gcr.io/distroless/nodejs26-debian13) and ship no gopsutil.
       Grype additionally mis-matches this CVE against the OpenTelemetry .NET
       SDK (UnknownPackage type) which has no code path to the affected
       function. Doubly inapplicable.
