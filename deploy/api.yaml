@@ -1,0 +1,166 @@
+# ClutterStock API (ASP.NET Core 10 Minimal API + EF Core on PostgreSQL), with the migrator as an
+# initContainer: the API can't start until the schema is current. MigrateAsync is a no-op when there
+# is nothing to apply, and EF Core takes a migrations lock, so restarts and extra replicas are safe.
+# Each release's migrations must work with the previous release's code (expand/contract), because a
+# rolling update migrates while old pods still serve.
+#
+# ${VARS} are filled in by Flux postBuild substitution in the cluster repo; `${X:=d}` has a default.
+# Only substitute string values: kustomize drops the quotes, so a substituted number or boolean
+# comes out as a YAML int/bool and env values must be strings.
+# Every variable without a default must be listed in README.md (CI fails otherwise).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clutterstock-api
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: clutterstock-api
+  template:
+    metadata:
+      labels:
+        app: clutterstock-api
+        app.kubernetes.io/name: clutterstock-api
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654          # the dotnet aspnet image's `app` user ($APP_UID)
+        fsGroup: 1654
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+      - name: migrator
+        image: ghcr.io/hwinther/clutterstock/migrator
+        # Releases pin tag@digest, so a cached image is always the right one.
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: PG_HOST
+          value: "${PG_HOST}"
+        - name: PG_DB
+          value: "${PG_DB:=clutterstock}"
+        - name: PG_USER
+          value: "${PG_USER}"
+        - name: PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "${PG_SECRET}"
+              key: password
+        - name: ConnectionStrings__ClutterStock
+          value: "Host=$(PG_HOST);Port=5432;Database=$(PG_DB);Username=$(PG_USER);Password=$(PG_PASSWORD)"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      containers:
+      - name: clutterstock-api
+        image: ghcr.io/hwinther/clutterstock/api
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ASPNETCORE_URLS
+          value: http://+:8080
+        - name: PG_HOST
+          value: "${PG_HOST}"
+        - name: PG_DB
+          value: "${PG_DB:=clutterstock}"
+        - name: PG_USER
+          value: "${PG_USER}"
+        - name: PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "${PG_SECRET}"
+              key: password
+        # URI form; the API's PostgresUrlParser converts it to ADO.NET key=value.
+        # The key must match Program.cs `GetConnectionString("ClutterStock")`.
+        - name: ConnectionStrings__ClutterStock
+          value: "postgresql://$(PG_USER):$(PG_PASSWORD)@$(PG_HOST):5432/$(PG_DB)"
+        - name: OTEL_SERVICE_NAME
+          value: "clutterstock-api"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "${OTEL_EXPORTER_OTLP_ENDPOINT}"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: grpc
+        - name: OTEL_TRACES_EXPORTER
+          value: otlp
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.namespace=$(POD_NAMESPACE),deployment.environment=${APP_ENVIRONMENT:=production}"
+        - name: Authentication__Authority
+          value: "${OIDC_AUTHORITY}"
+        - name: Authentication__Audience
+          value: "${OIDC_AUDIENCE:=clutterstock-api}"
+        - name: RabbitMq__HostName
+          value: "${RABBITMQ_HOST}"
+        - name: RabbitMq__VirtualHost
+          value: "${RABBITMQ_VHOST}"
+        - name: RabbitMq__UserName
+          valueFrom:
+            secretKeyRef:
+              name: "${RABBITMQ_SECRET}"
+              key: username
+        - name: RabbitMq__Password
+          valueFrom:
+            secretKeyRef:
+              name: "${RABBITMQ_SECRET}"
+              key: password
+        # Same authenticated Valkey/Redis connection string the frontend uses, under the .NET key.
+        - name: Redis__ConnectionString
+          valueFrom:
+            secretKeyRef:
+              name: clutterstock-valkey
+              key: redis-url
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 6
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clutterstock-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: clutterstock-api

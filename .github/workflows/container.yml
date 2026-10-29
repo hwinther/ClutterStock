@@ -1,0 +1,112 @@
+name: "Publish containers and manifests to GHCR"
+
+# Builds, scans and pushes the api, migrator and frontend images, then renders deploy/ with all
+# three pinned to tag@digest and ships it as one signed OCI artifact
+# (ghcr.io/hwinther/clutterstock/manifests:<version>) for Flux in hwinther/proxmox to pull.
+# tag-and-release dispatches this workflow at the tag ref, so the artifact's cosign identity is
+# container.yml@refs/tags/v*, which the cluster's OCIRepository verify pins.
+
+on:
+  workflow_dispatch:
+    inputs:
+      grype_fail_build:
+        description: "Fail the build if Grype finds vulnerabilities"
+        type: boolean
+        default: true
+  # A tag pushed by hand (not by tag-and-release's GITHUB_TOKEN, which doesn't fire workflows).
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      actions: write
+      security-events: write
+      pull-requests: write
+    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@ea2e22d0328718f318217ef055d244c3fade0323 # v2.1.0
+    with:
+      dotnet_version: 10.0.x
+      solution_path: backend
+      solution_file: ClutterStock.slnx
+      project_file: src/Api/Api.csproj
+      container_registry: ghcr.io
+      container_image_name_postfix: api
+      grype_fail_build: ${{ github.event.inputs.grype_fail_build == 'false' && 'never' || 'auto' }}
+
+  migrator:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      actions: write
+      security-events: write
+      pull-requests: write
+    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@ea2e22d0328718f318217ef055d244c3fade0323 # v2.1.0
+    with:
+      dotnet_version: 10.0.x
+      solution_path: backend
+      solution_file: ClutterStock.slnx
+      project_file: src/Migrator/Migrator.csproj
+      container_registry: ghcr.io
+      container_image_name_postfix: migrator
+      grype_fail_build: ${{ github.event.inputs.grype_fail_build == 'false' && 'never' || 'auto' }}
+
+  frontend:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      actions: write
+      security-events: write
+      pull-requests: write
+    uses: hwinther/reusable-workflows/.github/workflows/docker-container.yml@ea2e22d0328718f318217ef055d244c3fade0323 # v2.1.0
+    with:
+      container_registry: ghcr.io
+      container_image_name_postfix: frontend
+      build_context: frontend
+      dockerfile: frontend/Dockerfile
+      grype_fail_build: ${{ github.event.inputs.grype_fail_build == 'false' && 'never' || 'auto' }}
+
+  # Release builds only. All three images come from the same commit, so they share GitVersion's
+  # version; dotnet-container.yml doesn't output it, so it's taken from the frontend build.
+  manifests:
+    needs: [api, migrator, frontend]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Signed in this job (a composite action runs in the caller's job), so the identity is this
+      # workflow's. A single file at the root: the Flux Kustomization applies everything under its path.
+      - name: Render, validate, push and sign
+        uses: hwinther/reusable-workflows/.github/actions/manifests@ea2e22d0328718f318217ef055d244c3fade0323 # v2.1.0
+        with:
+          mode: push
+          artifact: ghcr.io/hwinther/clutterstock/manifests
+          tag: ${{ needs.frontend.outputs.version }}
+          images: |
+            ghcr.io/hwinther/clutterstock/api:${{ needs.frontend.outputs.version }}@${{ needs.api.outputs.image_digest }}
+            ghcr.io/hwinther/clutterstock/migrator:${{ needs.frontend.outputs.version }}@${{ needs.migrator.outputs.image_digest }}
+            ghcr.io/hwinther/clutterstock/frontend:${{ needs.frontend.outputs.version }}@${{ needs.frontend.outputs.image_digest }}
+          renders: clutterstock.yaml=deploy
