@@ -28,6 +28,25 @@ down-migrations, and during a rolling update the previous release's pods still s
 schema. So each release's migrations must be backward compatible with the previous release
 (expand/contract): add columns and tables first, drop or rename them a release later.
 
+Name a migration that drops or renames something (the contract step) with `Contract` after the
+timestamp, e.g. `dotnet ef migrations add ContractDropLegacyColumns`. A rollback across one would
+run old code on a schema it can't use, so `promote.yml` refuses it unless forced.
+
+## Promotion
+
+Test runs the newest release by itself. Production pins an exact release in hwinther/proxmox and
+accepts only artifacts co-signed by `promote.yml`. To promote or roll back, run **Promote to
+production** (Actions, from `main`) with the version:
+
+1. It checks the artifact carries the release signature. A promotion must be the newest release
+   (what test runs); a rollback must be older than production and not cross a contract migration
+   (`force` overrides that).
+2. It waits for approval on the `production` environment.
+3. It co-signs the artifact digest and opens (or updates) the tag-bump PR in hwinther/proxmox.
+   Merging that PR deploys it.
+
+Running it with the version production already pins only re-signs it.
+
 ## Contract
 
 ### Variables
