@@ -9,6 +9,8 @@ on:
     paths:
       - "frontend/**"
       - "backend/**"
+      # The preview runs this PR's deploy/ (the manifests job).
+      - "deploy/**"
       - "docker-compose.e2e.yml"
       - ".github/workflows/pr-e2e.yml"
   push:
@@ -165,15 +167,49 @@ jobs:
       sbom_artifact_name: ${{ needs.frontend.outputs.sbom_artifact }}
       grype_artifact_name: ${{ needs.frontend.outputs.grype_artifact }}
 
+  # Renders the PR's deploy/ like a release, with the three images that just landed in GHCR pinned
+  # to tag@digest, and pushes it as the signed artifact ghcr.io/hwinther/clutterstock/manifests:pr-<N>.
+  # Signed in this job, so the identity is pr-e2e.yml@refs/pull/<N>/merge: the cluster's preview
+  # OCIRepository accepts only that, and test/production only release tags.
+  manifests:
+    needs: [api, migrator, frontend, push-api, push-migrator, push-frontend]
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      tag: pr-${{ github.event.pull_request.number }}
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Render, validate, push and sign
+        id: push
+        uses: hwinther/reusable-workflows/.github/actions/manifests@e80ab952c6982cd557a8722fa124bf971aad6134 # v2.3.0
+        with:
+          mode: push
+          artifact: ghcr.io/hwinther/clutterstock/manifests
+          tag: pr-${{ github.event.pull_request.number }}
+          images: |
+            ghcr.io/hwinther/clutterstock/api:${{ needs.api.outputs.version }}@${{ needs.push-api.outputs.image_digest }}
+            ghcr.io/hwinther/clutterstock/migrator:${{ needs.migrator.outputs.version }}@${{ needs.push-migrator.outputs.image_digest }}
+            ghcr.io/hwinther/clutterstock/frontend:${{ needs.frontend.outputs.version }}@${{ needs.push-frontend.outputs.image_digest }}
+          renders: clutterstock.yaml=deploy
+
   # Deploys an ephemeral preview env to the homelab cluster via GitOps. The reusable workflow
   # mints a GitHub App installation token, clones hwinther/proxmox, renders the per-PR overlay
   # under clusters/production/apps/previews/clutterstock/, and pushes one commit. Flux reconciles
   # within ~1 min.
   #
   # Same `deploy-feature` label gate as the push-* jobs so a PR opts into push + deploy together.
-  # `needs:` on the push-* jobs ensures we deploy the exact digests that just landed in GHCR.
+  # The overlay pins the manifest artifact by digest, and the artifact pins the images.
   deploy-preview:
-    needs: [api, migrator, frontend, push-api, push-migrator, push-frontend]
+    needs: [manifests]
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
     permissions:
       contents: read
@@ -185,12 +221,10 @@ jobs:
       pr_number: ${{ github.event.pull_request.number }}
       host: clutterstock-${{ github.event.pull_request.number }}.preview.wsh.no
       db_name: clutterstock_pr${{ github.event.pull_request.number }}
-      image_api_tag: ${{ needs.api.outputs.version }}
-      image_api_digest: ${{ needs.push-api.outputs.image_digest }}
-      image_frontend_tag: ${{ needs.frontend.outputs.version }}
-      image_frontend_digest: ${{ needs.push-frontend.outputs.image_digest }}
-      image_migrator_tag: ${{ needs.migrator.outputs.version }}
-      image_migrator_digest: ${{ needs.push-migrator.outputs.image_digest }}
+      app_name: clutterstock
+      # The preview template pins the manifest artifact (which pins the images), not the images.
+      image_tag: ${{ needs.manifests.outputs.tag }}
+      image_digest: ${{ needs.manifests.outputs.digest }}
     secrets:
       app_id: ${{ secrets.PROXMOX_GITOPS_APP_ID }}
       app_private_key: ${{ secrets.PROXMOX_GITOPS_APP_PRIVATE_KEY }}
@@ -198,7 +232,7 @@ jobs:
   # Single sticky PR comment with the preview URL once the GitOps commit has landed. Flux still
   # needs ~1 min to reconcile after this comment appears.
   comment-preview-url:
-    needs: [deploy-preview]
+    needs: [deploy-preview, manifests]
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
     runs-on: ubuntu-latest
     permissions:
@@ -211,10 +245,11 @@ jobs:
           message: |
             ### Preview environment
 
-            Deployed via Flux (reconciles within ~1 min).
+            Deployed via Flux (reconciles within ~1 min) from the signed manifest artifact
+            `manifests:${{ needs.manifests.outputs.tag }}` (this PR's `deploy/`), with the images
+            that just passed e2e + grype pinned by digest.
 
             - Preview URL: ${{ needs.deploy-preview.outputs.preview_url }}
             - Database: `clutterstock_pr${{ github.event.pull_request.number }}` on `cluttertestdb.postgres-test`
-            - Image digests are pinned to the build that just passed e2e + grype.
 
             Closing the PR auto-removes the env via `pr-preview-cleanup.yml`.
