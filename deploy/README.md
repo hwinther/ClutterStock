@@ -11,7 +11,10 @@ which:
 4. signs it with cosign (keyless).
 
 On pull requests, `manifest-diff.yml` posts the rendered diff against the base branch as a PR
-comment. Don't commit rendered output.
+comment. A PR labelled `deploy-feature` also gets a preview environment: the `manifests` job in
+`pr-e2e.yml` renders this directory the same way with the PR's images and pushes it as
+`manifests:pr-<N>`, signed by `pr-e2e.yml`, which only the cluster's preview tree accepts. Don't
+commit rendered output.
 
 The cluster repo (hwinther/proxmox) consumes the artifact through a Flux `OCIRepository` and
 `Kustomization` per environment. It provides everything that isn't in here:
