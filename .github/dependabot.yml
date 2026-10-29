@@ -14,8 +14,6 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
-  cooldown:
-    default-days: 7
   assignees:
   - "hwinther"
   groups:
@@ -32,8 +30,6 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
-  cooldown:
-    default-days: 7
   assignees:
   - "hwinther"
 
@@ -44,8 +40,6 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
-  cooldown:
-    default-days: 7
   assignees:
   - "hwinther"
   # update-dotnet-lockfiles triggers dependabot-update-dotnet-lockfiles.yml, which regenerates the
@@ -98,8 +92,6 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
-  cooldown:
-    default-days: 7
   assignees:
   - "hwinther"
   ignore:
@@ -161,8 +153,6 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
-  cooldown:
-    default-days: 7
   assignees:
   - "hwinther"
   ignore:
