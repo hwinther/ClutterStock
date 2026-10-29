@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 import { testApiServer } from "./msw/server";
 
 beforeAll(() => {
-  testApiServer.listen({ onUnhandledRequest: "warn" });
+  testApiServer.listen({ onUnhandledFrame: "warn" });
 });
 
 afterEach(() => {
