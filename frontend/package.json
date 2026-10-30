@@ -51,7 +51,7 @@
     "@wshno/eslint-config": "0.2.0",
     "@wshno/prettier-config": "0.1.1",
     "@wshno/tsconfig": "0.1.1",
-    "allure": "3.21.0",
+    "allure": "3.22.1",
     "allure-playwright": "3.14.0",
     "artillery": "2.0.32",
     "dotenv": "18.0.8",
