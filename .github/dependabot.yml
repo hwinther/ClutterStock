@@ -105,6 +105,10 @@ updates:
     wshno:
       patterns:
       - "@wshno/*"
+    # core, vitest-runner and typescript-checker peer-depend on the exact same version.
+    stryker:
+      patterns:
+      - "@stryker-mutator/*"
     types:
       patterns:
       - "@types/*"
