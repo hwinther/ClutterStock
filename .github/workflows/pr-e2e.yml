@@ -146,7 +146,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@feat/registry-image-handoff
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@24ffa09874b3e20da1e2250753f34b1a8554686c # feat/registry-image-handoff (temporary)
     with:
       container_registry: ghcr.io
       container_image_name_postfix: api
@@ -168,7 +168,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@feat/registry-image-handoff
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@24ffa09874b3e20da1e2250753f34b1a8554686c # feat/registry-image-handoff (temporary)
     with:
       container_registry: ghcr.io
       container_image_name_postfix: migrator
@@ -190,7 +190,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@feat/registry-image-handoff
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@24ffa09874b3e20da1e2250753f34b1a8554686c # feat/registry-image-handoff (temporary)
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
