@@ -1,11 +1,11 @@
 import {
   createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
+  use,
 } from "react";
 
 export type ToastKind = "success" | "error" | "info";
@@ -28,6 +28,12 @@ interface ToastContextValue {
 }
 
 const DEFAULT_TTL_MS = 5000;
+
+const ACCENTS: Record<ToastKind, string> = {
+  success: "var(--c-accent)",
+  error: "var(--c-danger)",
+  info: "var(--c-fg-2)",
+};
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
@@ -59,7 +65,7 @@ export function ToastProvider({
     [toasts, push, dismiss],
   );
 
-  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
+  return <ToastContext value={value}>{children}</ToastContext>;
 }
 
 /**
@@ -74,10 +80,10 @@ export function FlashToasts({
   readonly flashes: readonly ToastInput[];
 }) {
   const { push } = useToasts();
-  const lastSeen = useRef<readonly ToastInput[] | null>(null);
+  const lastSeenRef = useRef<readonly ToastInput[] | null>(null);
   useEffect(() => {
-    if (flashes === lastSeen.current) return;
-    lastSeen.current = flashes;
+    if (flashes === lastSeenRef.current) return;
+    lastSeenRef.current = flashes;
     for (const f of flashes) push(f);
   }, [flashes, push]);
   return null;
@@ -85,7 +91,7 @@ export function FlashToasts({
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useToasts(): ToastContextValue {
-  const ctx = useContext(ToastContext);
+  const ctx = use(ToastContext);
   if (!ctx) throw new Error("useToasts must be used inside <ToastProvider>");
   return ctx;
 }
@@ -98,14 +104,14 @@ export function useToasts(): ToastContextValue {
 // eslint-disable-next-line react-refresh/only-export-components
 export function useToastFromActionData(actionData: unknown): void {
   const { push } = useToasts();
-  const lastSeen = useRef<unknown>(null);
+  const lastSeenRef = useRef<unknown>(null);
   useEffect(() => {
     if (actionData == null) {
-      lastSeen.current = null;
+      lastSeenRef.current = null;
       return;
     }
-    if (actionData === lastSeen.current) return;
-    lastSeen.current = actionData;
+    if (actionData === lastSeenRef.current) return;
+    lastSeenRef.current = actionData;
     if (typeof actionData === "object" && "error" in actionData) {
       const error = (actionData as { error?: unknown }).error;
       if (typeof error === "string" && error.length > 0) {
@@ -118,17 +124,17 @@ export function useToastFromActionData(actionData: unknown): void {
 function ToastItem({ toast }: { readonly toast: Toast }) {
   const { dismiss } = useToasts();
   const ttl = toast.ttlMs ?? DEFAULT_TTL_MS;
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const start = useCallback(() => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => dismiss(toast.id), ttl);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => dismiss(toast.id), ttl);
   }, [dismiss, toast.id, ttl]);
 
   const stop = useCallback(() => {
-    if (timer.current) {
-      clearTimeout(timer.current);
-      timer.current = null;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   }, []);
 
@@ -137,12 +143,7 @@ function ToastItem({ toast }: { readonly toast: Toast }) {
     return stop;
   }, [start, stop]);
 
-  const accent =
-    toast.kind === "success"
-      ? "var(--c-accent)"
-      : toast.kind === "error"
-        ? "var(--c-danger)"
-        : "var(--c-fg-2)";
+  const accent = ACCENTS[toast.kind];
 
   return (
     <div

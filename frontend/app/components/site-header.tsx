@@ -4,6 +4,7 @@ import type { SessionUser } from "~/lib/session.server";
 import { UserModal } from "./user-modal";
 import { TuiUserPanel } from "./tui-user-panel";
 import { useTheme } from "~/lib/theme";
+import { useClock } from "~/lib/use-clock";
 
 type ThemeId = "system" | "tui" | "win98" | "cde";
 const THEMES: ThemeId[] = ["system", "tui", "win98", "cde"];
@@ -32,7 +33,7 @@ export function SiteHeader() {
   // useSyncExternalStore returns false on server, true on client — no effect needed
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [theme, setThemeState] = useState<ThemeId>(() => {
+  const [theme, setTheme] = useState<ThemeId>(() => {
     if (typeof window === "undefined") return "system";
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
@@ -41,6 +42,7 @@ export function SiteHeader() {
     return "system";
   });
   const navigate = useNavigate();
+  const time = useClock();
   const activeTheme = useTheme();
   const isTui = activeTheme === "tui";
 
@@ -52,7 +54,7 @@ export function SiteHeader() {
 
   function cycleTheme() {
     const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length] ?? "system";
-    setThemeState(next);
+    setTheme(next);
     applyTheme(next);
   }
 
@@ -117,7 +119,7 @@ export function SiteHeader() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, height: 32 }}>
           {mounted && (
             <span className="tui-brand" style={{ fontSize: 11, color: "var(--c-fg-2)", fontFamily: "inherit" }}>
-              {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              {time}
             </span>
           )}
           <button
