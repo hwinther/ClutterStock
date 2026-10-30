@@ -36,7 +36,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@feat/registry-image-handoff
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -50,7 +50,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@feat/registry-image-handoff
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -64,7 +64,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-image-docker.yml@feat/registry-image-handoff
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-docker.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
@@ -80,7 +80,7 @@ jobs:
       actions: read
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@feat/registry-image-handoff
+    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       image: ${{ needs.api.outputs.image }}
       container_image_name_postfix: api
@@ -94,7 +94,7 @@ jobs:
       actions: read
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@feat/registry-image-handoff
+    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       image: ${{ needs.migrator.outputs.image }}
       container_image_name_postfix: migrator
@@ -108,7 +108,7 @@ jobs:
       actions: read
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@feat/registry-image-handoff
+    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       image: ${{ needs.frontend.outputs.image }}
       container_image_name_postfix: frontend
@@ -122,7 +122,7 @@ jobs:
       packages: read
       actions: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@76fb81108350e1e975dfed96d38a42544efaf034 # test/e2e-cache-on-handoff (temporary)
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       compose_file: docker-compose.e2e.yml
       playwright_working_directory: frontend
@@ -147,7 +147,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@24ffa09874b3e20da1e2250753f34b1a8554686c # feat/registry-image-handoff (temporary)
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       container_registry: ghcr.io
       container_image_name_postfix: api
@@ -169,7 +169,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@24ffa09874b3e20da1e2250753f34b1a8554686c # feat/registry-image-handoff (temporary)
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       container_registry: ghcr.io
       container_image_name_postfix: migrator
@@ -191,7 +191,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@24ffa09874b3e20da1e2250753f34b1a8554686c # feat/registry-image-handoff (temporary)
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@13ed266821f5ae16fa7b1cc0a9fce50353fcda81 # test/e2e-cache-on-handoff (temporary)
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
