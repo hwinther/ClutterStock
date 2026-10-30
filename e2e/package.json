@@ -1,0 +1,39 @@
+{
+  "name": "clutterstock-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Black-box tests against the running stack: Playwright e2e (tests/) and Artillery load tests (load/)",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "typecheck": "tsc",
+    "lint": "eslint . --report-unused-disable-directives",
+    "load": "artillery run --output load-report.json load/clutterstock.yml",
+    "load:report": "artillery report load-report.json"
+  },
+  "prettier": "@wshno/prettier-config",
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@wshno/eslint-config": "0.2.0",
+    "@wshno/playwright-config": "0.1.0",
+    "@wshno/prettier-config": "0.1.1",
+    "@wshno/tsconfig": "0.1.1",
+    "allure": "3.22.1",
+    "allure-playwright": "3.14.0",
+    "artillery": "2.0.32",
+    "dotenv": "18.0.8",
+    "eslint": "10.13.0",
+    "lighthouse": "13.4.0",
+    "monocart-reporter": "2.15.1",
+    "otpauth": "9.5.1",
+    "playwright-lighthouse": "4.0.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3"
+  },
+  "//overrides": "Artillery's Playwright engine and playwright-lighthouse bring their own Playwright; keep one copy. Must equal the @playwright/test version @wshno/playwright-config pins.",
+  "overrides": {
+    "playwright": "1.64.1",
+    "playwright-core": "1.64.1"
+  }
+}

@@ -2,12 +2,6 @@
 FROM node:26-alpine AS development-dependencies-env
 COPY ./package.json package-lock.json /app/
 WORKDIR /app
-# Playwright's postinstall fetches ~600MB of browser binaries from Microsoft's CDN; a single stalled
-# TCP connection there hangs `npm ci` indefinitely (no timeout on the download). The dev-deps stage
-# only exists to feed `npm run build` (Vite/React Router) — Playwright e2e tests run in a separate
-# compose stack, not inside this container. Skipping the browser download removes the hang risk
-# without affecting the production build artifact.
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN npm ci
 
 FROM node:26-alpine AS production-dependencies-env

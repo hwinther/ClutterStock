@@ -1,0 +1,23 @@
+node_modules/
+.env.test
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.auth/
+
+# Allure (history travels via GHCR image, report is a CI artifact)
+allure-results/
+allure-report/
+allure-history.jsonl
+
+# Monocart (Playwright browser-side coverage)
+monocart-report/
+monocart-coverage/
+
+# Artillery load test outputs
+load-report.json
+load-report.html
+# Artillery's TS processor bundler stages CJS output here mid-run; usually
+# cleaned up but ignore proactively in case a crash leaves it behind.
+load/scenarios/dist/

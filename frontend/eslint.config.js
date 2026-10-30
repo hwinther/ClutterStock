@@ -7,5 +7,5 @@ export default [
   ...wshno,
   ...vitest(),
   ...testingLibrary(),
-  { ignores: ["app/api/types.ts", "e2e/**", "coverage/**", "test-results/**", "design-template/**"] },
+  { ignores: ["app/api/types.ts", "coverage/**", "test-results/**", "design-template/**"] },
 ];

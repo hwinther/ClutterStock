@@ -203,7 +203,7 @@ fi
 cat <<EOF
 
 Run E2E tests with:
-  cd frontend && npx playwright test
+  cd e2e && npx playwright test
 
 Tear down with:
   scripts/e2e-up.sh --down

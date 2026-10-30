@@ -1,0 +1,13 @@
+{
+  "extends": "@wshno/tsconfig/node.json",
+  "compilerOptions": {
+    // Playwright and Artillery transpile the specs themselves, so imports stay extensionless.
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    // page.evaluate() callbacks run in the browser.
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "noEmit": true
+  },
+  "include": ["tests", "load", "playwright.config.ts", "allurerc.mjs", "eslint.config.js"],
+  "exclude": ["node_modules", "playwright-report", "test-results", "load/scenarios/dist"]
+}

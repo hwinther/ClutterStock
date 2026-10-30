@@ -39,15 +39,15 @@ jobs:
         with:
           node-version: 26.x
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: e2e/package-lock.json
 
-      - name: Install frontend deps
+      - name: Install e2e deps
         run: npm ci
-        working-directory: frontend
+        working-directory: e2e
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-        working-directory: frontend
+        working-directory: e2e
 
       - name: Resolve :latest image refs
         run: |
@@ -67,9 +67,9 @@ jobs:
             # FROM-scratch image has no CMD; pass a dummy so `docker create`
             # passes spec validation. We only cp out then rm — never start.
             cid=$(docker create "$IMG" /history.jsonl)
-            docker cp "$cid:/history.jsonl" frontend/allure-history.jsonl
+            docker cp "$cid:/history.jsonl" e2e/allure-history.jsonl
             docker rm "$cid" >/dev/null
-            echo "Restored history.jsonl ($(wc -l < frontend/allure-history.jsonl) entries)."
+            echo "Restored history.jsonl ($(wc -l < e2e/allure-history.jsonl) entries)."
           else
             echo "No history image yet — first run."
           fi
@@ -81,7 +81,7 @@ jobs:
         run: docker compose -f docker-compose.e2e.yml up -d --wait --wait-timeout 180
 
       - name: Run Playwright
-        working-directory: frontend
+        working-directory: e2e
         env:
           CI: "true"
           E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
@@ -93,7 +93,7 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.e2e.yml logs --no-color > compose-logs.txt
 
-      # The lighthouse HTML lives at frontend/test-results/perf.home-*/lighthouse-home.html
+      # The lighthouse HTML lives at e2e/test-results/perf.home-*/lighthouse-home.html
       # (written by playwright-lighthouse). testInfo.attach() also copies it
       # under monocart-report/ but with a content-hash filename, which
       # changes every run and can't be linked from README. Drop a stable copy
@@ -102,14 +102,14 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          if [ ! -d frontend/monocart-report ]; then
+          if [ ! -d e2e/monocart-report ]; then
             echo "monocart-report not produced — skipping lighthouse staging."
             exit 0
           fi
-          LH=$(find frontend/test-results -name 'lighthouse-home.html' -type f 2>/dev/null | sort | tail -1)
+          LH=$(find e2e/test-results -name 'lighthouse-home.html' -type f 2>/dev/null | sort | tail -1)
           if [ -n "$LH" ]; then
-            cp "$LH" frontend/monocart-report/lighthouse-home.html
-            echo "Staged $LH -> frontend/monocart-report/lighthouse-home.html"
+            cp "$LH" e2e/monocart-report/lighthouse-home.html
+            echo "Staged $LH -> e2e/monocart-report/lighthouse-home.html"
           else
             echo "No lighthouse-home.html found in test-results — skipping."
           fi
@@ -121,14 +121,14 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          if [ ! -d frontend/monocart-report ]; then
+          if [ ! -d e2e/monocart-report ]; then
             echo "monocart-report not produced — skipping lighthouse JSON staging."
             exit 0
           fi
-          LH=$(find frontend/test-results -name 'lighthouse-home.json' -type f 2>/dev/null | sort | tail -1)
+          LH=$(find e2e/test-results -name 'lighthouse-home.json' -type f 2>/dev/null | sort | tail -1)
           if [ -n "$LH" ]; then
-            cp "$LH" frontend/monocart-report/lighthouse-home.json
-            echo "Staged $LH -> frontend/monocart-report/lighthouse-home.json"
+            cp "$LH" e2e/monocart-report/lighthouse-home.json
+            echo "Staged $LH -> e2e/monocart-report/lighthouse-home.json"
           else
             echo "No lighthouse-home.json found in test-results — skipping."
           fi
@@ -147,14 +147,14 @@ jobs:
           set -euo pipefail
           mkdir -p badges-e2e
           E2E_COV_ARG=()
-          if [ -f frontend/monocart-coverage/cobertura-coverage.xml ]; then
-            E2E_COV_ARG=(--e2e-cobertura frontend/monocart-coverage/cobertura-coverage.xml)
+          if [ -f e2e/monocart-coverage/cobertura-coverage.xml ]; then
+            E2E_COV_ARG=(--e2e-cobertura e2e/monocart-coverage/cobertura-coverage.xml)
           else
             echo "::warning::No monocart cobertura-coverage.xml — skipping e2e coverage badge."
           fi
           LH_ARG=()
-          if [ -f frontend/monocart-report/lighthouse-home.json ]; then
-            LH_ARG=(--lighthouse-json frontend/monocart-report/lighthouse-home.json)
+          if [ -f e2e/monocart-report/lighthouse-home.json ]; then
+            LH_ARG=(--lighthouse-json e2e/monocart-report/lighthouse-home.json)
           else
             echo "::warning::No lighthouse-home.json — skipping lighthouse badges."
           fi
@@ -182,7 +182,7 @@ jobs:
 
       - name: Generate Allure report
         if: always()
-        working-directory: frontend
+        working-directory: e2e
         run: npx allure generate ./allure-results --output ./allure-report
 
       - name: Upload Allure report artifact
@@ -190,7 +190,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: allure-report
-          path: frontend/allure-report/
+          path: e2e/allure-report/
           retention-days: 30
           if-no-files-found: warn
 
@@ -200,7 +200,7 @@ jobs:
         with:
           name: traces-and-logs
           path: |
-            frontend/test-results/
+            e2e/test-results/
             compose-logs.txt
           retention-days: 14
           if-no-files-found: warn
@@ -212,11 +212,11 @@ jobs:
         run: |
           set -euo pipefail
           REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
-          if [ ! -f frontend/allure-history.jsonl ]; then
+          if [ ! -f e2e/allure-history.jsonl ]; then
             echo "No history.jsonl produced — skipping."
             exit 0
           fi
-          cp frontend/allure-history.jsonl ./history.jsonl
+          cp e2e/allure-history.jsonl ./history.jsonl
           docker build -t "ghcr.io/${REPO}/allure-history:latest" \
             -f scripts/allure-history.Dockerfile .
           docker push "ghcr.io/${REPO}/allure-history:latest"
@@ -226,12 +226,12 @@ jobs:
         run: |
           set -euo pipefail
           REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
-          if [ ! -d frontend/allure-report ]; then
+          if [ ! -d e2e/allure-report ]; then
             echo "No allure-report directory produced — skipping."
             exit 0
           fi
           docker build -t "ghcr.io/${REPO}/allure-report:latest" \
-            -f scripts/allure-report.Dockerfile frontend/
+            -f scripts/allure-report.Dockerfile e2e/
           docker push "ghcr.io/${REPO}/allure-report:latest"
 
       # Same success-or-failure gate as Allure — a failed run still produces
@@ -241,12 +241,12 @@ jobs:
         run: |
           set -euo pipefail
           REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
-          if [ ! -d frontend/monocart-report ]; then
+          if [ ! -d e2e/monocart-report ]; then
             echo "No monocart-report directory produced — skipping."
             exit 0
           fi
           docker build -t "ghcr.io/${REPO}/monocart-report:latest" \
-            -f scripts/monocart-report.Dockerfile frontend/
+            -f scripts/monocart-report.Dockerfile e2e/
           docker push "ghcr.io/${REPO}/monocart-report:latest"
 
       - name: Push monocart-coverage image
@@ -254,12 +254,12 @@ jobs:
         run: |
           set -euo pipefail
           REPO=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
-          if [ ! -d frontend/monocart-coverage ]; then
+          if [ ! -d e2e/monocart-coverage ]; then
             echo "No monocart-coverage directory produced — skipping."
             exit 0
           fi
           docker build -t "ghcr.io/${REPO}/monocart-coverage:latest" \
-            -f scripts/monocart-coverage.Dockerfile frontend/
+            -f scripts/monocart-coverage.Dockerfile e2e/
           docker push "ghcr.io/${REPO}/monocart-coverage:latest"
 
       - name: Tear down stack

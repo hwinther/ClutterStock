@@ -9,6 +9,7 @@ on:
     paths:
       - "frontend/**"
       - "backend/**"
+      - "e2e/**"
       # The preview runs this PR's deploy/ (the manifests job).
       - "deploy/**"
       - "docker-compose.e2e.yml"
@@ -19,6 +20,7 @@ on:
     paths:
       - "frontend/**"
       - "backend/**"
+      - "e2e/**"
       - "docker-compose.e2e.yml"
       - ".github/workflows/pr-e2e.yml"
 
@@ -125,7 +127,7 @@ jobs:
     uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@c1e80ad637dcdd38bb6de0f447475c40a8625141 # v2.9.0
     with:
       compose_file: docker-compose.e2e.yml
-      playwright_working_directory: frontend
+      playwright_working_directory: e2e
       environment: build
       playwright_cache_enabled: true
       node_modules_cache_enabled: true
