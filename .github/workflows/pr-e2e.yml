@@ -27,17 +27,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Build only. On same-repo PRs each image goes to a staging tag (pr-<N>-<sha7>) and is handed
+  # on as repo@digest, so the scans, e2e and the push all use the same bytes; Dependabot PRs and
+  # pushes to main fall back to a workflow artifact. prune-ghcr.yml deletes staging tags once the
+  # PR is closed.
   api:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
-      packages: read
-      id-token: write
-      attestations: write
-      actions: write
-      security-events: write
-      pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@00fef736b925dfc7b70ab0476276ae1f59e1683b # v2.0.1
+      packages: write
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -45,19 +44,13 @@ jobs:
       project_file: src/Api/Api.csproj
       container_registry: ghcr.io
       container_image_name_postfix: api
-      grype_fail_build: auto
 
   migrator:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
-      packages: read
-      id-token: write
-      attestations: write
-      actions: write
-      security-events: write
-      pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-dotnet.yml@00fef736b925dfc7b70ab0476276ae1f59e1683b # v2.0.1
+      packages: write
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -65,24 +58,60 @@ jobs:
       project_file: src/Migrator/Migrator.csproj
       container_registry: ghcr.io
       container_image_name_postfix: migrator
-      grype_fail_build: auto
 
   frontend:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
-      packages: read
-      id-token: write
-      attestations: write
-      actions: write
-      security-events: write
-      pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-and-scan-docker.yml@00fef736b925dfc7b70ab0476276ae1f59e1683b # v2.0.1
+      packages: write
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-docker.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
       build_context: frontend
       dockerfile: frontend/Dockerfile
+
+  # The scans run next to e2e rather than before it.
+  api-scan:
+    needs: [api]
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      security-events: write
+      pull-requests: write
+    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
+    with:
+      image: ${{ needs.api.outputs.image }}
+      container_image_name_postfix: api
+      grype_fail_build: auto
+
+  migrator-scan:
+    needs: [migrator]
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      security-events: write
+      pull-requests: write
+    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
+    with:
+      image: ${{ needs.migrator.outputs.image }}
+      container_image_name_postfix: migrator
+      grype_fail_build: auto
+
+  frontend-scan:
+    needs: [frontend]
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      security-events: write
+      pull-requests: write
+    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
+    with:
+      image: ${{ needs.frontend.outputs.image }}
+      container_image_name_postfix: frontend
       grype_fail_build: auto
 
   e2e:
@@ -93,22 +122,24 @@ jobs:
       packages: read
       actions: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@00fef736b925dfc7b70ab0476276ae1f59e1683b # v2.0.1
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
     with:
       compose_file: docker-compose.e2e.yml
       playwright_working_directory: frontend
       environment: build
+      playwright_cache_enabled: true
+      node_modules_cache_enabled: true
       image_artifacts_json: |
-        {"API_IMAGE":"${{ needs.api.outputs.image_artifact }}",
-         "MIGRATOR_IMAGE":"${{ needs.migrator.outputs.image_artifact }}",
-         "FRONTEND_IMAGE":"${{ needs.frontend.outputs.image_artifact }}"}
+        {"API_IMAGE":"${{ needs.api.outputs.image }}",
+         "MIGRATOR_IMAGE":"${{ needs.migrator.outputs.image }}",
+         "FRONTEND_IMAGE":"${{ needs.frontend.outputs.image }}"}
     secrets:
       e2e_username: ${{ secrets.E2E_USERNAME }}
       e2e_password: ${{ secrets.E2E_PASSWORD }}
       e2e_otp_secret: ${{ secrets.E2E_OTP_SECRET }}
 
   push-api:
-    needs: [api, e2e]
+    needs: [api, api-scan, e2e]
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
     permissions:
       contents: read
@@ -116,19 +147,21 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@00fef736b925dfc7b70ab0476276ae1f59e1683b # v2.0.1
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: api
-      artifact_name: ${{ needs.api.outputs.image_artifact }}
+      artifact_name: ${{ needs.api.outputs.image }}
       container_image_tags: ${{ needs.api.outputs.container_image_tags }}
       image_digest: ${{ needs.api.outputs.image_digest }}
       version: ${{ needs.api.outputs.version }}
-      sbom_artifact_name: ${{ needs.api.outputs.sbom_artifact }}
-      grype_artifact_name: ${{ needs.api.outputs.grype_artifact }}
+      sbom_artifact_name: ${{ needs.api-scan.outputs.sbom_artifact }}
+      grype_artifact_name: ${{ needs.api-scan.outputs.grype_artifact }}
+      sbom_cyclonedx_sha256: ${{ needs.api-scan.outputs.sbom_cyclonedx_sha256 }}
+      grype_json_sha256: ${{ needs.api-scan.outputs.grype_json_sha256 }}
 
   push-migrator:
-    needs: [migrator, e2e]
+    needs: [migrator, migrator-scan, e2e]
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
     permissions:
       contents: read
@@ -136,19 +169,21 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@00fef736b925dfc7b70ab0476276ae1f59e1683b # v2.0.1
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: migrator
-      artifact_name: ${{ needs.migrator.outputs.image_artifact }}
+      artifact_name: ${{ needs.migrator.outputs.image }}
       container_image_tags: ${{ needs.migrator.outputs.container_image_tags }}
       image_digest: ${{ needs.migrator.outputs.image_digest }}
       version: ${{ needs.migrator.outputs.version }}
-      sbom_artifact_name: ${{ needs.migrator.outputs.sbom_artifact }}
-      grype_artifact_name: ${{ needs.migrator.outputs.grype_artifact }}
+      sbom_artifact_name: ${{ needs.migrator-scan.outputs.sbom_artifact }}
+      grype_artifact_name: ${{ needs.migrator-scan.outputs.grype_artifact }}
+      sbom_cyclonedx_sha256: ${{ needs.migrator-scan.outputs.sbom_cyclonedx_sha256 }}
+      grype_json_sha256: ${{ needs.migrator-scan.outputs.grype_json_sha256 }}
 
   push-frontend:
-    needs: [frontend, e2e]
+    needs: [frontend, frontend-scan, e2e]
     if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
     permissions:
       contents: read
@@ -156,16 +191,18 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@00fef736b925dfc7b70ab0476276ae1f59e1683b # v2.0.1
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@b8b6caf0ad38b8a338f9d1d824ba77c0dd7ab509 # v2.7.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
-      artifact_name: ${{ needs.frontend.outputs.image_artifact }}
+      artifact_name: ${{ needs.frontend.outputs.image }}
       container_image_tags: ${{ needs.frontend.outputs.container_image_tags }}
       image_digest: ${{ needs.frontend.outputs.image_digest }}
       version: ${{ needs.frontend.outputs.version }}
-      sbom_artifact_name: ${{ needs.frontend.outputs.sbom_artifact }}
-      grype_artifact_name: ${{ needs.frontend.outputs.grype_artifact }}
+      sbom_artifact_name: ${{ needs.frontend-scan.outputs.sbom_artifact }}
+      grype_artifact_name: ${{ needs.frontend-scan.outputs.grype_artifact }}
+      sbom_cyclonedx_sha256: ${{ needs.frontend-scan.outputs.sbom_cyclonedx_sha256 }}
+      grype_json_sha256: ${{ needs.frontend-scan.outputs.grype_json_sha256 }}
 
   # Renders the PR's deploy/ like a release, with the three images that just landed in GHCR pinned
   # to tag@digest, and pushes it as the signed artifact ghcr.io/hwinther/clutterstock/manifests:pr-<N>.
