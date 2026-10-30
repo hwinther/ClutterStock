@@ -50,15 +50,15 @@ jobs:
         with:
           node-version: 26.x
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: e2e/package-lock.json
 
-      - name: Install frontend deps
+      - name: Install e2e deps
         run: npm ci
-        working-directory: frontend
+        working-directory: e2e
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-        working-directory: frontend
+        working-directory: e2e
 
       - name: Resolve image refs
         env:
@@ -80,7 +80,7 @@ jobs:
       # session-storage.json per VU and replays them — no concurrent Authelia
       # logins, no TOTP races.
       - name: Seed auth state (Playwright setup project)
-        working-directory: frontend
+        working-directory: e2e
         env:
           CI: "true"
           E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
@@ -106,7 +106,7 @@ jobs:
           echo "overrides=$OVERRIDES" >> $GITHUB_OUTPUT
 
       - name: Run Artillery load test
-        working-directory: frontend
+        working-directory: e2e
         run: |
           npx artillery run \
             --output load-report.json \
@@ -118,7 +118,7 @@ jobs:
       # nice-to-have, the raw metrics are the source of truth.
       - name: Generate HTML report
         if: always()
-        working-directory: frontend
+        working-directory: e2e
         continue-on-error: true
         run: npx artillery report --output load-report.html load-report.json
 
@@ -132,8 +132,8 @@ jobs:
         with:
           name: load-report
           path: |
-            frontend/load-report.json
-            frontend/load-report.html
+            e2e/load-report.json
+            e2e/load-report.html
             compose-logs.txt
           retention-days: 30
           if-no-files-found: warn

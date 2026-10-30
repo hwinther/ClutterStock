@@ -27,11 +27,18 @@ npm run build
 npm run start        # production SSR server
 npm test             # Vitest unit tests
 npm test -- app/features/items.test.ts   # single test file
-npm run test:e2e     # Playwright E2E tests
 npm run lint
 npm run lint:fix
 npm run coverage:ci
 npm run openapi-typescript  # regenerate types from backend OpenAPI (run after backend changes)
+```
+
+```bash
+cd e2e
+npm test             # Playwright E2E tests (needs the scripts/e2e-up.sh stack)
+npm run load         # Artillery load test
+npm run lint
+npm run typecheck
 ```
 
 ## Architecture
@@ -102,15 +109,15 @@ Integration tests use the `WebApplicationFactory` pattern with a real PostgreSQL
 
 **Frontend unit tests** use Vitest with MSW for API mocking. Test setup is in `app/test/setup.ts`. Coverage uses V8 provider (Cobertura/LCOV output).
 
-**E2E tests** use Playwright against the full running stack and follow the **Page Object Model** pattern — page classes live under `frontend/e2e/pages/` and are exposed to specs via the `home` fixture in `frontend/e2e/fixtures.ts`; specs use `await home.<thing>()` instead of raw locators. Authentication is handled by a setup fixture (`e2e/auth.setup.ts`) that logs in through Authelia with TOTP/2FA — requires `E2E_USERNAME`, `E2E_PASSWORD`, and `E2E_OTP_SECRET` env vars (see `frontend/.env.test.sample`). Auth state is cached in `playwright/.auth/`.
+**E2E tests** use Playwright against the full running stack and follow the **Page Object Model** pattern — page classes live under `e2e/tests/pages/` and are exposed to specs via the `home` fixture in `e2e/tests/fixtures.ts`; specs use `await home.<thing>()` instead of raw locators. Authentication is handled by a setup fixture (`e2e/tests/auth.setup.ts`) that logs in through Authelia with TOTP/2FA — requires `E2E_USERNAME`, `E2E_PASSWORD`, and `E2E_OTP_SECRET` env vars (see `e2e/.env.test.sample`). Auth state is cached in `e2e/playwright/.auth/`. `e2e/` is its own npm package on `@wshno/playwright-config`, which pins Playwright and supplies the shared defaults; the frontend has no Playwright dependency.
 
 **Local E2E stack** comes up via `scripts/e2e-up.sh` which builds api/migrator/frontend container images locally (no GHCR push) and starts `docker-compose.e2e.yml`. Host ports are deliberately mapped to mimic the dev URLs already baked into the frontend image and hardcoded in tests: frontend `5173:3000`, api `5155:8081`. The script supports remote docker contexts (ssh:// or tcp:// with `--ssh-host`) by tunnelling the docker socket and the two app ports over a single SSH master. The `signout` Playwright project depends on the `chromium` project — sign-out destroys the shared Redis session keyed by `playwright/.auth/user.json`, so it must run last.
 
 **E2E in CI** is split into two workflows:
-- `pr-e2e.yml` — fast smoke on PRs and main pushes. Builds api/migrator/frontend container images via the reusable `dotnet-container.yml` / `docker-container.yml` workflows, scans with Grype (gateable per-PR via the `skip-grype` label), runs the suite against digest-pinned refs in compose, posts a jq-built `e2e-results` PR comment. The `push: branches: [main]` trigger is what keeps the `:latest` images updated (gitversion produces `latest;<MajorMinorPatch>` only on main).
+- `pr-e2e.yml` — fast smoke on PRs and main pushes. Builds api/migrator/frontend via the reusable `build-image-dotnet.yml` / `build-image-docker.yml` workflows, which push a `pr-<N>-<sha7>` staging tag on same-repo PRs (Dependabot PRs and main pushes fall back to a workflow artifact). `scan-image.yml` runs Grype next to e2e, `playwright-e2e.yml` runs `e2e/` against the digest-pinned images in compose and posts the `e2e-results` PR comment, and the `deploy-feature` label promotes the staging digest with `image-push.yml` and deploys a preview. The `push: branches: [main]` trigger is what keeps the `:latest` images updated (gitversion produces `latest;<MajorMinorPatch>` only on main).
 - `nightly-e2e.yml` — `cron: '0 3 * * *'` + workflow_dispatch. Pulls the same `docker-compose.e2e.yml` stack but resolves images as `:latest` (last main merge), and adds the `allure-playwright` reporter output. Generates the Allure 3 report with cross-run history. Pushes two `FROM scratch` images to GHCR on `success() || failure()`: `allure-history:latest` (single `history.jsonl`, the trend's persistent state — never checked into git) and `allure-report:latest` (the rendered HTML). The daily catches Authelia drift, loose-tag upstream drift (`postgres:16-alpine`, `redis:7-alpine`, `ubuntu-latest`), and accumulates flake-rate signal. `api-docs-pages.yml` pulls `allure-report:latest` on release runs and embeds it under `/e2e-allure/` on the Pages site.
 
-**Load tests** (Artillery + Playwright engine) live in `frontend/load/` (`clutterstock.yml` + `scenarios/home.ts`) and are driven via `npm run load`. They reuse the same `docker-compose.e2e.yml` stack and the cached `playwright/.auth/user.json` produced by the Playwright `setup` project — every Artillery VU replays that single Authelia session rather than logging in fresh, so the test does not hammer Authelia. The `.github/workflows/load-test.yml` workflow is `workflow_dispatch` only (inputs: `image_tag`, `arrival_rate`, `duration_sec`) and uploads `load-report.json` + `load-report.html` as artifacts; no cron, no PR gate. Real-browser VUs are heavy — keep peak concurrency under ~15 on GitHub-hosted runners.
+**Load tests** (Artillery + Playwright engine) live in `e2e/load/` (`clutterstock.yml` + `scenarios/home.ts`) and are driven via `npm run load` from `e2e/`. They reuse the same `docker-compose.e2e.yml` stack and the cached `playwright/.auth/user.json` produced by the Playwright `setup` project — every Artillery VU replays that single Authelia session rather than logging in fresh, so the test does not hammer Authelia. The `.github/workflows/load-test.yml` workflow is `workflow_dispatch` only (inputs: `image_tag`, `arrival_rate`, `duration_sec`) and uploads `load-report.json` + `load-report.html` as artifacts; no cron, no PR gate. Real-browser VUs are heavy — keep peak concurrency under ~15 on GitHub-hosted runners.
 
 ## Key Conventions
 

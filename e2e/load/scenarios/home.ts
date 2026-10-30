@@ -11,7 +11,7 @@ interface Events {
 
 // Artillery's playwright engine invokes this per VU. `page` is a fresh Page in
 // a fresh BrowserContext — we attach the cached Authelia session before the
-// first navigation, then walk a smoke flow that mirrors e2e/smoke.spec.ts plus
+// first navigation, then walk a smoke flow that mirrors tests/smoke.spec.ts plus
 // a search interaction. Keep the steps cheap; load runs measure how the SSR
 // frontend handles N concurrent users, not feature coverage.
 export async function homeFlow(

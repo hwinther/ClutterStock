@@ -1,23 +1,25 @@
-import { defineConfig, devices } from "@playwright/test";
+import { devices } from "@playwright/test";
+import {
+  ciReporters,
+  definePlaywrightConfig,
+  isCI,
+  localReporters,
+} from "@wshno/playwright-config";
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { authFile } from "./e2e/auth-paths";
+import { authFile } from "./tests/auth-paths";
 
 dotenv.config({
   path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".env.test"),
 });
 
-export default defineConfig({
-  testDir: "./e2e",
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI
+// Shared defaults (testDir ./tests, retries, forbidOnly, the github/html/json CI reporters, trace,
+// screenshot and video on failure) come from @wshno/playwright-config; only what differs is set here.
+export default definePlaywrightConfig({
+  reporter: isCI
     ? [
-        ["github"],
-        ["html", { open: "never" }],
-        ["json", { outputFile: "playwright-report/results.json" }],
+        ...ciReporters,
         ["allure-playwright", { resultsDir: "allure-results" }],
         [
           "monocart-reporter",
@@ -50,11 +52,10 @@ export default defineConfig({
           },
         ],
       ]
-    : "list",
+    : localReporters,
   use: {
     // Use localhost (not 127.0.0.1): Vite may bind IPv6-only on Windows.
-    baseURL: "http://localhost:5173",
-    trace: "on-first-retry",
+    baseURL: process.env.BASE_URL ?? "http://localhost:5173",
   },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },

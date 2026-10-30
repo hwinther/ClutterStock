@@ -3,10 +3,10 @@ import path from "node:path";
 import type { BrowserContext, Page } from "playwright";
 
 // Paths resolve from process.cwd() — `npm run load` and the CI workflow both
-// run artillery from frontend/, so this lands at frontend/playwright/.auth/.
+// run artillery from e2e/, so this lands at e2e/playwright/.auth/.
 // We can't use import.meta.url here: Artillery's built-in TS bundler emits
 // CommonJS, and import.meta is empty in that output. Mirror these constants
-// against frontend/e2e/auth-paths.ts when those move.
+// against e2e/tests/auth-paths.ts when those move.
 const authFile = path.resolve("playwright/.auth/user.json");
 const sessionFile = path.resolve("playwright/.auth/session-storage.json");
 
