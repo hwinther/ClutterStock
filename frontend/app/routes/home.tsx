@@ -10,6 +10,8 @@ import { CategoryTag } from "~/components/category-tag";
 import { ItemThumb } from "~/components/item-thumb";
 import { Sparkline } from "~/components/sparkline";
 import { TuiPanel, TuiStatusBar } from "~/components/tui-widgets";
+import { itemsPanelTitle } from "~/features/items/items-panel-title";
+import { useClock } from "~/lib/use-clock";
 import { SidebarGroup, SidebarRow } from "~/components/sidebar";
 import { CDEMenuBar, CDEFootRow, Win98MenuBar, Win98AddressBar, Win98StatusBar } from "~/components/theme-chrome";
 import { ItemViewPanel } from "~/features/items/item-view-panel";
@@ -124,9 +126,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     if (buttons.length === 0) return;
     const dir = (e.key === "ArrowDown" || e.key === "j") ? 1 : -1;
     const idx = buttons.indexOf(document.activeElement as HTMLElement);
-    const nextIdx = idx < 0
-      ? (dir === 1 ? 0 : buttons.length - 1)
-      : (idx + dir + buttons.length) % buttons.length;
+    let nextIdx = (idx + dir + buttons.length) % buttons.length;
+    if (idx < 0) nextIdx = dir === 1 ? 0 : buttons.length - 1;
     buttons[nextIdx]?.focus();
   }
 
@@ -195,11 +196,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === "1" || e.key === "2" || e.key === "3" || e.key === "4")) {
         e.preventDefault();
         if (e.key === "4") { setTerminalOpen(o => !o); return; }
-        const root =
-          e.key === "1" ? navRef.current
-          : e.key === "2" ? itemsRef.current
-          : (document.querySelector<HTMLElement>(".tui-detail")
-              ?? document.querySelector<HTMLElement>(".cs-body > aside.tui-panel:nth-of-type(2)"));
+        let root: HTMLElement | null;
+        if (e.key === "1") root = navRef.current;
+        else if (e.key === "2") root = itemsRef.current;
+        else root = document.querySelector<HTMLElement>(".tui-detail")
+          ?? document.querySelector<HTMLElement>(".cs-body > aside.tui-panel:nth-of-type(2)");
         focusFirstIn(root);
         return;
       }
@@ -335,8 +336,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         gap: 1, background: "var(--c-border-2)",
         borderBottom: "1px solid var(--c-border)", flexShrink: 0,
       }}>
-        {stats.map((s, i) => (
-          <div key={i} style={{
+        {stats.map(s => (
+          <div key={s.label} style={{
             padding: "12px 20px", background: "var(--c-bg-2)",
             display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 10,
           }}>
@@ -418,13 +419,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <Win98AddressBar location={activeLocation} room={activeRoom} />
 
       <TuiTopBar
-        locationPath={
-          activeLocation && activeRoom
-            ? `${activeLocation.name?.toLowerCase()}/${activeRoom.name?.toLowerCase()}`
-            : activeLocation
-              ? `${activeLocation.name?.toLowerCase()}`
-              : "all items"
-        }
+        locationPath={tuiLocationPath(activeLocation, activeRoom)}
         itemCount={items.length}
       />
 
@@ -539,8 +534,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               }}
             />
           )}
-          {isTui ? (
-            visibleItems.length === 0 ? (
+          {isTui && visibleItems.length === 0 && (
               <TuiPanel title="─[ items · 0 ]─" style={{ flex: 1, minWidth: 0, background: "var(--c-bg)" }}>
                 <div style={{
                   display: "flex", flexDirection: "column", alignItems: "center",
@@ -557,7 +551,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   </button>
                 </div>
               </TuiPanel>
-            ) : (
+            )}
+          {isTui && visibleItems.length > 0 && (
               <TuiItemTable
                 items={visibleItems}
                 roomById={roomById}
@@ -568,9 +563,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 }}
                 totalCount={items.length}
               />
-            )
-          ) : (
-            <TuiPanel title={`─[ items · ${visibleItems.length}${visibleItems.length !== items.length ? ` of ${items.length}` : ""} ]─`} style={{ flex: 1, minWidth: 0, overflowY: "auto", background: "var(--c-bg)" }}>
+          )}
+          {!isTui && (
+            <TuiPanel title={itemsPanelTitle(visibleItems.length, items.length)} style={{ flex: 1, minWidth: 0, overflowY: "auto", background: "var(--c-bg)" }}>
               {visibleItems.length === 0 ? (
                 <div style={{
                   display: "flex", flexDirection: "column", alignItems: "center",
@@ -590,8 +585,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "var(--c-bg-2)", position: "sticky", top: 0, zIndex: 1 }}>
-                      {["Item", "Room", "Category", "Notes", "Updated"].map((h, i) => (
-                        <th key={i} style={{
+                      {["Item", "Room", "Category", "Notes", "Updated"].map(h => (
+                        <th key={h} style={{
                           textAlign: "left", padding: "8px 14px",
                           fontSize: 11, fontWeight: 500, color: "var(--c-fg-2)",
                           textTransform: "uppercase", letterSpacing: "0.04em",
@@ -769,14 +764,14 @@ function focusFirstIn(root: HTMLElement | null) {
   focusable?.focus();
 }
 
+function tuiLocationPath(location?: LocationResponse | null, room?: RoomResponse | null): string {
+  if (location && room) return `${location.name?.toLowerCase()}/${room.name?.toLowerCase()}`;
+  if (location) return `${location.name?.toLowerCase()}`;
+  return "all items";
+}
+
 function TuiTopBar({ locationPath, itemCount }: { locationPath: string; itemCount: number }) {
-  const [time, setTime] = useState<string>("");
-  useEffect(() => {
-    const tick = () => setTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-    tick();
-    const id = setInterval(tick, 30_000);
-    return () => clearInterval(id);
-  }, []);
+  const time = useClock();
   const { line: version, sha } = getVersionLine();
   return (
     <div className="cs-tui-topbar">

@@ -1,5 +1,7 @@
 import type { ItemResponse, RoomResponse } from "~/api/client";
 
+import { itemsPanelTitle } from "./items-panel-title";
+
 export function TuiItemTable({ items, roomById, selectedId, onSelect, totalCount }: {
   items: ItemResponse[];
   roomById: Record<number, RoomResponse | undefined>;
@@ -10,7 +12,7 @@ export function TuiItemTable({ items, roomById, selectedId, onSelect, totalCount
   return (
     <div className="tui-panel tui-table" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <span className="tui-panel-title">
-        {`─[ items · ${items.length}${items.length !== totalCount ? ` of ${totalCount}` : ""} ]─`}
+        {itemsPanelTitle(items.length, totalCount)}
       </span>
 
       <div className="tui-table-scroll">

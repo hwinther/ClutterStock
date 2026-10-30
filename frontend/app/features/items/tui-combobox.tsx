@@ -44,9 +44,8 @@ export function TuiCombobox({ name, value, options, onChange, disabled, ariaLabe
   function moveHighlight(delta: number) {
     if (flatOptions.length === 0) return;
     const idx = flatOptions.findIndex(o => o.value === highlightedValue);
-    const nextIdx = idx < 0
-      ? (delta > 0 ? 0 : flatOptions.length - 1)
-      : (idx + delta + flatOptions.length) % flatOptions.length;
+    let nextIdx = (idx + delta + flatOptions.length) % flatOptions.length;
+    if (idx < 0) nextIdx = delta > 0 ? 0 : flatOptions.length - 1;
     setHighlightedValue(flatOptions[nextIdx]!.value);
   }
 
@@ -83,7 +82,6 @@ export function TuiCombobox({ name, value, options, onChange, disabled, ariaLabe
     if (e.key === "Tab") {
       // Let tab move focus naturally, but close the list first
       setOpen(false);
-      return;
     }
   }
 
@@ -116,10 +114,10 @@ export function TuiCombobox({ name, value, options, onChange, disabled, ariaLabe
           className="tui-combobox-list"
           ref={listRef}
         >
-          {options.map((opt, i) => {
+          {options.map(opt => {
             if (opt.kind === "group") {
               return (
-                <li key={`g-${i}`} className="tui-combobox-group">── {opt.label} ──</li>
+                <li key={`g-${opt.label}`} className="tui-combobox-group">── {opt.label} ──</li>
               );
             }
             const sel = opt.value === value;

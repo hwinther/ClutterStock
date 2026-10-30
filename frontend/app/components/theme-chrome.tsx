@@ -55,11 +55,9 @@ export function Win98AddressBar({ location, room }: {
   location?: LocationResponse | null;
   room?: RoomResponse | null;
 }) {
-  const path = room && location
-    ? `C:\\ClutterStock\\${location.name}\\${room.name}`
-    : location
-    ? `C:\\ClutterStock\\${location.name}`
-    : `C:\\ClutterStock\\All Items`;
+  let path = `C:\\ClutterStock\\All Items`;
+  if (room && location) path = `C:\\ClutterStock\\${location.name}\\${room.name}`;
+  else if (location) path = `C:\\ClutterStock\\${location.name}`;
   return (
     <div className="win98-addressbar">
       <span className="win98-addressbar-label">Address</span>

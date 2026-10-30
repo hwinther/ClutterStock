@@ -52,20 +52,18 @@ describe("typed wrapper", () => {
       ),
     );
 
-    try {
-      await post("/api/v1/locations", { body: { name: "" } });
-      throw new Error("expected throw");
-    } catch (e) {
-      // The wrapper throws a Response so RR7 can surface .data on the boundary.
-      expect(e).toBeInstanceOf(Response);
-      const res = e as Response;
-      expect(res.status).toBe(400);
-      const body = await res.json();
-      expect(body).toMatchObject({
-        title: "One or more validation errors occurred.",
-        errors: { Name: ["The Name field is required."] },
-      });
-    }
+    const e: unknown = await post("/api/v1/locations", {
+      body: { name: "" },
+    }).catch((err: unknown) => err);
+    // The wrapper throws a Response so RR7 can surface .data on the boundary.
+    expect(e).toBeInstanceOf(Response);
+    const res = e as Response;
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toMatchObject({
+      title: "One or more validation errors occurred.",
+      errors: { Name: ["The Name field is required."] },
+    });
   });
 
   it("preserves requestId/traceId from ProblemDetails extensions", async () => {
@@ -83,20 +81,18 @@ describe("typed wrapper", () => {
       ),
     );
 
-    try {
-      await get("/api/v1/locations/{id}", { params: { id: 1 } });
-      throw new Error("expected throw");
-    } catch (e) {
-      expect(e).toBeInstanceOf(Response);
-      // asApiProblem normalises both Response and ApiProblemError into the
-      // same boundary-friendly shape — and pulls extension fields out.
-      const body = await (e as Response).json();
-      const fakeRouteError = { status: 500, statusText: "Server error", data: body };
-      const problem = asApiProblem(fakeRouteError);
-      expect(problem).not.toBeNull();
-      expect(problem!.requestId).toBe("0HN42");
-      expect(problem!.traceId).toBe("00-trace-id-99");
-    }
+    const e: unknown = await get("/api/v1/locations/{id}", {
+      params: { id: 1 },
+    }).catch((err: unknown) => err);
+    expect(e).toBeInstanceOf(Response);
+    // asApiProblem normalises both Response and ApiProblemError into the
+    // same boundary-friendly shape — and pulls extension fields out.
+    const body = await (e as Response).json();
+    const fakeRouteError = { status: 500, statusText: "Server error", data: body };
+    const problem = asApiProblem(fakeRouteError);
+    expect(problem).not.toBeNull();
+    expect(problem!.requestId).toBe("0HN42");
+    expect(problem!.traceId).toBe("00-trace-id-99");
   });
 
   it("returns void for a 204 DELETE", async () => {

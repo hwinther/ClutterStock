@@ -106,11 +106,10 @@ export function TuiTerminal({ open, onClose, items, rooms, locations, currentFil
 
     if (head === "filter") {
       onFilter(rest);
-      const out: Line = rest
-        ? { kind: "out", text: `filter set: "${rest}"` }
-        : currentFilter
-          ? { kind: "out", text: `filter cleared (was "${currentFilter}")` }
-          : { kind: "out", text: "filter is empty" };
+      let text = "filter is empty";
+      if (rest) text = `filter set: "${rest}"`;
+      else if (currentFilter) text = `filter cleared (was "${currentFilter}")`;
+      const out: Line = { kind: "out", text };
       setHistory(h => [...h, echo, out]);
       return;
     }
@@ -131,6 +130,7 @@ export function TuiTerminal({ open, onClose, items, rooms, locations, currentFil
 
       <div ref={scrollRef} className="tui-terminal-history">
         {history.map((line, i) => (
+          // eslint-disable-next-line @eslint-react/no-array-index-key -- append-only log, lines never reorder
           <div key={i} className={`tui-terminal-line tui-terminal-line--${line.kind}`}>
             {line.text}
           </div>

@@ -22,6 +22,7 @@ export function ItemEditPanel({ item, rooms, locations, defaultRoomId, onClose, 
   const fetcher = useFetcher<ActionData>();
   const [validationError, setValidationError] = useState<string | null>(null);
   const isNew = !item;
+  const submitLabel = isNew ? "Create item" : "Save changes";
   const submitting = fetcher.state !== "idle";
   const locationById = Object.fromEntries(locations.map(l => [l.id!, l]));
 
@@ -180,7 +181,7 @@ export function ItemEditPanel({ item, rooms, locations, defaultRoomId, onClose, 
               opacity: submitting ? 0.7 : 1, fontFamily: "inherit",
             }}
           >
-            {submitting ? "Saving…" : (isNew ? "Create item" : "Save changes")}
+            {submitting ? "Saving…" : submitLabel}
           </button>
           <button
             type="button" onClick={onClose} disabled={submitting}

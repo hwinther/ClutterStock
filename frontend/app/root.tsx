@@ -71,10 +71,12 @@ function PublicRuntimeConfigScript() {
   const data = useRouteLoaderData("root");
   const cfg = data?.publicRuntime;
   if (!cfg) return null;
-  const json = JSON.stringify(cfg);
+  // Escape "<" so a value can never close the script tag.
+  const json = JSON.stringify(cfg).replaceAll("<", "\\u003c");
   return (
     <script
       // Runs before module scripts; hydrates browser OTEL + other public runtime config.
+      // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- inline config for the browser, escaped above
       dangerouslySetInnerHTML={{
         __html: `window.__CLUTTERSTOCK_PUBLIC__=${json};`,
       }}
@@ -114,7 +116,9 @@ export function Layout({
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Set theme before first paint to avoid flash */}
-        <script dangerouslySetInnerHTML={{ __html:
+        <script
+          // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- static theme bootstrap, no user input
+          dangerouslySetInnerHTML={{ __html:
           `(function(){try{var t=localStorage.getItem('cs-theme');if(t&&['tui','win98','cde'].includes(t))document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`
         }} />
         <Meta />

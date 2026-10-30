@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   FlashToasts,
@@ -44,8 +44,8 @@ describe("ToastProvider + useToasts", () => {
         <span>placeholder</span>
       </Harness>,
     );
-    expect(screen.queryByRole("status")).toBeNull();
-    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("FlashToasts drains a server-side flash payload onto the queue", async () => {
@@ -55,8 +55,6 @@ describe("ToastProvider + useToasts", () => {
         <Toaster />
       </ToastProvider>,
     );
-    // FlashToasts pushes inside useEffect — flush effects.
-    await act(async () => {});
     expect(screen.getByText("Welcome back")).toBeInTheDocument();
   });
 
@@ -68,7 +66,6 @@ describe("ToastProvider + useToasts", () => {
         <Toaster />
       </ToastProvider>,
     );
-    await act(async () => {});
     expect(screen.getByText("first")).toBeInTheDocument();
 
     // Same identity — no re-push.
@@ -78,7 +75,6 @@ describe("ToastProvider + useToasts", () => {
         <Toaster />
       </ToastProvider>,
     );
-    await act(async () => {});
     expect(screen.getAllByText("first")).toHaveLength(1);
 
     // New array (a new loader run after a redirect) — push the new batch.
@@ -88,43 +84,36 @@ describe("ToastProvider + useToasts", () => {
         <Toaster />
       </ToastProvider>,
     );
-    await act(async () => {});
     expect(screen.getByText("second")).toBeInTheDocument();
   });
 
   it("auto-dismisses after the default 5 seconds", async () => {
-    const { getByRole } = render(
+    render(
       <ToastProvider>
         <PushButton message="ping" />
         <Toaster />
       </ToastProvider>,
     );
-    await act(async () => {
-      getByRole("button", { name: "push" }).click();
-    });
+    fireEvent.click(screen.getByRole("button", { name: "push" }));
     expect(screen.getByText("ping")).toBeInTheDocument();
     await act(async () => {
       vi.advanceTimersByTime(5000);
     });
-    expect(screen.queryByText("ping")).toBeNull();
+    expect(screen.queryByText("ping")).not.toBeInTheDocument();
   });
 
   it("push() renders a new toast that the user can dismiss manually", async () => {
-    const { getByRole } = render(
+    render(
       <Harness>
         <PushButton message="saved" />
       </Harness>,
     );
 
-    await act(async () => {
-      getByRole("button", { name: "push" }).click();
-    });
+    fireEvent.click(screen.getByRole("button", { name: "push" }));
     expect(screen.getByText("saved")).toBeInTheDocument();
 
-    await act(async () => {
-      getByRole("button", { name: "Dismiss" }).click();
-    });
-    expect(screen.queryByText("saved")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByText("saved")).not.toBeInTheDocument();
   });
 });
 
@@ -170,6 +159,6 @@ describe("useToastFromActionData", () => {
         <ActionDataConsumer data={{ ok: true, data: {} }} />
       </Harness>,
     );
-    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

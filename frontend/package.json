@@ -22,24 +22,12 @@
     "load": "artillery run --output load-report.json load/clutterstock.yml",
     "load:report": "artillery report load-report.json"
   },
+  "prettier": "@wshno/prettier-config",
   "dependencies": {
-    "@opentelemetry/api": "1.9.1",
-    "@opentelemetry/auto-instrumentations-node": "0.81.0",
-    "@opentelemetry/auto-instrumentations-web": "0.68.0",
-    "@opentelemetry/context-zone": "2.12.0",
-    "@opentelemetry/exporter-logs-otlp-http": "0.223.0",
-    "@opentelemetry/exporter-metrics-otlp-http": "0.223.0",
-    "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
-    "@opentelemetry/instrumentation": "0.223.0",
-    "@opentelemetry/resources": "2.12.0",
-    "@opentelemetry/sdk-logs": "0.223.0",
-    "@opentelemetry/sdk-metrics": "2.12.0",
-    "@opentelemetry/sdk-node": "0.223.0",
-    "@opentelemetry/sdk-trace-base": "2.12.0",
-    "@opentelemetry/sdk-trace-web": "2.12.0",
-    "@opentelemetry/semantic-conventions": "1.43.0",
+    "@opentelemetry/api": "1.10.0",
     "@react-router/node": "8.5.1",
     "@react-router/serve": "8.5.1",
+    "@wshno/otel": "0.1.1",
     "isbot": "5.1.39",
     "oidc-client-ts": "3.5.0",
     "react": "19.3.0",
@@ -48,7 +36,6 @@
     "redis": "6.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
     "@playwright/test": "1.64.1",
     "@react-router/dev": "8.5.1",
     "@stryker-mutator/core": "9.6.1",
@@ -61,15 +48,15 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitest/coverage-v8": "5.0.5",
+    "@wshno/eslint-config": "0.2.0",
+    "@wshno/prettier-config": "0.1.1",
+    "@wshno/tsconfig": "0.1.1",
     "allure": "3.21.0",
     "allure-playwright": "3.14.0",
     "artillery": "2.0.32",
     "dotenv": "18.0.8",
-    "eslint": "^9.39.3",
+    "eslint": "10.13.0",
     "eslint-formatter-compact": "^9.0.1",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
     "jsdom": "30.1.3",
     "lighthouse": "13.4.0",
     "monocart-reporter": "2.15.1",
@@ -78,14 +65,17 @@
     "openapi-typescript": "7.13.0",
     "otpauth": "9.5.1",
     "playwright-lighthouse": "4.0.0",
+    "prettier": "3.9.10",
     "tailwindcss": "4.3.0",
-    "typescript": "5.9.3",
-    "typescript-eslint": "^8.62.1",
+    "typescript": "6.0.3",
     "vite": "8.3.5",
     "vitest": "5.0.5"
   },
   "overrides": {
     "playwright-core": "1.64.1",
-    "playwright": "1.64.1"
+    "playwright": "1.64.1",
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
   }
 }

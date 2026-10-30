@@ -16,7 +16,7 @@ export function Win98Tree({
   onSelectCategory: (name: string) => void;
   onAddRoom: (locationId: number) => void;
 }) {
-  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+  const [collapsed, setCollapsed] = useState<Set<number>>(() => new Set());
   const [rootCollapsed, setRootCollapsed] = useState(false);
   const [categoriesCollapsed, setCategoriesCollapsed] = useState(false);
 
@@ -44,10 +44,11 @@ export function Win98Tree({
           {locations.map(loc => {
             const locRooms = rooms.filter(r => r.locationId === loc.id);
             const isCollapsed = loc.id != null && collapsed.has(loc.id);
+            const chevron = isCollapsed ? "▶" : "▼";
             return (
               <div key={loc.id}>
                 <Row
-                  chevron={locRooms.length > 0 ? (isCollapsed ? "▶" : "▼") : ""}
+                  chevron={locRooms.length > 0 ? chevron : ""}
                   icon="🏠"
                   label={loc.name ?? "Location"}
                   onChevronClick={() => loc.id != null && toggle(loc.id)}
