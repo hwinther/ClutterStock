@@ -24,7 +24,7 @@
     "artillery": "2.0.32",
     "dotenv": "18.0.8",
     "eslint": "10.13.0",
-    "lighthouse": "13.4.0",
+    "lighthouse": "13.6.0",
     "monocart-reporter": "2.15.1",
     "otpauth": "9.5.1",
     "playwright-lighthouse": "4.0.0",
