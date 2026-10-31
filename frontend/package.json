@@ -61,6 +61,9 @@
   "overrides": {
     "openapi-typescript": {
       "typescript": "$typescript"
+    },
+    "typed-rest-client": {
+      "qs": "6.17.1"
     }
   }
 }

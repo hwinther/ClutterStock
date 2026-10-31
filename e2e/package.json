@@ -34,6 +34,7 @@
   "//overrides": "Artillery's Playwright engine and playwright-lighthouse bring their own Playwright; keep one copy. Must equal the @playwright/test version @wshno/playwright-config pins.",
   "overrides": {
     "playwright": "1.64.1",
-    "playwright-core": "1.64.1"
+    "playwright-core": "1.64.1",
+    "dompurify": "3.4.17"
   }
 }
