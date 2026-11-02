@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
+import { uniqueSuffix } from "../helpers";
 import { HelpOverlay } from "./help-overlay";
 import { ItemPanel } from "./item-panel";
 import { ItemsTable } from "./items-table";
@@ -74,18 +75,21 @@ export class HomePage {
   // Click "+ New item" and walk through whichever panel chain shows up: when
   // the DB has no locations/rooms yet, the toolbar button opens
   // new-location → new-room → new-item rather than going straight to new-item.
-  // This keeps tests robust against a freshly seeded dev database.
+  // This keeps tests robust against a freshly seeded dev database. On one, parallel workers all
+  // take this path at once, so the names need uniqueSuffix: with Date.now() alone two workers
+  // created same-named rooms, and a spec that clicks its room by name in the sidebar got the
+  // other, empty one.
   async openNewItemFlow(): Promise<ItemPanel> {
     await this.newItemButton.click();
 
     if (await this.newLocationPanel.isVisible()) {
-      await this.newLocationPanel.nameInput.fill(`E2E Loc-${Date.now()}`);
+      await this.newLocationPanel.nameInput.fill(uniqueSuffix("E2E Loc"));
       await this.newLocationPanel.button("Create location").click();
       await this.newLocationPanel.expectHidden();
     }
 
     if (await this.newRoomPanel.isVisible()) {
-      await this.newRoomPanel.nameInput.fill(`E2E Room-${Date.now()}`);
+      await this.newRoomPanel.nameInput.fill(uniqueSuffix("E2E Room"));
       await this.newRoomPanel.button("Create room").click();
       await this.newRoomPanel.expectHidden();
     }
