@@ -4,6 +4,15 @@ import { authFile, sessionFile } from "./auth-paths";
 
 test.describe.configure({ mode: "serial" });
 
+// The test aborts the redirect to Authelia's end-session (below), so the signed-out app page stays
+// open and its live-updates stream reconnects without a session: 401. A real sign-out navigates
+// away first, which closes the stream.
+test.use({
+  requestGuard: {
+    allow: [(r) => r.status === 401 && new URL(r.url).pathname === "/sse/items"],
+  },
+});
+
 // Sign-out destroys the Redis session keyed by the sid baked into user.json.
 // If we leave the cached storage files behind, the auth.setup mtime gate (20
 // minutes) will skip the OTP flow on the next run and every test will hit a
