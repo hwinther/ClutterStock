@@ -1,4 +1,5 @@
-import { expect, test as base } from "@playwright/test";
+import { expect, mergeTests, test as base } from "@playwright/test";
+import { guardsTest } from "@wshno/playwright-config";
 import { addCoverageReport } from "monocart-reporter";
 import fs from "node:fs";
 import { sessionFile } from "./auth-paths";
@@ -10,7 +11,7 @@ interface Fixtures {
   home: HomePage;
 }
 
-export const test = base.extend<Fixtures>({
+const appTest = base.extend<Fixtures>({
   page: async ({ page }, use, testInfo) => {
     if (fs.existsSync(sessionFile)) {
       const stored: Record<string, Record<string, string>> = JSON.parse(
@@ -45,3 +46,7 @@ export const test = base.extend<Fixtures>({
     await use(new HomePage(page));
   },
 });
+
+// guardsTest (@wshno/playwright-config) fails a spec in which the page breaks its CSP (Report-Only
+// included), logs a console error or warning, throws uncaught, or gets a 4xx/5xx or network error.
+export const test = mergeTests(appTest, guardsTest);

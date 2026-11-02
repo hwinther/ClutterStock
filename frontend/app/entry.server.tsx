@@ -7,6 +7,8 @@ import { isbot } from "isbot";
 import type { RenderToPipeableStreamOptions } from "react-dom/server";
 import { renderToPipeableStream } from "react-dom/server";
 
+import { NonceContext } from "~/lib/nonce";
+import { applyDocumentCsp, applySecurityHeaders, createNonce } from "~/lib/security-headers.server";
 import { startNodeOpenTelemetry } from "~/otel/server";
 import { withSsrRequestSpan } from "~/otel/ssr-request";
 
@@ -22,6 +24,8 @@ export default function handleRequest(
   // React Router 8 enables middleware by default, so the load context is a RouterContextProvider.
   loadContext: RouterContextProvider,
 ) {
+  applySecurityHeaders(responseHeaders);
+
   // https://httpwg.org/specs/rfc9110.html#HEAD
   if (request.method.toUpperCase() === "HEAD") {
     return new Response(null, {
@@ -49,6 +53,10 @@ async function renderHtmlResponse(
   return new Promise((resolve, reject) => {
     let shellRendered = false;
     const userAgent = request.headers.get("user-agent");
+    // One nonce per document: on the CSP header, React Router's scripts (via <ServerRouter nonce>),
+    // React's streaming scripts (renderToPipeableStream), and the app's own (NonceContext).
+    const nonce = createNonce();
+    applyDocumentCsp(responseHeaders, nonce);
 
     // Ensure requests from bots and SPA Mode renders wait for all content to load before responding
     // https://react.dev/reference/react-dom/server/renderToPipeableStream#waiting-for-all-content-to-load-for-crawlers-and-static-generation
@@ -65,8 +73,11 @@ async function renderHtmlResponse(
     );
 
     const { pipe, abort } = renderToPipeableStream(
-      <ServerRouter context={routerContext} url={request.url} />,
+      <NonceContext value={nonce}>
+        <ServerRouter context={routerContext} url={request.url} nonce={nonce} />
+      </NonceContext>,
       {
+        nonce,
         [readyOption]() {
           shellRendered = true;
           const body = new PassThrough({
@@ -107,3 +118,8 @@ async function renderHtmlResponse(
   });
 }
 
+/** Data requests (client navigations, fetchers) get the same headers; the CSP is for documents. */
+export function handleDataRequest(response: Response): Response {
+  applySecurityHeaders(response.headers);
+  return response;
+}

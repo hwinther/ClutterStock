@@ -12,6 +12,7 @@ import { LiveUpdates } from "~/components/live-updates";
 import { ProblemBoundary } from "~/components/problem-boundary";
 import { SiteFooter } from "~/components/site-footer";
 import { SiteHeader } from "~/components/site-header";
+import { useNonce } from "~/lib/nonce";
 import { FlashToasts, Toaster, ToastProvider, type ToastInput } from "~/lib/toasts";
 import type { PublicRuntimeConfig } from "~/public-runtime-config";
 import type { SessionUser } from "~/lib/session.server";
@@ -69,12 +70,14 @@ export async function loader({ request }: Route.LoaderArgs): Promise<RootLoaderD
 
 function PublicRuntimeConfigScript() {
   const data = useRouteLoaderData("root");
+  const nonce = useNonce();
   const cfg = data?.publicRuntime;
   if (!cfg) return null;
   // Escape "<" so a value can never close the script tag.
   const json = JSON.stringify(cfg).replaceAll("<", "\\u003c");
   return (
     <script
+      nonce={nonce}
       // Runs before module scripts; hydrates browser OTEL + other public runtime config.
       // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- inline config for the browser, escaped above
       dangerouslySetInnerHTML={{
@@ -109,6 +112,7 @@ export function Layout({
 }) {
   const data = useRouteLoaderData("root") as RootLoaderData | undefined;
   const initialFlashes = data?.flashes ?? [];
+  const nonce = useNonce();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -117,6 +121,7 @@ export function Layout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Set theme before first paint to avoid flash */}
         <script
+          nonce={nonce}
           // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- static theme bootstrap, no user input
           dangerouslySetInnerHTML={{ __html:
           `(function(){try{var t=localStorage.getItem('cs-theme');if(t&&['tui','win98','cde'].includes(t))document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`
