@@ -13,8 +13,10 @@ which:
 On pull requests, `manifest-diff.yml` posts the rendered diff against the base branch as a PR
 comment. A PR labelled `deploy-feature` also gets a preview environment: the `manifests` job in
 `pr-e2e.yml` renders this directory the same way with the PR's images and pushes it as
-`manifests:pr-<N>`, signed by `pr-e2e.yml`, which only the cluster's preview tree accepts. Don't
-commit rendered output.
+`manifests:pr-<N>`, signed by `pr-e2e.yml`, which only the cluster's preview tree accepts. Every
+push to main does the same with the images that passed CI on main: images and artifact are tagged
+`main-<sha7>` plus the moving `main` (never GitVersion's version, which the next release takes),
+for the nightly preview env. Don't commit rendered output.
 
 The cluster repo (hwinther/proxmox) consumes the artifact through a Flux `OCIRepository` and
 `Kustomization` per environment. It provides everything that isn't in here:
