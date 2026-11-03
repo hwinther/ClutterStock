@@ -18,7 +18,7 @@ jobs:
       checks: write
       pull-requests: write
       packages: read
-    uses: hwinther/reusable-workflows/.github/workflows/pr-build.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/pr-build.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     with:
       node_enabled: true
