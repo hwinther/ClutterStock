@@ -44,16 +44,25 @@ jobs:
         id: tag
         run: echo "tag=main-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
+  # One GitVersion run for all three images (they'd otherwise each compute the same version in their
+  # own job).
+  version:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    permissions:
+      contents: read
+    uses: hwinther/reusable-workflows/.github/workflows/gitversion.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
+
   # Build only. On same-repo PRs each image goes to a staging tag (pr-<N>-<sha7>) and is handed
   # on as repo@digest, so the scans, e2e and the push all use the same bytes; Dependabot PRs and
   # pushes to main fall back to a workflow artifact. prune-ghcr.yml deletes staging tags once the
   # PR is closed.
   api:
+    needs: [version]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
       packages: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -61,13 +70,17 @@ jobs:
       project_file: src/Api/Api.csproj
       container_registry: ghcr.io
       container_image_name_postfix: api
+      version: ${{ needs.version.outputs.version }}
+      image_tags: ${{ needs.version.outputs.image_tags }}
+      is_alpha: ${{ needs.version.outputs.is_alpha }}
 
   migrator:
+    needs: [version]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
       packages: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-dotnet.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -75,16 +88,23 @@ jobs:
       project_file: src/Migrator/Migrator.csproj
       container_registry: ghcr.io
       container_image_name_postfix: migrator
+      version: ${{ needs.version.outputs.version }}
+      image_tags: ${{ needs.version.outputs.image_tags }}
+      is_alpha: ${{ needs.version.outputs.is_alpha }}
 
   frontend:
+    needs: [version]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
       packages: write
-    uses: hwinther/reusable-workflows/.github/workflows/build-image-docker.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-docker.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
+      version: ${{ needs.version.outputs.version }}
+      image_tags: ${{ needs.version.outputs.image_tags }}
+      is_alpha: ${{ needs.version.outputs.is_alpha }}
       build_context: frontend
       dockerfile: frontend/Dockerfile
 
@@ -97,7 +117,7 @@ jobs:
       actions: read
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       image: ${{ needs.api.outputs.image }}
       container_image_name_postfix: api
@@ -111,7 +131,7 @@ jobs:
       actions: read
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       image: ${{ needs.migrator.outputs.image }}
       container_image_name_postfix: migrator
@@ -125,7 +145,7 @@ jobs:
       actions: read
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/scan-image.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       image: ${{ needs.frontend.outputs.image }}
       container_image_name_postfix: frontend
@@ -139,7 +159,7 @@ jobs:
       packages: read
       actions: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       compose_file: docker-compose.e2e.yml
       playwright_working_directory: e2e
@@ -164,7 +184,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: api
@@ -186,7 +206,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: migrator
@@ -208,7 +228,7 @@ jobs:
       id-token: write
       attestations: write
       actions: read
-    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/image-push.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
@@ -247,7 +267,7 @@ jobs:
 
       - name: Render, validate, push and sign
         id: push
-        uses: hwinther/reusable-workflows/.github/actions/manifests@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+        uses: hwinther/reusable-workflows/.github/actions/manifests@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
         with:
           mode: push
           artifact: ghcr.io/hwinther/clutterstock/manifests
@@ -277,7 +297,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-upsert.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-upsert.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       target_repo: hwinther/proxmox
       preview_base_path: clusters/production/apps/previews/clutterstock
