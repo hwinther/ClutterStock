@@ -108,6 +108,49 @@ jobs:
       build_context: frontend
       dockerfile: frontend/Dockerfile
 
+  # The @wshno/playwright-config version the e2e image builds on: the one e2e/'s lock file resolves,
+  # so the image's browser matches the suite's Playwright.
+  e2e-base:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      playwright_config: ${{ steps.lock.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: "@wshno/playwright-config from the lock file"
+        id: lock
+        run: |
+          set -euo pipefail
+          v=$(jq -r '.packages["node_modules/@wshno/playwright-config"].version' e2e/package-lock.json)
+          [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::No @wshno/playwright-config version"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+  # The test runner: e2e/'s specs and npm packages on @wshno/playwright-config's runner image
+  # (e2e/Dockerfile), run below as the `playwright` service of docker-compose.e2e.yml. Built and
+  # handed on like the app images, so e2e needs no Node or browsers on the runner.
+  e2e-image:
+    needs: [version, e2e-base]
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    permissions:
+      contents: read
+      packages: write
+    uses: hwinther/reusable-workflows/.github/workflows/build-image-docker.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
+    with:
+      container_registry: ghcr.io
+      container_image_name_postfix: e2e
+      version: ${{ needs.version.outputs.version }}
+      image_tags: ${{ needs.version.outputs.image_tags }}
+      is_alpha: ${{ needs.version.outputs.is_alpha }}
+      build_context: e2e
+      dockerfile: e2e/Dockerfile
+      build_args: PLAYWRIGHT_CONFIG_VERSION=${{ needs.e2e-base.outputs.playwright_config }}
+
   # The scans run next to e2e rather than before it.
   api-scan:
     needs: [api]
@@ -152,24 +195,26 @@ jobs:
       grype_fail_build: auto
 
   e2e:
-    needs: [api, migrator, frontend]
+    needs: [api, migrator, frontend, e2e-image]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     permissions:
       contents: read
       packages: read
       actions: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@c6bfa6d9ba3c93bad01f78b7f4c22bce86c9aa62 # feat/e2e-compose-service-and-handoff (hwinther/reusable-workflows#209)
     with:
       compose_file: docker-compose.e2e.yml
+      # The suite runs from the e2e image as a compose service, not with Node and browsers on the
+      # runner: the same `docker compose --profile e2e run --rm playwright` as locally.
+      compose_playwright_service: playwright
       playwright_working_directory: e2e
       environment: build
-      playwright_cache_enabled: true
-      node_modules_cache_enabled: true
       image_artifacts_json: |
         {"API_IMAGE":"${{ needs.api.outputs.image }}",
          "MIGRATOR_IMAGE":"${{ needs.migrator.outputs.image }}",
-         "FRONTEND_IMAGE":"${{ needs.frontend.outputs.image }}"}
+         "FRONTEND_IMAGE":"${{ needs.frontend.outputs.image }}",
+         "E2E_IMAGE":"${{ needs.e2e-image.outputs.image }}"}
     secrets:
       e2e_username: ${{ secrets.E2E_USERNAME }}
       e2e_password: ${{ secrets.E2E_PASSWORD }}

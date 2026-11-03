@@ -68,7 +68,7 @@ jobs:
       # Schedule events don't expose `inputs`, so mirror the workflow_dispatch
       # default as a single-line comma string. Keep this in sync with the
       # `images` input default above.
-      images: ${{ inputs.images || 'clutterstock/api,clutterstock/migrator,clutterstock/frontend,clutterstock/allure-report,clutterstock/allure-history,clutterstock/badges-e2e,clutterstock/monocart-report,clutterstock/monocart-coverage,clutterstock/manifests' }}
+      images: ${{ inputs.images || 'clutterstock/api,clutterstock/migrator,clutterstock/frontend,clutterstock/allure-report,clutterstock/allure-history,clutterstock/badges-e2e,clutterstock/monocart-report,clutterstock/monocart-coverage,clutterstock/manifests,clutterstock/e2e' }}
       package_namespace_prefix: clutterstock/
       # When set on a manual run, bypasses the smart prune and deletes the
       # entire named package via the GHCR package DELETE API. Cron runs leave

@@ -3,6 +3,10 @@
 #   API_IMAGE=ghcr.io/<owner>/<repo>/api@sha256:...
 #   MIGRATOR_IMAGE=ghcr.io/<owner>/<repo>/migrator@sha256:...
 #   FRONTEND_IMAGE=ghcr.io/<owner>/<repo>/frontend@sha256:...
+#   E2E_IMAGE=ghcr.io/<owner>/<repo>/e2e@sha256:...   (the test runner, profile e2e)
+#
+# `docker compose up -d --wait` starts the app; `docker compose --profile e2e run --rm playwright`
+# then runs the suite from the e2e image (e2e/Dockerfile) against it.
 #
 # Host port mapping is chosen to match what's already baked into the existing images
 # and hardcoded in tests: api on 5155 (matches frontend/.env VITE_API_URL), frontend
@@ -97,4 +101,28 @@ services:
       api-ready:
         condition: service_completed_successfully
       redis:
+        condition: service_healthy
+
+  # The e2e suite (e2e/Dockerfile: specs and npm packages on @wshno/playwright-config's runner
+  # image). Only with --profile e2e, so a plain `up` starts just the app. Host networking: the app's
+  # origin is http://localhost:5173 (PUBLIC_ORIGIN, the OIDC redirect URI, CSRF, cookie keying), so
+  # the browser must reach it there and not as http://frontend:3000.
+  playwright:
+    image: ${E2E_IMAGE:-clutterstock-e2e:local}
+    profiles: [e2e]
+    network_mode: host
+    environment:
+      - CI
+      - BASE_URL
+      - E2E_USERNAME
+      - E2E_PASSWORD
+      - E2E_OTP_SECRET
+    # Reports land in e2e/ on the host, where the workflow's summary and upload look for them.
+    volumes:
+      - ./e2e/playwright-report:/e2e/playwright-report
+      - ./e2e/test-results:/e2e/test-results
+      - ./e2e/monocart-report:/e2e/monocart-report
+      - ./e2e/allure-results:/e2e/allure-results
+    depends_on:
+      frontend:
         condition: service_healthy
