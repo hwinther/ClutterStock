@@ -21,6 +21,7 @@ on:
       - "frontend/**"
       - "backend/**"
       - "e2e/**"
+      - "deploy/**"
       - "docker-compose.e2e.yml"
       - ".github/workflows/pr-e2e.yml"
 
@@ -29,6 +30,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The tag for builds of main: main-<sha7>, pushed together with the moving `main`. Not
+  # GitVersion's MajorMinorPatch: on main that is the next release's version, which the release
+  # would then overwrite. Runs on every event (it's cheap) so the push jobs can depend on it
+  # without being skipped on pull requests.
+  main-tag:
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: main-<sha7>
+        id: tag
+        run: echo "tag=main-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
   # Build only. On same-repo PRs each image goes to a staging tag (pr-<N>-<sha7>) and is handed
   # on as repo@digest, so the scans, e2e and the push all use the same bytes; Dependabot PRs and
   # pushes to main fall back to a workflow artifact. prune-ghcr.yml deletes staging tags once the
@@ -141,8 +156,8 @@ jobs:
       e2e_otp_secret: ${{ secrets.E2E_OTP_SECRET }}
 
   push-api:
-    needs: [api, api-scan, e2e]
-    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
+    needs: [main-tag, api, api-scan, e2e]
+    if: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     permissions:
       contents: read
       packages: write
@@ -154,17 +169,17 @@ jobs:
       container_registry: ghcr.io
       container_image_name_postfix: api
       artifact_name: ${{ needs.api.outputs.image }}
-      container_image_tags: ${{ needs.api.outputs.container_image_tags }}
+      container_image_tags: ${{ github.event_name == 'push' && format('ghcr.io/hwinther/clutterstock/api:{0},ghcr.io/hwinther/clutterstock/api:main', needs.main-tag.outputs.tag) || needs.api.outputs.container_image_tags }}
       image_digest: ${{ needs.api.outputs.image_digest }}
-      version: ${{ needs.api.outputs.version }}
+      version: ${{ github.event_name == 'push' && needs.main-tag.outputs.tag || needs.api.outputs.version }}
       sbom_artifact_name: ${{ needs.api-scan.outputs.sbom_artifact }}
       grype_artifact_name: ${{ needs.api-scan.outputs.grype_artifact }}
       sbom_cyclonedx_sha256: ${{ needs.api-scan.outputs.sbom_cyclonedx_sha256 }}
       grype_json_sha256: ${{ needs.api-scan.outputs.grype_json_sha256 }}
 
   push-migrator:
-    needs: [migrator, migrator-scan, e2e]
-    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
+    needs: [main-tag, migrator, migrator-scan, e2e]
+    if: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     permissions:
       contents: read
       packages: write
@@ -176,17 +191,17 @@ jobs:
       container_registry: ghcr.io
       container_image_name_postfix: migrator
       artifact_name: ${{ needs.migrator.outputs.image }}
-      container_image_tags: ${{ needs.migrator.outputs.container_image_tags }}
+      container_image_tags: ${{ github.event_name == 'push' && format('ghcr.io/hwinther/clutterstock/migrator:{0},ghcr.io/hwinther/clutterstock/migrator:main', needs.main-tag.outputs.tag) || needs.migrator.outputs.container_image_tags }}
       image_digest: ${{ needs.migrator.outputs.image_digest }}
-      version: ${{ needs.migrator.outputs.version }}
+      version: ${{ github.event_name == 'push' && needs.main-tag.outputs.tag || needs.migrator.outputs.version }}
       sbom_artifact_name: ${{ needs.migrator-scan.outputs.sbom_artifact }}
       grype_artifact_name: ${{ needs.migrator-scan.outputs.grype_artifact }}
       sbom_cyclonedx_sha256: ${{ needs.migrator-scan.outputs.sbom_cyclonedx_sha256 }}
       grype_json_sha256: ${{ needs.migrator-scan.outputs.grype_json_sha256 }}
 
   push-frontend:
-    needs: [frontend, frontend-scan, e2e]
-    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
+    needs: [main-tag, frontend, frontend-scan, e2e]
+    if: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     permissions:
       contents: read
       packages: write
@@ -198,28 +213,31 @@ jobs:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
       artifact_name: ${{ needs.frontend.outputs.image }}
-      container_image_tags: ${{ needs.frontend.outputs.container_image_tags }}
+      container_image_tags: ${{ github.event_name == 'push' && format('ghcr.io/hwinther/clutterstock/frontend:{0},ghcr.io/hwinther/clutterstock/frontend:main', needs.main-tag.outputs.tag) || needs.frontend.outputs.container_image_tags }}
       image_digest: ${{ needs.frontend.outputs.image_digest }}
-      version: ${{ needs.frontend.outputs.version }}
+      version: ${{ github.event_name == 'push' && needs.main-tag.outputs.tag || needs.frontend.outputs.version }}
       sbom_artifact_name: ${{ needs.frontend-scan.outputs.sbom_artifact }}
       grype_artifact_name: ${{ needs.frontend-scan.outputs.grype_artifact }}
       sbom_cyclonedx_sha256: ${{ needs.frontend-scan.outputs.sbom_cyclonedx_sha256 }}
       grype_json_sha256: ${{ needs.frontend-scan.outputs.grype_json_sha256 }}
 
-  # Renders the PR's deploy/ like a release, with the three images that just landed in GHCR pinned
-  # to tag@digest, and pushes it as the signed artifact ghcr.io/hwinther/clutterstock/manifests:pr-<N>.
-  # Signed in this job, so the identity is pr-e2e.yml@refs/pull/<N>/merge: the cluster's preview
-  # OCIRepository accepts only that, and test/production only release tags.
+  # Renders deploy/ like a release, with the three images that just landed in GHCR pinned to
+  # tag@digest, and pushes it as the signed artifact ghcr.io/hwinther/clutterstock/manifests:pr-<N>
+  # (a PR) or :main-<sha7> plus the moving :main (main, for the nightly preview env). Signed in this
+  # job, so the identity is pr-e2e.yml@refs/pull/<N>/merge or pr-e2e.yml@refs/heads/main: the
+  # cluster's preview OCIRepository accepts only those, and test/production only release tags.
   manifests:
-    needs: [api, migrator, frontend, push-api, push-migrator, push-frontend]
-    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature') }}
+    needs: [main-tag, api, migrator, frontend, push-api, push-migrator, push-frontend]
+    if: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-feature')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       id-token: write
+    env:
+      TAG: ${{ github.event_name == 'push' && needs.main-tag.outputs.tag || format('pr-{0}', github.event.pull_request.number) }}
     outputs:
-      tag: pr-${{ github.event.pull_request.number }}
+      tag: ${{ env.TAG }}
       digest: ${{ steps.push.outputs.digest }}
     steps:
       - name: Checkout
@@ -233,12 +251,18 @@ jobs:
         with:
           mode: push
           artifact: ghcr.io/hwinther/clutterstock/manifests
-          tag: pr-${{ github.event.pull_request.number }}
+          tag: ${{ env.TAG }}
           images: |
-            ghcr.io/hwinther/clutterstock/api:${{ needs.api.outputs.version }}@${{ needs.push-api.outputs.image_digest }}
-            ghcr.io/hwinther/clutterstock/migrator:${{ needs.migrator.outputs.version }}@${{ needs.push-migrator.outputs.image_digest }}
-            ghcr.io/hwinther/clutterstock/frontend:${{ needs.frontend.outputs.version }}@${{ needs.push-frontend.outputs.image_digest }}
+            ghcr.io/hwinther/clutterstock/api:${{ github.event_name == 'push' && needs.main-tag.outputs.tag || needs.api.outputs.version }}@${{ needs.push-api.outputs.image_digest }}
+            ghcr.io/hwinther/clutterstock/migrator:${{ github.event_name == 'push' && needs.main-tag.outputs.tag || needs.migrator.outputs.version }}@${{ needs.push-migrator.outputs.image_digest }}
+            ghcr.io/hwinther/clutterstock/frontend:${{ github.event_name == 'push' && needs.main-tag.outputs.tag || needs.frontend.outputs.version }}@${{ needs.push-frontend.outputs.image_digest }}
           renders: clutterstock.yaml=deploy
+
+      # The nightly preview env deploys whatever :main points at. Same digest, so the signature
+      # made above covers it; flux and the registry login come from the step above.
+      - name: Move the main tag
+        if: github.event_name == 'push'
+        run: flux tag artifact "oci://ghcr.io/hwinther/clutterstock/manifests:${TAG}" --tag main
 
   # Deploys an ephemeral preview env to the homelab cluster via GitOps. The reusable workflow
   # mints a GitHub App installation token, clones hwinther/proxmox, renders the per-PR overlay
