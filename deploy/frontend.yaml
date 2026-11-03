@@ -62,6 +62,14 @@ spec:
           value: "https://${APP_HOST}/v1/traces"
         - name: PUBLIC_OTEL_SERVICE_NAME
           value: "clutterstock-frontend"
+        # The SSR server's own traces and logs (CSP violation reports among them), over OTLP/HTTP.
+        # Empty leaves the SDK on its localhost default, i.e. exporting nowhere.
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "${OTEL_EXPORTER_OTLP_HTTP_ENDPOINT:=}"
+        # report-only: the CSP is sent as Content-Security-Policy-Report-Only (reported, not
+        # enforced). enforce: sent as Content-Security-Policy.
+        - name: CSP_MODE
+          value: "${CSP_MODE:=report-only}"
         # Read at runtime by oidc.server.ts via process.env (the SSR code uses process.env.VITE_*,
         # so they aren't inlined at build time).
         - name: VITE_OIDC_AUTHORITY
