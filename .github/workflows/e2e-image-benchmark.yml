@@ -56,7 +56,7 @@ jobs:
       packages: read
       actions: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@7dceeab7f1da9be5216010ce156e1cc35ea51c02 # v2.14.0
     with:
       base_url: ${{ inputs.base_url }}
       container_image: ${{ !startsWith(matrix.variant, 'runner') && format('ghcr.io/hwinther/clutterstock/playwright:{0}-{1}', needs.version.outputs.playwright, matrix.variant) || '' }}

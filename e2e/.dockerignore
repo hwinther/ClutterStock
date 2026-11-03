@@ -1,0 +1,13 @@
+node_modules
+playwright
+playwright-report
+test-results
+monocart-report
+monocart-coverage
+allure-results
+allure-report
+load-report.json
+.env*
+Dockerfile
+.dockerignore
+images
