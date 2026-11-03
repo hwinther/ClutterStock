@@ -102,12 +102,17 @@ test.describe("CSP report endpoint", () => {
     expect(reportTo.status()).toBe(204);
   });
 
-  test("answers 204 to a malformed body and 405 to a GET", async ({ request }) => {
+  // @local-only: a deployed env sits behind the NAXSI edge, which rejects a body that isn't valid
+  // JSON (rule 15) before the app sees it.
+  test("answers 204 to a malformed body", { tag: "@local-only" }, async ({ request }) => {
     const malformed = await request.post("/csp-report", {
       headers: { "content-type": "application/csp-report" },
       data: "{not json",
     });
     expect(malformed.status()).toBe(204);
+  });
+
+  test("answers 405 to a GET", async ({ request }) => {
     expect((await request.get("/csp-report")).status()).toBe(405);
   });
 });

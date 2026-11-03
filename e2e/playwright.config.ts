@@ -60,6 +60,9 @@ export default definePlaywrightConfig({
   use: {
     baseURL,
   },
+  // Against a deployed env, skip what only holds for the app itself (e.g. bodies the NAXSI edge
+  // rejects before they reach it).
+  grepInvert: process.env.BASE_URL ? /@local-only/ : undefined,
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
