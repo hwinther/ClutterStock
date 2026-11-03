@@ -26,6 +26,17 @@ services:
       timeout: 3s
       retries: 30
 
+  # Receives the api's and the SSR frontend's traces during the run and writes them to
+  # e2e/otel-out/traces.jsonl (e2e/otel/collector.yaml), for pr-e2e's slow-calls report. Root so it
+  # can write to the bind mount the runner creates.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.163.2
+    user: "0:0"
+    command: ["--config=/etc/otelcol/collector.yaml"]
+    volumes:
+      - ./e2e/otel/collector.yaml:/etc/otelcol/collector.yaml:ro
+      - ./e2e/otel-out:/out
+
   redis:
     image: redis:7-alpine
     healthcheck:
@@ -53,7 +64,9 @@ services:
       Authentication__Authority: https://auth.wsh.no
       Authentication__Audience: clutterstock-api
       Cors__AllowedOrigins__0: http://localhost:5173
-      OTEL_SDK_DISABLED: "true"
+      # Traces (requests, EF Core queries) to the e2e collector, for the slow-calls report.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: clutterstock-api
     ports:
       - "5155:8081"
     # No native healthcheck: aspnet:*-chiseled-extra has no shell, no curl, no wget
@@ -66,6 +79,9 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+      # Also makes `compose stop` end the api before the collector, so its last spans get written.
+      otel-collector:
+        condition: service_started
 
   api-ready:
     image: curlimages/curl:8.10.1
@@ -85,7 +101,9 @@ services:
       # because the SSR code uses process.env.VITE_*, not import.meta.env).
       VITE_OIDC_AUTHORITY: https://auth.wsh.no
       VITE_OIDC_CLIENT_ID: clutterstock
-      OTEL_SDK_DISABLED: "true"
+      # SSR traces (loaders, calls to the api) to the e2e collector.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: clutterstock-frontend-ssr
       NODE_ENV: production
     ports:
       - "5173:3000"
@@ -102,6 +120,8 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
 
   # The e2e suite (e2e/Dockerfile: specs and npm packages on @wshno/playwright-config's runner
   # image). Only with --profile e2e, so a plain `up` starts just the app. Host networking: the app's

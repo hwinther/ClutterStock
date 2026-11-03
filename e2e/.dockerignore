@@ -11,3 +11,4 @@ load-report.json
 Dockerfile
 .dockerignore
 images
+otel-out
