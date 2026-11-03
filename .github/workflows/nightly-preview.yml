@@ -20,14 +20,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # The digest :main points at now, so the env and the report name the exact build.
+  # The digest :main points at now, so the env and the report name the exact build, and the runner
+  # image that goes with the e2e suite's @wshno/playwright-config.
   resolve:
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      contents: read
     outputs:
       digest: ${{ steps.main.outputs.digest }}
       revision: ${{ steps.main.outputs.revision }}
+      e2e_image: ${{ steps.e2e-image.outputs.ref }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The image shares its version with the npm package, so a bump of @wshno/playwright-config
+      # (Dependabot's or by hand) moves both together.
+      - name: Runner image from the lock file
+        id: e2e-image
+        run: |
+          set -euo pipefail
+          v=$(jq -r '.packages["node_modules/@wshno/playwright-config"].version' e2e/package-lock.json)
+          [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::No @wshno/playwright-config version"; exit 1; }
+          echo "ref=ghcr.io/wshno/playwright-config:$v" >> "$GITHUB_OUTPUT"
+
       - name: Resolve manifests:main
         id: main
         run: |
@@ -105,7 +123,7 @@ jobs:
 
   # The whole suite, data-changing specs included: the database is thrown away afterwards.
   e2e:
-    needs: [deploy]
+    needs: [resolve, deploy]
     permissions:
       contents: read
       packages: read
@@ -114,6 +132,8 @@ jobs:
     uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@8f22617d7095fab1e4497d48cb8d1d5bb8f0950b # v2.13.0
     with:
       base_url: https://clutterstock-nightly.preview.wsh.no
+      # Browsers baked in (chromium-headless-shell), so the job installs none.
+      container_image: ${{ needs.resolve.outputs.e2e_image }}
       # Flux reconciles within ~1 min; a fresh namespace also waits for the database, the secret
       # clones, the migrator and the image pulls.
       wait_url: https://clutterstock-nightly.preview.wsh.no/healthz/ready
