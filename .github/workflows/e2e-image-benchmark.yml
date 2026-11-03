@@ -1,0 +1,111 @@
+name: "E2E image benchmark"
+
+# Times the same e2e run on the runner (with and without the browser + node_modules caches) and in
+# each Playwright image from playwright-images.yml, then tabulates the step timings: image pull
+# ("Initialize containers"), npm install, browser install, the tests themselves and the whole job.
+# It runs the read-only specs (smoke, security headers) against a deployed env, one variant at a
+# time: in parallel they would share the network, and their sign-ins would reuse one TOTP code.
+#
+# GitHub-hosted runners pull from GHCR far faster than a private runner pulls from an internal
+# registry, so read the pull column relatively: size and decompression carry over, bandwidth doesn't.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Deployed env to run the read-only specs against"
+        default: https://clutterstock.test.wsh.no
+        type: string
+
+permissions: {}
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      playwright: ${{ steps.lock.outputs.playwright }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Playwright version from the lock file
+        id: lock
+        run: echo "playwright=$(jq -r '.packages["node_modules/@playwright/test"].version' e2e/package-lock.json)" >> "$GITHUB_OUTPUT"
+
+  bench:
+    needs: [version]
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        variant:
+          - runner
+          - runner-cached
+          - official
+          - official-zstd
+          - chromium
+          - chromium-zstd
+          - headless-shell
+          - headless-shell-zstd
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      pull-requests: write
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@7ee48c985a42c304b9899ab592ec4182edc7979a # v2.12.0
+    with:
+      base_url: ${{ inputs.base_url }}
+      container_image: ${{ !startsWith(matrix.variant, 'runner') && format('ghcr.io/hwinther/clutterstock/playwright:{0}-{1}', needs.version.outputs.playwright, matrix.variant) || '' }}
+      playwright_working_directory: e2e
+      environment: build
+      playwright_cache_enabled: ${{ matrix.variant == 'runner-cached' }}
+      node_modules_cache_enabled: ${{ matrix.variant == 'runner-cached' }}
+      playwright_run_command: npx playwright test --project=chromium tests/smoke.spec.ts tests/security-headers.spec.ts
+      pr_comment_enabled: false
+      # Nothing to upload: eight jobs would collide on the report artifact's name.
+      report_paths_json: "[]"
+    secrets:
+      e2e_username: ${{ secrets.E2E_USERNAME }}
+      e2e_password: ${{ secrets.E2E_PASSWORD }}
+      e2e_otp_secret: ${{ secrets.E2E_OTP_SECRET }}
+
+  report:
+    needs: [bench]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Tabulate step timings
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/actions/runs/$RUN/jobs?per_page=100" --paginate --jq '.jobs[]' \
+            | jq -s '.' > jobs.json
+          {
+            echo "### E2E setup time by variant"
+            echo
+            echo "| Variant | Result | Pull image | Set up Node | npm install | Browsers | Tests | Whole job |"
+            echo "|---|---|--:|--:|--:|--:|--:|--:|"
+            jq -r '
+              def secs($a; $b): if $a and $b then (($b | fromdateiso8601) - ($a | fromdateiso8601)) else null end;
+              def step($j; $pattern): [$j.steps[]? | select(.name | test($pattern)) | secs(.started_at; .completed_at)] | map(select(. != null)) | add;
+              def fmt: if . == null or . == 0 then "–" else "\(.)s" end;
+              .[] | select(.name | startswith("bench (")) as $j
+              | [ ($j.name | capture("bench \\((?<v>[^)]+)\\)").v),
+                  $j.conclusion,
+                  (step($j; "^Initialize containers$") | fmt),
+                  (step($j; "^Set up Node$") | fmt),
+                  (step($j; "^(Restore node_modules|Install npm dependencies)$") | fmt),
+                  (step($j; "^(Restore Playwright browsers cache|Install Playwright)") | fmt),
+                  (step($j; "^Run Playwright$") | fmt),
+                  (secs($j.started_at; $j.completed_at) | fmt) ]
+              | "| " + join(" | ") + " |"' jobs.json
+          } >> "$GITHUB_STEP_SUMMARY"
