@@ -1,10 +1,11 @@
+import { appUrl } from "./app-url";
 import { expect, test } from "./fixtures";
 
 test("home loads and shows authenticated app after sign-in", async ({ home }) => {
   await home.goto();
 
   // Must stay on the app — not redirected to auth.
-  await expect(home.page).toHaveURL(/localhost:5173/);
+  await expect.poll(() => new URL(home.page.url()).origin).toBe(appUrl.origin);
 
   await expect(home.headerLink).toBeVisible();
 

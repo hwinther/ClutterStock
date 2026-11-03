@@ -1,6 +1,7 @@
 import { expect, test as setup } from "@playwright/test";
 import fs from "node:fs";
 import * as OTPAuth from "otpauth";
+import { appUrl } from "./app-url";
 import { authDir, authFile, sessionFile } from "./auth-paths";
 
 // Reuse cached storage state if it's younger than this. Keep well under the
@@ -51,7 +52,7 @@ setup("authenticate", async ({ page }) => {
 
   // After OTP, Authelia redirects to either consent or directly back to the app
   await page.waitForURL(
-    url => url.pathname.includes("/consent/") || url.hostname === "localhost",
+    url => url.pathname.includes("/consent/") || url.hostname === appUrl.hostname,
     { timeout: 15_000 },
   );
 
@@ -82,6 +83,6 @@ setup("authenticate", async ({ page }) => {
   fs.mkdirSync(authDir, { recursive: true });
   fs.writeFileSync(
     sessionFile,
-    JSON.stringify({ "http://localhost:5173": sessionData }, null, 2),
+    JSON.stringify({ [appUrl.origin]: sessionData }, null, 2),
   );
 });

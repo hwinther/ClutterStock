@@ -14,6 +14,10 @@ dotenv.config({
   path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".env.test"),
 });
 
+// Use localhost (not 127.0.0.1): Vite may bind IPv6-only on Windows. BASE_URL points the suite at a
+// deployed env instead (the nightly preview).
+const baseURL = process.env.BASE_URL ?? "http://localhost:5173";
+
 // Shared defaults (testDir ./tests, retries, forbidOnly, the github/html/json CI reporters, trace,
 // screenshot and video on failure) come from @wshno/playwright-config; only what differs is set here.
 export default definePlaywrightConfig({
@@ -32,7 +36,7 @@ export default definePlaywrightConfig({
               // container. Excludes inline data: URLs, hot-reload websockets,
               // and the OIDC redirect to auth.wsh.no.
               entryFilter: (entry: { url: string }) =>
-                entry.url.includes("localhost:5173"),
+                entry.url.startsWith(new URL(baseURL).origin),
               // Map bundled output back to source files via the build's
               // source maps. Keep only files under app/ — drop node_modules,
               // build artifacts, and the generated react-router types.
@@ -54,8 +58,7 @@ export default definePlaywrightConfig({
       ]
     : localReporters,
   use: {
-    // Use localhost (not 127.0.0.1): Vite may bind IPv6-only on Windows.
-    baseURL: process.env.BASE_URL ?? "http://localhost:5173",
+    baseURL,
   },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
