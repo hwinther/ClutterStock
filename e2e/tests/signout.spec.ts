@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { expect, test } from "./fixtures";
+import { appUrl } from "./app-url";
 import { authFile, sessionFile } from "./auth-paths";
 
 test.describe.configure({ mode: "serial" });
@@ -27,7 +28,7 @@ test("sign-out clears the app session and forces re-auth on next visit", async (
   await home.expectAuthenticated();
 
   // Sanity: the app session cookie is set after auth.setup.
-  const before = await page.context().cookies("http://localhost:5173/");
+  const before = await page.context().cookies(appUrl.href);
   expect(before.some((c) => c.name === "clutterstock_sid" && c.value)).toBe(true);
 
   // Abort the navigation to Authelia's end-session endpoint. The /auth/signout
@@ -48,7 +49,7 @@ test("sign-out clears the app session and forces re-auth on next visit", async (
   await expect
     .poll(
       async () => {
-        const cs = await page.context().cookies("http://localhost:5173/");
+        const cs = await page.context().cookies(appUrl.href);
         return cs.find((c) => c.name === "clutterstock_sid")?.value ?? "";
       },
       { timeout: 10_000 },
@@ -60,7 +61,7 @@ test("sign-out clears the app session and forces re-auth on next visit", async (
   //    cookie jar) with maxRedirects: 0 so we observe the immediate response
   //    without following the redirect chain into Authelia — Authelia would
   //    silently re-auth via its still-valid IdP cookie, defeating the point.
-  const res = await page.request.get("http://localhost:5173/", {
+  const res = await page.request.get(appUrl.href, {
     maxRedirects: 0,
   });
   expect(res.status()).toBe(302);

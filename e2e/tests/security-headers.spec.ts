@@ -1,4 +1,5 @@
 import { parseCsp } from "@wshno/playwright-config";
+import { appUrl } from "./app-url";
 import { expect, test } from "./fixtures";
 
 // frontend/app/lib/security-headers.server.ts. The e2e stack leaves CSP_MODE unset, so the policy
@@ -77,7 +78,7 @@ test.describe("CSP report endpoint", () => {
         "csp-report": {
           "blocked-uri": "inline",
           disposition: "report",
-          "document-uri": "http://localhost:5173/",
+          "document-uri": appUrl.href,
           "effective-directive": "script-src-elem",
         },
       }),
@@ -92,7 +93,7 @@ test.describe("CSP report endpoint", () => {
           body: {
             blockedURL: "inline",
             disposition: "report",
-            documentURL: "http://localhost:5173/",
+            documentURL: appUrl.href,
             effectiveDirective: "script-src-elem",
           },
         },
