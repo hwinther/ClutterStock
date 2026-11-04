@@ -19,7 +19,9 @@ ENV VITE_APP_VERSION=${APP_VERSION}
 ENV VITE_GIT_SHA=${GIT_SHA}
 RUN npm run build
 
-FROM gcr.io/distroless/nodejs26-debian13
+# Pinned to the digest so Dependabot (docker, weekly) opens a PR when Google rebuilds the image with
+# Debian security fixes; an unpinned tag only changed whenever the frontend happened to be rebuilt.
+FROM gcr.io/distroless/nodejs26-debian13:latest@sha256:c952ca0a7057a306eadacf330fe972dffd016a22ec2c5b67cb3abb7d2746a276
 WORKDIR /app
 COPY ./package.json /app/
 COPY --from=production-dependencies-env /app/node_modules /app/node_modules
