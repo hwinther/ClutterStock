@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
 
       - name: Render, validate and report
-        uses: hwinther/reusable-workflows/.github/actions/manifests@7dceeab7f1da9be5216010ce156e1cc35ea51c02 # v2.14.0
+        uses: hwinther/reusable-workflows/.github/actions/manifests@ec173a085ab690c1e7d1918243173c98cba31fc3 # v2.15.0
         with:
           mode: diff
           renders: clutterstock.yaml=deploy
