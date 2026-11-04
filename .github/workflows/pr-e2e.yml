@@ -415,7 +415,7 @@ jobs:
   # report reads. Also runs when a test job failed, so the failures are reported.
   quality:
     needs: [main-tag, version, unit, e2e, api-scan, migrator-scan, frontend-scan]
-    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ !cancelled() }}
     permissions:
       contents: read
       packages: write
@@ -423,6 +423,5 @@ jobs:
     uses: hwinther/reusable-workflows/.github/workflows/quality-artifact.yml@ec173a085ab690c1e7d1918243173c98cba31fc3 # v2.15.0
     with:
       tags: |
-        ${{ needs.main-tag.outputs.tag }}
-        main
+        pr-${{ github.event.pull_request.number }}-qtest
       version: ${{ needs.version.outputs.version }}
