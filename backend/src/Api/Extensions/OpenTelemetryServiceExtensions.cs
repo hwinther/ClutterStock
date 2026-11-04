@@ -16,9 +16,15 @@ internal static class OpenTelemetryServiceExtensions
                                      .GetName()
                                      .Version?.ToString();
 
+        // AddService overrides the OTEL_SERVICE_NAME resource detector, so honor the variable here
+        // (deploy and compose set it to clutterstock-api); the assembly name is only a fallback.
+        var serviceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") is { Length: > 0 } configuredName
+            ? configuredName
+            : environment.ApplicationName;
+
         services.AddOpenTelemetry()
                 .ConfigureResource(resource => resource.AddService(
-                                       environment.ApplicationName,
+                                       serviceName,
                                        serviceVersion: serviceVersion))
                 .WithTracing(static tracing => tracing
                                                .AddAspNetCoreInstrumentation(static options =>
