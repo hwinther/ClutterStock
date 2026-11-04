@@ -208,6 +208,11 @@ jobs:
       # The suite runs from the e2e image as a compose service, not with Node and browsers on the
       # runner: the same `docker compose --profile e2e run --rm playwright` as locally.
       compose_playwright_service: playwright
+      # The api and SSR frontend trace to the stack's collector; API requests and SQL queries over
+      # 2 s are reported in the job summary and the PR comment.
+      otel_traces_file: e2e/otel-out/traces.jsonl
+      slow_span_threshold_ms: 2000
+      report_paths_json: '["playwright-report","test-results","otel-out"]'
       playwright_working_directory: e2e
       environment: build
       image_artifacts_json: |
