@@ -70,6 +70,7 @@ jobs:
       project_file: src/Api/Api.csproj
       container_registry: ghcr.io
       container_image_name_postfix: api
+      handoff: artifact
       version: ${{ needs.version.outputs.version }}
       image_tags: ${{ needs.version.outputs.image_tags }}
       is_alpha: ${{ needs.version.outputs.is_alpha }}
@@ -88,6 +89,7 @@ jobs:
       project_file: src/Migrator/Migrator.csproj
       container_registry: ghcr.io
       container_image_name_postfix: migrator
+      handoff: artifact
       version: ${{ needs.version.outputs.version }}
       image_tags: ${{ needs.version.outputs.image_tags }}
       is_alpha: ${{ needs.version.outputs.is_alpha }}
@@ -102,6 +104,7 @@ jobs:
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
+      handoff: artifact
       version: ${{ needs.version.outputs.version }}
       image_tags: ${{ needs.version.outputs.image_tags }}
       is_alpha: ${{ needs.version.outputs.is_alpha }}
@@ -144,6 +147,7 @@ jobs:
     with:
       container_registry: ghcr.io
       container_image_name_postfix: e2e
+      handoff: artifact
       version: ${{ needs.version.outputs.version }}
       image_tags: ${{ needs.version.outputs.image_tags }}
       is_alpha: ${{ needs.version.outputs.is_alpha }}
