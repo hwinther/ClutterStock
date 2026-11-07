@@ -69,14 +69,14 @@ jobs:
   clear:
     permissions:
       contents: read
-    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-teardown.yml@52083df4f159415d37ce3365a8df0761d5a67516 # v2.23.0
+    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-teardown.yml@9d45837eaa945cfe341559f90ad2805a5580187d # v2.23.1
     with:
       target_repo: hwinther/proxmox
       preview_base_path: clusters/production/apps/previews/clutterstock
       pr_number: nightly
       app_name: clutterstock
+      client_id: ${{ vars.PROXMOX_GITOPS_CLIENT_ID }}
     secrets:
-      app_id: ${{ secrets.PROXMOX_GITOPS_APP_ID }}
       app_private_key: ${{ secrets.PROXMOX_GITOPS_APP_PRIVATE_KEY }}
 
   # The e2e job waits for readiness, so a leftover env still answering would pass that wait with the
@@ -106,7 +106,7 @@ jobs:
     needs: [resolve, wait-gone]
     permissions:
       contents: read
-    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-upsert.yml@52083df4f159415d37ce3365a8df0761d5a67516 # v2.23.0
+    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-upsert.yml@9d45837eaa945cfe341559f90ad2805a5580187d # v2.23.1
     with:
       target_repo: hwinther/proxmox
       preview_base_path: clusters/production/apps/previews/clutterstock
@@ -117,8 +117,8 @@ jobs:
       # The preview template pins the manifest artifact (which pins the images), not the images.
       image_tag: main
       image_digest: ${{ needs.resolve.outputs.digest }}
+      client_id: ${{ vars.PROXMOX_GITOPS_CLIENT_ID }}
     secrets:
-      app_id: ${{ secrets.PROXMOX_GITOPS_APP_ID }}
       app_private_key: ${{ secrets.PROXMOX_GITOPS_APP_PRIVATE_KEY }}
 
   # The whole suite, data-changing specs included: the database is thrown away afterwards.
@@ -129,7 +129,7 @@ jobs:
       packages: read
       actions: read
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@52083df4f159415d37ce3365a8df0761d5a67516 # v2.23.0
+    uses: hwinther/reusable-workflows/.github/workflows/playwright-e2e.yml@9d45837eaa945cfe341559f90ad2805a5580187d # v2.23.1
     with:
       base_url: https://clutterstock-nightly.preview.wsh.no
       # Browsers baked in (chromium-headless-shell), so the job installs none.
@@ -153,14 +153,14 @@ jobs:
     if: ${{ always() && needs.deploy.result != 'skipped' }}
     permissions:
       contents: read
-    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-teardown.yml@52083df4f159415d37ce3365a8df0761d5a67516 # v2.23.0
+    uses: hwinther/reusable-workflows/.github/workflows/gitops-preview-teardown.yml@9d45837eaa945cfe341559f90ad2805a5580187d # v2.23.1
     with:
       target_repo: hwinther/proxmox
       preview_base_path: clusters/production/apps/previews/clutterstock
       pr_number: nightly
       app_name: clutterstock
+      client_id: ${{ vars.PROXMOX_GITOPS_CLIENT_ID }}
     secrets:
-      app_id: ${{ secrets.PROXMOX_GITOPS_APP_ID }}
       app_private_key: ${{ secrets.PROXMOX_GITOPS_APP_PRIVATE_KEY }}
 
   # One open issue while the nightly is red: opened on the first failure, commented on after that,
