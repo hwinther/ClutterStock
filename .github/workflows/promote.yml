@@ -165,7 +165,9 @@ jobs:
         id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.PROXMOX_GITOPS_APP_ID }}
+          # The app's Client ID (Iv23…, a repository variable, not a secret). create-github-app-token v3
+          # deprecates app-id; the old App ID secret stays as a fallback.
+          client-id: ${{ vars.PROXMOX_GITOPS_CLIENT_ID || secrets.PROXMOX_GITOPS_APP_ID }}
           private-key: ${{ secrets.PROXMOX_GITOPS_APP_PRIVATE_KEY }}
           owner: hwinther
           repositories: proxmox
