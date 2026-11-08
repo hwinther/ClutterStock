@@ -1,78 +1,43 @@
 name: "Create release"
 
+# Creates the v* tag (auto = next version from GitVersion) and, optionally, the GitHub Release.
+# The tag is pushed with the wshno-devops-bot GitHub App's token, so the push itself starts
+# container.yml ("Publish containers and manifests to GHCR": api, migrator, frontend
+# and the signed manifests artifact) and api-docs-pages.yml.
+# (A tag pushed with GITHUB_TOKEN wouldn't trigger them, which is why this used to dispatch them.)
+#
+# Grype gate in the way (vulnerabilities we can't fix yet)? Let the build fail, then run
+# container.yml by hand at the tag ("Use workflow from" -> the tag) with "Fail the build" off.
+#
+# Needs: repository variable DEVOPS_BOT_CLIENT_ID, secret DEVOPS_BOT_PRIVATE_KEY, and the App
+# installed on this repo with Contents: write.
+
 on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Navn på tag (f.eks. v1.2.3)"
+        description: "Version tag (e.g. v1.2.3), or 'auto' for the next version"
         required: false
         default: "auto"
       release_notes:
-        description: "Utgivelsesnotater for denne taggen"
+        description: "Release notes"
         required: false
       create_release:
-        description: "Opprett en GitHub Release for denne taggen"
-        type: boolean
-        default: true
-      container_grype_fail_build:
-        description: "Fail the container workflow (api, migrator, frontend) if Grype finds vulnerabilities (turn off for a release override)"
+        description: "Also create a GitHub Release"
         type: boolean
         default: true
 
+permissions: {}
+
 jobs:
   tag:
-    # Required so we can dispatch container workflows after tagging (tag push from GITHUB_TOKEN does not fire on.push.tags)
     permissions:
       contents: write
-      actions: write
-    uses: hwinther/reusable-workflows/.github/workflows/tag-and-release.yml@3c1d9515664e32cffe91cb44845be94dd4c6fdf6 # v2.25.0
+    uses: hwinther/reusable-workflows/.github/workflows/tag-and-release.yml@6b6810e17143f38ac9dc0f84d504e7ff08b1d2bf # v2.26.0
     with:
       tag_name: ${{ inputs.tag_name }}
       release_notes: ${{ inputs.release_notes }}
       create_release: ${{ inputs.create_release }}
-
-  # GitHub does not run tag-push workflows when the tag was created with GITHUB_TOKEN; dispatch the same jobs explicitly.
-  trigger-container-builds:
-    needs: tag
-    if: success()
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Determine ref for container builds
-        id: ref
-        run: |
-          git fetch --tags --force
-          TAG="${{ inputs.tag_name }}"
-          if [ "$TAG" = "auto" ] || [ -z "$TAG" ]; then
-            REF=$(git tag -l 'v*' --sort=-v:refname | head -n1)
-          else
-            REF="$TAG"
-          fi
-          if [ -z "$REF" ]; then
-            echo "::error::Could not resolve a tag ref for container builds."
-            exit 1
-          fi
-          echo "Using ref: $REF"
-          echo "ref=$REF" >> "$GITHUB_OUTPUT"
-
-      # One workflow builds all three images and then the signed manifests artifact, which needs
-      # all three digests.
-      - name: Dispatch container + manifests workflow
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh workflow run container.yml
-          --ref "${{ steps.ref.outputs.ref }}"
-          -f grype_fail_build=${{ inputs.container_grype_fail_build }}
-
-      - name: Dispatch api-docs-pages workflow
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run api-docs-pages.yml --ref "${{ steps.ref.outputs.ref }}"
+      app_client_id: ${{ vars.DEVOPS_BOT_CLIENT_ID }}
+    secrets:
+      app_private_key: ${{ secrets.DEVOPS_BOT_PRIVATE_KEY }}
