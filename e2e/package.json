@@ -29,7 +29,7 @@
     "otpauth": "9.6.0",
     "playwright-lighthouse": "4.0.0",
     "prettier": "3.9.10",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "//overrides": "Artillery's Playwright engine and playwright-lighthouse bring their own Playwright; keep one copy. Must equal the @playwright/test version @wshno/playwright-config pins.",
   "overrides": {
