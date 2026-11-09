@@ -12,6 +12,7 @@ on:
       - "e2e/**"
       # The preview runs this PR's deploy/ (the manifests job).
       - "deploy/**"
+      - ".github/manifest-renders.txt"
       - "docker-compose.e2e.yml"
       - ".github/workflows/pr-e2e.yml"
   push:
@@ -22,6 +23,7 @@ on:
       - "backend/**"
       - "e2e/**"
       - "deploy/**"
+      - ".github/manifest-renders.txt"
       - "docker-compose.e2e.yml"
       - ".github/workflows/pr-e2e.yml"
 
@@ -339,7 +341,7 @@ jobs:
 
       - name: Render, validate, push and sign
         id: push
-        uses: hwinther/reusable-workflows/.github/actions/manifests@6b6810e17143f38ac9dc0f84d504e7ff08b1d2bf # v2.26.0
+        uses: hwinther/reusable-workflows/.github/actions/manifests@1fa5882e8aa1048af78492baf016f5a7b310be11 # v2.29.0
         with:
           mode: push
           artifact: ghcr.io/hwinther/clutterstock/manifests
@@ -348,7 +350,7 @@ jobs:
             ghcr.io/hwinther/clutterstock/api:${{ github.event_name == 'push' && needs.main-tag.outputs.tag || needs.api.outputs.version }}@${{ needs.push-api.outputs.image_digest }}
             ghcr.io/hwinther/clutterstock/migrator:${{ github.event_name == 'push' && needs.main-tag.outputs.tag || needs.migrator.outputs.version }}@${{ needs.push-migrator.outputs.image_digest }}
             ghcr.io/hwinther/clutterstock/frontend:${{ github.event_name == 'push' && needs.main-tag.outputs.tag || needs.frontend.outputs.version }}@${{ needs.push-frontend.outputs.image_digest }}
-          renders: clutterstock.yaml=deploy
+          renders_file: .github/manifest-renders.txt
 
       # The nightly preview env deploys whatever :main points at. Same digest, so the signature
       # made above covers it; flux and the registry login come from the step above.
