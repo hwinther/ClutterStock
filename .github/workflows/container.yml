@@ -43,6 +43,9 @@ jobs:
       project_file: src/Api/Api.csproj
       container_registry: ghcr.io
       container_image_name_postfix: api
+      # The GitHub Release already exists when tag-and-release pushes the tag, and attaching the
+      # SBOMs to it needs contents: write. They stay available as workflow artifacts.
+      release_asset_upload_enabled: false
       grype_fail_build: ${{ github.event.inputs.grype_fail_build == 'false' && 'never' || 'auto' }}
 
   migrator:
@@ -62,6 +65,9 @@ jobs:
       project_file: src/Migrator/Migrator.csproj
       container_registry: ghcr.io
       container_image_name_postfix: migrator
+      # The GitHub Release already exists when tag-and-release pushes the tag, and attaching the
+      # SBOMs to it needs contents: write. They stay available as workflow artifacts.
+      release_asset_upload_enabled: false
       grype_fail_build: ${{ github.event.inputs.grype_fail_build == 'false' && 'never' || 'auto' }}
 
   frontend:
@@ -77,6 +83,9 @@ jobs:
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
+      # The GitHub Release already exists when tag-and-release pushes the tag, and attaching the
+      # SBOMs to it needs contents: write. They stay available as workflow artifacts.
+      release_asset_upload_enabled: false
       build_context: frontend
       dockerfile: frontend/Dockerfile
       grype_fail_build: ${{ github.event.inputs.grype_fail_build == 'false' && 'never' || 'auto' }}
