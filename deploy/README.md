@@ -1,7 +1,7 @@
 # deploy/
 
 Workload manifests for ClutterStock: the API (with the migrator as its initContainer), the SSR
-frontend, and the Ingress. On every release, the `manifests` job in
+frontend, and the HTTPRoute. On every release, the `manifests` job in
 `.github/workflows/container.yml` runs the `manifests` action from hwinther/reusable-workflows,
 which:
 
@@ -22,6 +22,8 @@ The cluster repo (hwinther/proxmox) consumes the artifact through a Flux `OCIRep
 `Kustomization` per environment. It provides everything that isn't in here:
 
 - the namespace (via `targetNamespace`) and network policies;
+- a Gateway API Gateway the HTTPRoute can attach to (`GATEWAY_*` below), whose listener allows routes
+  from the target namespace, and a grant for the `APP_HOST` hostname;
 - the PostgreSQL database and role, and the Secrets below;
 - the variable values below (via `postBuild.substitute`).
 
@@ -62,7 +64,7 @@ quotes, so a number or boolean would come out as the wrong YAML type.
 
 | Variable | Default | Used for |
 |---|---|---|
-| `APP_HOST` | (required) | Ingress host, `PUBLIC_ORIGIN` (OIDC redirect URIs) and the browser OTLP endpoint, e.g. `clutterstock.wsh.no` |
+| `APP_HOST` | (required) | HTTPRoute hostname, `PUBLIC_ORIGIN` (OIDC redirect URIs) and the browser OTLP endpoint, e.g. `clutterstock.wsh.no` |
 | `OIDC_AUTHORITY` | (required) | OIDC issuer for the frontend login and the API's JWT validation, e.g. `https://auth.wsh.no` |
 | `OIDC_CLIENT_ID` | `clutterstock` | Frontend OIDC client |
 | `OIDC_AUDIENCE` | `clutterstock-api` | API JWT audience |
@@ -78,6 +80,9 @@ quotes, so a number or boolean would come out as the wrong YAML type.
 | `CSP_MODE` | `report-only` | `report-only` sends the frontend's CSP as `Content-Security-Policy-Report-Only`; `enforce` as `Content-Security-Policy` |
 | `APP_ENVIRONMENT` | `production` | `deployment.environment` resource attribute |
 | `HOMEPAGE_NAME` | `Clutterstock` | gethomepage.dev tile name |
+| `GATEWAY_NAME` | `traefik` | Gateway the HTTPRoute attaches to |
+| `GATEWAY_NAMESPACE` | `traefik` | Namespace of that Gateway |
+| `GATEWAY_LISTENER` | `web` | Gateway listener (`sectionName`) |
 
 ### Secrets
 
@@ -91,7 +96,7 @@ In the target namespace:
 ### Resource names
 
 `Deployment/clutterstock-api`, `Service/clutterstock-api`, `Deployment/clutterstock-frontend`,
-`Service/clutterstock-frontend`, `Ingress/clutterstock`. Flux prunes anything that disappears from
+`Service/clutterstock-frontend`, `HTTPRoute/clutterstock`. Flux prunes anything that disappears from
 the artifact, so rename deliberately.
 
 ## Render locally
