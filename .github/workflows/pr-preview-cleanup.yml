@@ -1,4 +1,4 @@
-name: "PR preview cleanup"
+name: Preview cleanup
 
 # Removes the ClutterStock preview env for a PR when the PR is closed (merged or not). Calls the
 # generic teardown reusable in hwinther/reusable-workflows, which removes the per-PR overlay from

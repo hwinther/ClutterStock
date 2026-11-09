@@ -1,4 +1,4 @@
-name: "Publish containers and manifests to GHCR"
+name: Publish release
 
 # Builds, scans and pushes the api, migrator and frontend images, then renders deploy/ with all
 # three pinned to tag@digest and ships it as one signed OCI artifact
