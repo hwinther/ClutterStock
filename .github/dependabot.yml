@@ -1,204 +1,192 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# Synced from wshno/devops settings-sync/files/dependabot/dotnet-node.yml (built by
+# settings-sync/dependabot/build.py): change it there. Stack: GitHub Actions, Docker, NuGet, npm.
+#
+# Directories are single-level wildcards, one per depth ('/', '/*', '/*/*'); directories without a
+# manifest are skipped. Cooldown: 7 days, 14 for GitHub Actions, so the synced workflows are updated
+# in wshno/devops (Renovate, 7 days) and synced before Dependabot here proposes the same bump.
+# Groups: a dependency goes to the FIRST group that matches; groups that match nothing are harmless.
 
 version: 2
 updates:
-- package-ecosystem: "github-actions"
-  directories:
-  - "/"
-  - "/.github/actions/*"
-  open-pull-requests-limit: 20
-  target-branch: "main"
-  schedule:
-    interval: "weekly"
-    day: "sunday"
-  assignees:
-  - "hwinther"
-  groups:
-    reusable-workflows:
-      patterns:
-      - "hwinther/reusable-workflows/*"
+  - package-ecosystem: 'github-actions'
+    directories:
+      - '/'
+      - '/.github/actions/*'
+    open-pull-requests-limit: 20
+    schedule:
+      interval: 'weekly'
+      day: 'sunday'
+    cooldown:
+      default-days: 14
+    assignees:
+      - 'hwinther'
+    groups:
+      reusable-workflows:
+        patterns:
+          - 'hwinther/reusable-workflows*'
 
-- package-ecosystem: "docker"
-  directories:
-  - "/"
-  - "/frontend"
-  open-pull-requests-limit: 20
-  target-branch: "main"
-  schedule:
-    interval: "weekly"
-    day: "sunday"
-  assignees:
-  - "hwinther"
+  - package-ecosystem: 'docker'
+    directories:
+      - '/'
+      - '/*'
+      - '/*/*'
+      - '/.github/actions/*'
+    open-pull-requests-limit: 20
+    schedule:
+      interval: 'weekly'
+      day: 'sunday'
+    cooldown:
+      default-days: 7
+    assignees:
+      - 'hwinther'
+    groups:
+      base-images:
+        patterns:
+          - '*'
 
-- package-ecosystem: "nuget"
-  directory: "/backend"
-  open-pull-requests-limit: 20
-  target-branch: "main"
-  schedule:
-    interval: "weekly"
-    day: "sunday"
-  assignees:
-  - "hwinther"
-  # update-dotnet-lockfiles triggers dependabot-update-dotnet-lockfiles.yml, which regenerates the
-  # lock files of every project in the solution. Dependabot only rewrites the bumped project's own
-  # packages.lock.json, so projects referencing it fail the locked-mode restore (NU1004) without it.
-  # Setting labels replaces Dependabot's defaults, so those are listed too.
-  labels:
-  - "dependencies"
-  - ".NET"
-  - "update-dotnet-lockfiles"
-  groups:
-    microsoft:
-      patterns:
-      - "Microsoft.*"
-      exclude-patterns:
-      - "Microsoft.OpenApi"
-      - "Microsoft.CodeAnalysis.*"
-      - "Microsoft.Testing.*"
-    # The source generators' Roslyn version must not exceed the compiler in the SDK that builds
-    # them (SDK 10.0.4xx ships Roslyn 5.9; backend/global.json sets the minimum). Kept apart so a
-    # Roslyn bump that needs a newer SDK doesn't block the rest of the Microsoft group.
-    roslyn:
-      patterns:
-      - "Microsoft.CodeAnalysis.*"
-    swashbuckle:
-      patterns:
-      - "Swashbuckle.*"
-    # xunit.v3 and coverlet.MTP both run on Microsoft.Testing.Platform and require a minimum
-    # version of it, so they move together (a lone xunit bump fails with NU1605).
-    test-platform:
-      patterns:
-      - "xunit"
-      - "xunit.*"
-      - "coverlet.*"
-      - "Microsoft.Testing.*"
-    nunit:
-      patterns:
-      - "nunit"
-      - "nunit.*"
-    opentelemetry:
-      patterns:
-      - "OpenTelemetry.*"
+  - package-ecosystem: 'nuget'
+    directories:
+      - '/'
+      - '/*'
+      - '/*/*'
+    open-pull-requests-limit: 20
+    schedule:
+      interval: 'weekly'
+      day: 'sunday'
+    cooldown:
+      default-days: 7
+    assignees:
+      - 'hwinther'
+    # update-dotnet-lockfiles triggers the synced dependabot-update-dotnet-lockfiles.yml, which
+    # regenerates every project's packages.lock.json (Dependabot only rewrites the bumped project's,
+    # so projects referencing it fail the locked-mode restore, NU1004). Setting labels replaces
+    # Dependabot's defaults, so those are listed too.
+    labels:
+      - 'dependencies'
+      - '.NET'
+      - 'update-dotnet-lockfiles'
+    groups:
+      roslyn:
+        patterns:
+          - 'Microsoft.CodeAnalysis.*'
+      testing:
+        patterns:
+          - 'xunit'
+          - 'xunit.*'
+          - 'nunit'
+          - 'nunit.*'
+          - 'NUnit*'
+          - 'coverlet.*'
+          - 'Microsoft.Testing.*'
+          - 'Microsoft.NET.Test.Sdk'
+      microsoft:
+        patterns:
+          - 'Microsoft.*'
+          - 'System.*'
+        exclude-patterns:
+          - 'Microsoft.OpenApi'
+      swashbuckle:
+        patterns:
+          - 'Swashbuckle.*'
+      opentelemetry:
+        patterns:
+          - 'OpenTelemetry.*'
 
-- package-ecosystem: "npm"
-  directories:
-  - "/frontend"
-  - "/e2e"
-  - "/scripts/badges"
-  open-pull-requests-limit: 20
-  target-branch: "main"
-  schedule:
-    interval: "weekly"
-    day: "sunday"
-  assignees:
-  - "hwinther"
-  ignore:
-  - dependency-name: "*"
-    update-types: [ "version-update:semver-patch" ]
-  # typescript-eslint, which @wshno/eslint-config builds on, supports TypeScript <6.1. Drop this once a
-  # typescript-eslint release widens that range.
-  - dependency-name: "typescript"
-    versions: [">=6.1"]
-  groups:
-    wshno:
-      patterns:
-      - "@wshno/*"
-    # core, vitest-runner and typescript-checker peer-depend on the exact same version.
-    stryker:
-      patterns:
-      - "@stryker-mutator/*"
-    types:
-      patterns:
-      - "@types/*"
-    eslint:
-      patterns:
-      - "eslint"
-      - "eslint-*"
-      - "@eslint/*"
-      - "@typescript-eslint/*"
-      - "*/eslint-plugin"
-      - "*/eslint-plugin-*"
-    react:
-      patterns:
-      - "react"
-      - "react-*"
-      - "@types/react*"
-    testing:
-      patterns:
-      - "@testing-library/*"
-      - "jsdom"
-      - "msw"
-    vite:
-      patterns:
-      - "vite"
-      - "vite-*"
-      - "@vitejs/*"
-      - "vitest"
-      - "@vitest/*"
-    tanstack:
-      patterns:
-      - "@tanstack/*"
-    code-quality:
-      patterns:
-      - "prettier"
-      - "@cspell/*"
-    build-tools:
-      patterns:
-      - "typescript"
-      - "typescript-*"
-      - "orval"
-    opentelemetry:
-      patterns:
-      - "@opentelemetry/*"
-    react-router:
-      patterns:
-      - "react-router"
-      - "@react-router/*"
-
-- package-ecosystem: "npm"
-  directory: "/e2e"
-  open-pull-requests-limit: 20
-  target-branch: "main"
-  schedule:
-    interval: "weekly"
-    day: "sunday"
-  assignees:
-  - "hwinther"
-  ignore:
-  - dependency-name: "*"
-    update-types: [ "version-update:semver-patch" ]
-  # typescript-eslint, which @wshno/eslint-config builds on, supports TypeScript <6.1. Drop this once a
-  # typescript-eslint release widens that range.
-  - dependency-name: "typescript"
-    versions: [">=6.1"]
-  groups:
-    types:
-      patterns:
-      - "@types/*"
-    eslint:
-      patterns:
-      - "eslint"
-      - "@eslint/*"
-      - "eslint-*"
-      - "typescript-eslint"
-      - "@typescript-eslint/*"
-      - "*/eslint-plugin"
-      - "*/eslint-plugin-*"
-    playwright:
-      patterns:
-      - "@playwright/*"
-    code-quality:
-      patterns:
-      - "prettier"
-      - "@cspell/*"
-    build-tools:
-      patterns:
-      - "typescript"
-      - "typescript-*"
-    utilities:
-      patterns:
-      - "dotenv"
-      - "globals"
+  - package-ecosystem: 'npm'
+    directories:
+      - '/'
+      - '/*'
+      - '/*/*'
+    open-pull-requests-limit: 20
+    schedule:
+      interval: 'weekly'
+      day: 'sunday'
+    cooldown:
+      default-days: 7
+    assignees:
+      - 'hwinther'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
+      # typescript-eslint, which @wshno/eslint-config builds on, supports TypeScript <6.1. Drop this
+      # once a typescript-eslint release widens that range.
+      - dependency-name: 'typescript'
+        versions: ['>=6.1']
+    groups:
+      wshno:
+        patterns:
+          - '@wshno/*'
+          - 'eslint'
+          - 'prettier'
+      react-router:
+        patterns:
+          - 'react-router'
+          - 'react-router-*'
+          - '@react-router/*'
+      react:
+        patterns:
+          - 'react'
+          - 'react-*'
+          - '@types/react*'
+      vite:
+        patterns:
+          - 'vite'
+          - 'vite-*'
+          - '@vitejs/*'
+      testing:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+          - '@testing-library/*'
+          - 'jsdom'
+          - 'msw'
+      playwright:
+        patterns:
+          - '@playwright/*'
+          - 'playwright*'
+      tanstack:
+        patterns:
+          - '@tanstack/*'
+      opentelemetry:
+        patterns:
+          - '@opentelemetry/*'
+      stryker:
+        patterns:
+          - '@stryker-mutator/*'
+      astro:
+        patterns:
+          - 'astro'
+          - '@astrojs/*'
+      ui-libraries:
+        patterns:
+          - 'bootstrap*'
+          - 'd3*'
+          - '@visx/*'
+          - '@icon/*'
+          - 'jquery*'
+          - 'datatables*'
+      eslint:
+        patterns:
+          - 'eslint-*'
+          - '@eslint/*'
+          - 'typescript-eslint'
+          - '@typescript-eslint/*'
+          - '@eslint-react/*'
+          - '*/eslint-plugin'
+          - '*/eslint-plugin-*'
+          - 'globals'
+      types:
+        patterns:
+          - '@types/*'
+      build-tools:
+        patterns:
+          - 'typescript'
+          - 'typescript-*'
+          - 'orval'
+          - 'openapi-typescript-codegen'
+      code-quality:
+        patterns:
+          - '@cspell/*'
+      utilities:
+        patterns:
+          - 'dotenv'
