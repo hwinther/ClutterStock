@@ -59,7 +59,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
 
       - name: Check the version, signature and migrations
         id: plan
@@ -149,7 +149,7 @@ jobs:
       id-token: write
     steps:
       - name: Set up cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
 
       # Signed in this job, so the identity is promote.yml@refs/heads/main.
       - name: Co-sign the artifact
