@@ -53,6 +53,7 @@ builder.Services.AddProblemDetails(options =>
             ctx.ProblemDetails.Extensions.TryAdd("traceId", activity.Id);
     });
 builder.Services.AddExceptionHandler<PostgresInputExceptionHandler>();
+builder.Services.AddExceptionHandler<ConcurrentDeleteExceptionHandler>();
 builder.Services.AddValidation();
 builder.Services.AddOpenApiDocumentation();
 
