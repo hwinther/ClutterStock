@@ -127,9 +127,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p zap-report
-          [ -f report_html.html ] && cp report_html.html zap-report/report.html
+          if [ -f report_html.html ]; then cp report_html.html zap-report/report.html; fi
           for f in report_md.md report_json.json; do
-            [ -f "$f" ] && cp "$f" "zap-report/$f"
+            if [ -f "$f" ]; then cp "$f" "zap-report/$f"; fi
           done
           ls -la zap-report
 
