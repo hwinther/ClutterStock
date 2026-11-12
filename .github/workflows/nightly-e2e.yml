@@ -49,13 +49,15 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: e2e
 
-      - name: Resolve :latest image refs
+      # The moving `main` tag (the last merge), so the app matches the suite checked out from main.
+      # :latest is the highest release: a spec changed since then would test an app that predates it.
+      - name: Resolve :main image refs
         run: |
           set -euo pipefail
           REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
-          echo "API_IMAGE=ghcr.io/${REPO}/api:latest"           >> $GITHUB_ENV
-          echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator:latest" >> $GITHUB_ENV
-          echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend:latest" >> $GITHUB_ENV
+          echo "API_IMAGE=ghcr.io/${REPO}/api:main"           >> $GITHUB_ENV
+          echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator:main" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend:main" >> $GITHUB_ENV
 
       - name: Pull allure-history image
         continue-on-error: true
