@@ -1,23 +1,34 @@
 name: "OWASP ZAP Scan"
 
+# OWASP ZAP active scan of the API, driven by its OpenAPI document: ZAP imports every operation with
+# its parameters and request bodies, then sends injection, traversal, overflow and malformed-input
+# attacks to each one and reports what the responses give away (server errors, stack traces, echoed
+# payloads, missing headers). It doesn't scan the frontend: the e2e suite's security-headers spec
+# and CSP guard cover that, and a crawler sees little of an app behind OIDC.
+#
+# Self-contained, so it carries over to other repos with an OpenAPI document:
+#   - docker-compose.zap.yml runs only the backend (from the moving `main` images) and points its
+#     JwtBearer at a throwaway OIDC issuer (navikt/mock-oauth2-server). The scan authenticates with a
+#     client_credentials token from that issuer: no secret, no Authelia user, and the token is
+#     worthless against any real environment.
+#   - The api runs as Production, as deployed: Development turns malformed-body 400s into 500s.
+#   - Findings go to one GitHub issue, updated by every run, and to the zap-report image that
+#     api-docs-pages publishes under /security/.
+#
+# Tune false positives in .zap/rules.tsv. The api's own log is uploaded as an artifact, so a server
+# error ZAP reports can be traced to its exception.
+
 on:
   workflow_dispatch:
-    inputs:
-      scan_type:
-        description: "Scan depth (baseline = passive ~5min; full = active ~30-60min)"
-        type: choice
-        options: [baseline, full]
-        default: baseline
   schedule:
-    # Weekly Sunday 04:00 UTC — runs after Saturday's nightly so Pages picks up
-    # both signals on the same redeploy chain when api-docs-pages.yml fires.
+    # Weekly, Sunday 04:00 UTC.
     - cron: "0 4 * * 0"
 
 concurrency:
-  # Same group key as nightly-e2e, so the two never run simultaneously against
-  # the shared Authelia user (Phase 2 will need that anyway; cheap to enforce now).
-  group: e2e-shared-auth
+  group: ${{ github.workflow }}
   cancel-in-progress: false
+
+permissions: {}
 
 jobs:
   scan:
@@ -25,7 +36,11 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # The findings issue (allow_issue_writing).
+      issues: write
     environment: build
+    env:
+      COMPOSE: docker compose -f docker-compose.e2e.yml -f docker-compose.zap.yml
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,60 +59,79 @@ jobs:
         with:
           node-version: 26.x
 
-      - name: Resolve :latest image refs
+      # The moving `main` tag: the last merge, so a regression shows up before it is released.
+      - name: Resolve image refs
         run: |
           set -euo pipefail
           REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
-          echo "API_IMAGE=ghcr.io/${REPO}/api:latest"           >> $GITHUB_ENV
-          echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator:latest" >> $GITHUB_ENV
-          echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend:latest" >> $GITHUB_ENV
+          {
+            echo "API_IMAGE=ghcr.io/${REPO}/api:main"
+            echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator:main"
+            # Not started (the scan needs only the backend), but compose interpolates every service.
+            echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend:main"
+          } >> "$GITHUB_ENV"
 
-      - name: Pull stack images
-        run: docker compose -f docker-compose.e2e.yml pull
+      # api-ready waits for /healthz/ready; its dependencies bring up postgres, the migrator, redis,
+      # the collector, the api and the mock issuer, and nothing else.
+      - name: Start the backend
+        run: $COMPOSE up -d --wait --wait-timeout 180 api-ready
 
-      - name: Start stack
-        run: docker compose -f docker-compose.e2e.yml up -d --wait --wait-timeout 180
+      # Through the published port, with the Host header the api uses on the compose network, so the
+      # token's iss is the issuer the api discovers (http://mock-oauth2:8080/clutterstock). aud must be
+      # the api's Authentication__Audience.
+      - name: Mint a scan token
+        run: |
+          set -euo pipefail
+          token=$(curl -fsS -X POST -H 'Host: mock-oauth2:8080' http://localhost:8099/clutterstock/token \
+            -d grant_type=client_credentials -d client_id=zap-scan -d client_secret=unused \
+            -d scope=clutterstock-api | jq -r .access_token)
+          echo "::add-mask::$token"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $token" http://localhost:5155/api/v1/locations)
+          if [ "$code" != "200" ]; then
+            echo "::error::The api answered $code with the scan token; ZAP would only scan the 401 path."
+            exit 1
+          fi
+          echo "ZAP_AUTH_HEADER_VALUE=Bearer $token" >> "$GITHUB_ENV"
 
-      # zaproxy/action-baseline runs ZAP in a container with --network=host on
-      # Linux runners, so http://localhost:5173 resolves to the frontend
-      # service exposed by docker-compose.e2e.yml.
-      - name: Run ZAP baseline scan
-        if: ${{ github.event_name == 'schedule' || inputs.scan_type == 'baseline' }}
-        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+      # The Swashbuckle document (OpenAPI 3.0): ZAP's importer builds broken request bodies from the
+      # 3.1 one at /openapi/v1.json, and the attacks then die on 400s. ZAP runs with --network=host,
+      # so localhost:5155 is the api. ZAP_AUTH_HEADER_VALUE (from the step above) goes on every
+      # request; Authorization is the default header.
+      - name: Run ZAP API scan
+        uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
         with:
-          target: "http://localhost:5173"
+          target: "http://localhost:5155/swagger/v1/swagger.json"
+          format: openapi
           rules_file_name: ".zap/rules.tsv"
-          # Off until the first run is clean — otherwise every finding becomes
-          # a GitHub issue. Flip to true after rules.tsv is tuned.
-          allow_issue_writing: false
+          allow_issue_writing: true
+          issue_title: "OWASP ZAP API scan"
           fail_action: false
-          artifact_name: zap-baseline
+          artifact_name: zap-api
 
-      - name: Run ZAP full scan
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.scan_type == 'full' }}
-        uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c # v0.13.0
+      - name: Save the api log
+        if: ${{ !cancelled() }}
+        run: $COMPOSE logs --no-color api > api.log 2>&1 || true
+
+      - name: Upload the api log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          target: "http://localhost:5173"
-          rules_file_name: ".zap/rules.tsv"
-          allow_issue_writing: false
-          fail_action: false
-          artifact_name: zap-full
+          name: zap-api-log
+          path: api.log
+          retention-days: 14
 
-      # The action drops report.html / report_md.md / report_json.json in the
-      # workflow workspace. Copy them to a stable directory so the badge
-      # generator and the GHCR push step have a single path to reference.
+      # The action writes report_html.html, report_md.md and report_json.json to the workspace.
+      # api-docs-pages serves report.html as /security/index.html.
       - name: Stage ZAP report
         if: ${{ success() || failure() }}
         run: |
           set -euo pipefail
           mkdir -p zap-report
-          for f in report.html report_md.md report_json.json; do
-            if [ -f "$f" ]; then
-              cp "$f" "zap-report/$f"
-            fi
+          [ -f report_html.html ] && cp report_html.html zap-report/report.html
+          for f in report_md.md report_json.json; do
+            [ -f "$f" ] && cp "$f" "zap-report/$f"
           done
-          echo "Staged:"
-          ls -la zap-report || true
+          ls -la zap-report
 
       - name: Generate ZAP findings badge
         if: ${{ success() || failure() }}
@@ -125,6 +159,6 @@ jobs:
             -f scripts/zap-report.Dockerfile .
           docker push "ghcr.io/${REPO}/zap-report:latest"
 
-      - name: Tear down stack
+      - name: Tear down the backend
         if: always()
-        run: docker compose -f docker-compose.e2e.yml down -v
+        run: $COMPOSE down -v
