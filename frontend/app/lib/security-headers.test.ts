@@ -14,6 +14,8 @@ describe("contentSecurityPolicy", () => {
   it("allows scripts only from the site and with the nonce", () => {
     const policy = contentSecurityPolicy("abc123");
     expect(policy).toContain("script-src 'self' 'nonce-abc123'");
+    expect(policy).toContain("style-src 'self' 'nonce-abc123' https://fonts.googleapis.com");
+    expect(policy).not.toMatch(/style-src [^;]*'unsafe-inline'/);
     expect(policy).not.toMatch(/script-src[^;]*'unsafe-(inline|eval)'/);
     expect(policy).toContain("frame-ancestors 'none'");
     expect(policy).toContain("report-uri /csp-report");
@@ -28,26 +30,21 @@ describe("createNonce", () => {
 });
 
 describe("applyDocumentCsp", () => {
-  it("is Report-Only unless CSP_MODE=enforce", () => {
-    vi.stubEnv("NODE_ENV", "production");
-    const reportOnly = new Headers();
-    applyDocumentCsp(reportOnly, "n");
-    expect(reportOnly.get("content-security-policy-report-only")).toContain("'nonce-n'");
-    expect(reportOnly.get("content-security-policy")).toBeNull();
-    expect(reportOnly.get("reporting-endpoints")).toBe('csp="/csp-report"');
-
-    vi.stubEnv("CSP_MODE", "enforce");
-    const enforced = new Headers();
-    applyDocumentCsp(enforced, "n");
-    expect(enforced.get("content-security-policy")).toContain("'nonce-n'");
-    expect(enforced.get("content-security-policy-report-only")).toBeNull();
-  });
-
-  it("sets nothing outside production, where Vite injects inline scripts", () => {
-    vi.stubEnv("NODE_ENV", "development");
+  it.each(["production", "development", "test"])("enforces the policy (NODE_ENV=%s)", (env) => {
+    vi.stubEnv("NODE_ENV", env);
     const headers = new Headers();
     applyDocumentCsp(headers, "n");
-    expect([...headers.keys()]).toEqual([]);
+    expect(headers.get("content-security-policy")).toContain("'nonce-n'");
+    expect(headers.get("content-security-policy-report-only")).toBeNull();
+    expect(headers.get("reporting-endpoints")).toBe('csp="/csp-report"');
+  });
+
+  it("only reports with the CSP_MODE=report-only emergency switch", () => {
+    vi.stubEnv("CSP_MODE", "report-only");
+    const headers = new Headers();
+    applyDocumentCsp(headers, "n");
+    expect(headers.get("content-security-policy-report-only")).toContain("'nonce-n'");
+    expect(headers.get("content-security-policy")).toBeNull();
   });
 });
 

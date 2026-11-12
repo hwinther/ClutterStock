@@ -2,9 +2,9 @@ import { parseCsp } from "@wshno/playwright-config";
 import { appUrl } from "./app-url";
 import { expect, test } from "./fixtures";
 
-// frontend/app/lib/security-headers.server.ts. The e2e stack leaves CSP_MODE unset, so the policy
-// comes as Content-Security-Policy-Report-Only; cspGuard fails a spec on Report-Only violations too.
-const cspHeader = "content-security-policy-report-only";
+// frontend/app/lib/security-headers.server.ts. The policy is enforced in every environment, the e2e
+// stack and the nightly preview included, so a Report-Only header here is a regression.
+const cspHeader = "content-security-policy";
 
 const expected = {
   "cross-origin-opener-policy": "same-origin",
@@ -21,6 +21,7 @@ test.describe("security headers", () => {
     const second = (await request.get("/")).headers();
     expect(first).toMatchObject(expected);
     expect(first["reporting-endpoints"]).toBe('csp="/csp-report"');
+    expect(first["content-security-policy-report-only"]).toBeUndefined();
 
     const nonce = (headers: Record<string, string>) =>
       parseCsp(headers[cspHeader])[0]
@@ -56,16 +57,18 @@ test.describe("security headers", () => {
   test.describe("in the browser", () => {
     test.use({ cspGuard: { mode: "warn" } });
 
-    test("an injected inline script is reported", async ({ cspViolations, home }) => {
+    test("an injected inline script is blocked and reported", async ({ cspViolations, home }) => {
       await home.goto();
-      await home.page.evaluate(() => {
+      const ran = await home.page.evaluate(() => {
         const script = document.createElement("script");
         script.textContent = "window.__injected = true";
         document.body.append(script);
+        return "__injected" in window;
       });
+      expect(ran).toBe(false);
       await expect
         .poll(() => cspViolations.map((v) => `${v.disposition} ${v.effectiveDirective}`))
-        .toEqual(["report script-src-elem"]);
+        .toEqual(["enforce script-src-elem"]);
     });
   });
 });

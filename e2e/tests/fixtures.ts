@@ -47,6 +47,6 @@ const appTest = base.extend<Fixtures>({
   },
 });
 
-// guardsTest (@wshno/playwright-config) fails a spec in which the page breaks its CSP (Report-Only
-// included), logs a console error or warning, throws uncaught, or gets a 4xx/5xx or network error.
+// guardsTest (@wshno/playwright-config) fails a spec in which the page breaks its CSP, logs a
+// console error or warning, throws uncaught, or gets a 4xx/5xx or network error.
 export const test = mergeTests(appTest, guardsTest);
