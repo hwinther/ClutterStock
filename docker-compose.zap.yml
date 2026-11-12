@@ -1,0 +1,35 @@
+# Overlay on docker-compose.e2e.yml for the ZAP API scan (.github/workflows/zap-scan.yml):
+#
+#   docker compose -f docker-compose.e2e.yml -f docker-compose.zap.yml up -d --wait api-ready
+#   token=$(curl -s -H 'Host: mock-oauth2:8080' http://localhost:8099/clutterstock/token \
+#     -d grant_type=client_credentials -d client_id=zap-scan -d client_secret=unused \
+#     -d scope=clutterstock-api | jq -r .access_token)
+#   curl -H "Authorization: Bearer $token" http://localhost:5155/api/v1/locations
+#
+# The api trusts a throwaway OIDC issuer (navikt/mock-oauth2-server) in place of auth.wsh.no, so the
+# scan authenticates with a client_credentials token that needs no secret and is worthless against
+# any real environment. Only the backend runs: no frontend, no Authelia.
+services:
+  mock-oauth2:
+    image: ghcr.io/navikt/mock-oauth2-server:6.1.3
+    environment:
+      SERVER_PORT: "8080"
+    ports:
+      # The workflow mints the token through this port, with the Host header the api uses, so the
+      # token's iss matches the issuer the api discovers.
+      - "8099:8080"
+
+  api:
+    environment:
+      # As deployed. Development rethrows a malformed request body as a 500 (ThrowOnBadRequest) where
+      # Production answers 400, which would bury the real server errors in noise.
+      ASPNETCORE_ENVIRONMENT: Production
+      # The issuer is the mock's "clutterstock" path; the api fetches its discovery document over the
+      # compose network, hence plain http.
+      Authentication__Authority: http://mock-oauth2:8080/clutterstock
+      Authentication__Audience: clutterstock-api
+      # Bound by AddJwtBearer from the Authentication:Schemes:Bearer section.
+      Authentication__Schemes__Bearer__RequireHttpsMetadata: "false"
+    depends_on:
+      mock-oauth2:
+        condition: service_started
