@@ -9,3 +9,5 @@
 # See https://www.zaproxy.org/docs/alerts/ for the catalogue.
 10049	IGNORE	Non-Storable Content: informational, API responses are per-user and must not be cached
 100001	IGNORE	Unexpected Content-Type: only fires on the Swagger UI HTML pages; the API itself returns JSON
+40014	IGNORE	Persistent XSS in JSON: the API stores text as sent and returns it as application/json with nosniff; React escapes on render and the enforced CSP blocks inline scripts without the nonce
+10104	IGNORE	User Agent Fuzzer: informational; the responses differ because the scan changes the data between requests, not because of the User-Agent
