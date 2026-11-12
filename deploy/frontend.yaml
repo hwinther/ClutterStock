@@ -73,10 +73,10 @@ spec:
               fieldPath: metadata.namespace
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: "service.namespace=$(POD_NAMESPACE),deployment.environment=${APP_ENVIRONMENT:=production}"
-        # report-only: the CSP is sent as Content-Security-Policy-Report-Only (reported, not
-        # enforced). enforce: sent as Content-Security-Policy.
+        # The CSP is enforced. report-only (Content-Security-Policy-Report-Only: reported, not
+        # blocked) is an emergency switch for when the policy breaks a page and a release can't wait.
         - name: CSP_MODE
-          value: "${CSP_MODE:=report-only}"
+          value: "${CSP_MODE:=enforce}"
         # Read at runtime by oidc.server.ts via process.env (the SSR code uses process.env.VITE_*,
         # so they aren't inlined at build time).
         - name: VITE_OIDC_AUTHORITY

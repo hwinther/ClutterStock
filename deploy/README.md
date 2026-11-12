@@ -77,7 +77,7 @@ quotes, so a number or boolean would come out as the wrong YAML type.
 | `RABBITMQ_SECRET` | (required) | Name of the Secret with the RabbitMQ `username` and `password` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | (required) | API OTLP gRPC collector endpoint |
 | `OTEL_EXPORTER_OTLP_HTTP_ENDPOINT` | (empty) | Frontend SSR server OTLP/HTTP collector endpoint (traces, and logs including CSP violation reports), e.g. `http://obs-otel-collector.observability-production.svc.cluster.local:4318`. Empty means no export |
-| `CSP_MODE` | `report-only` | `report-only` sends the frontend's CSP as `Content-Security-Policy-Report-Only`; `enforce` as `Content-Security-Policy` |
+| `CSP_MODE` | `enforce` | `enforce` sends the frontend's CSP as `Content-Security-Policy`. `report-only` (`Content-Security-Policy-Report-Only`) is an emergency switch only, for when the policy breaks a page and a release can't wait |
 | `APP_ENVIRONMENT` | `production` | `deployment.environment` resource attribute |
 | `HOMEPAGE_NAME` | `Clutterstock` | gethomepage.dev tile name |
 | `GATEWAY_NAME` | `traefik` | Gateway the HTTPRoute attaches to |

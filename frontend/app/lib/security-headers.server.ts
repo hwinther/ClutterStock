@@ -13,9 +13,10 @@ export function createNonce(): string {
  * - Scripts: same origin, plus inline scripts carrying this request's nonce (React Router's hydration
  *   data and module loader, React's streaming scripts, and the theme and runtime-config scripts in
  *   root.tsx). No 'unsafe-inline' and no 'unsafe-eval'.
- * - Styles: same origin and the Google Fonts stylesheet. style-src-attr allows inline style
- *   attributes: SSR renders React's `style` props as attributes, and the components use them widely.
- *   Inline <style> elements stay blocked.
+ * - Styles: same origin, the Google Fonts stylesheet, and <style> elements carrying the nonce (none in
+ *   a production build; the Vite dev server injects the CSS as <style> elements and nonces them from
+ *   the csp-nonce meta in root.tsx). style-src-attr allows inline style attributes: SSR renders
+ *   React's `style` props as attributes, and the components use them widely.
  * - Fonts: same origin and Google Fonts. Everything the browser fetches (OTLP traces, SSE, the API)
  *   is same origin.
  * - Reports go to CSP_REPORT_PATH, via report-to (Chromium) and report-uri (Firefox).
@@ -24,7 +25,7 @@ export function contentSecurityPolicy(nonce: string): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}'`,
-    "style-src 'self' https://fonts.googleapis.com",
+    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
     "style-src-attr 'unsafe-inline'",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data:",
@@ -39,11 +40,13 @@ export function contentSecurityPolicy(nonce: string): string {
 }
 
 /**
- * `report-only` (default) sends the policy as Content-Security-Policy-Report-Only: violations are
- * reported, nothing is blocked. `enforce` sends it as Content-Security-Policy. Set by CSP_MODE.
+ * The policy is enforced everywhere: production, previews, the e2e stack and the Vite dev server.
+ * CSP_MODE=report-only is an emergency switch only (sends it as Content-Security-Policy-Report-Only,
+ * so violations are reported and nothing is blocked) for when an enforced policy breaks a deployed
+ * env and a release can't wait.
  */
 export function cspMode(): "enforce" | "report-only" {
-  return process.env.CSP_MODE?.trim() === "enforce" ? "enforce" : "report-only";
+  return process.env.CSP_MODE?.trim() === "report-only" ? "report-only" : "enforce";
 }
 
 /** Headers for every response the SSR server renders: documents and data requests. */
@@ -57,12 +60,8 @@ export function applySecurityHeaders(headers: Headers): void {
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
 }
 
-/**
- * Adds the CSP to an HTML document response. Only in production builds: the Vite dev server injects
- * inline scripts without a nonce.
- */
+/** Adds the CSP to an HTML document response, in every environment (see cspMode). */
 export function applyDocumentCsp(headers: Headers, nonce: string): void {
-  if (process.env.NODE_ENV !== "production") return;
   const name =
     cspMode() === "enforce" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only";
   headers.set(name, contentSecurityPolicy(nonce));

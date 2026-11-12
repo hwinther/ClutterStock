@@ -119,6 +119,9 @@ export function Layout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* The Vite dev client copies this nonce onto the <style> elements it injects, so local
+            dev runs under the same CSP as production (style-src allows the nonce). */}
+        <meta property="csp-nonce" nonce={nonce} />
         {/* Set theme before first paint to avoid flash */}
         <script
           nonce={nonce}
