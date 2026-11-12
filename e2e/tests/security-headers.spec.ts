@@ -57,16 +57,18 @@ test.describe("security headers", () => {
   test.describe("in the browser", () => {
     test.use({ cspGuard: { mode: "warn" } });
 
-    test("an injected inline script is reported", async ({ cspViolations, home }) => {
+    test("an injected inline script is blocked and reported", async ({ cspViolations, home }) => {
       await home.goto();
-      await home.page.evaluate(() => {
+      const ran = await home.page.evaluate(() => {
         const script = document.createElement("script");
         script.textContent = "window.__injected = true";
         document.body.append(script);
+        return "__injected" in window;
       });
+      expect(ran).toBe(false);
       await expect
         .poll(() => cspViolations.map((v) => `${v.disposition} ${v.effectiveDirective}`))
-        .toEqual(["report script-src-elem"]);
+        .toEqual(["enforce script-src-elem"]);
     });
   });
 });
