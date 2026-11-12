@@ -1,6 +1,6 @@
 # Tiny scratch image carrying the rendered monocart-reporter E2E dashboard.
-# Build context: e2e/ (so the COPY source is the monocart-report folder
-# produced by Playwright's monocart-reporter at the end of a nightly run).
+# Build context: e2e/monocart-report (produced by Playwright's monocart-reporter at the end of
+# a nightly run), not e2e/: e2e/.dockerignore keeps the reports out of the e2e image's context.
 # Pulled by api-docs-pages.yml on tag/release to embed under /e2e-report/.
 #
 # A stable-named lighthouse-home.html is staged into this directory by the
@@ -8,4 +8,4 @@
 # link to the latest Lighthouse report (the in-monocart attachment uses a
 # content hash that changes every run).
 FROM scratch
-COPY monocart-report /monocart-report
+COPY . /monocart-report
