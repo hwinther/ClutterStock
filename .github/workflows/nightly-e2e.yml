@@ -3,7 +3,7 @@ name: "Nightly E2E (Allure)"
 on:
   workflow_dispatch:
   schedule:
-    # 03:00 UTC daily — picks up the prior day's main-merge `:latest` images.
+    # 03:00 UTC daily — picks up the prior day's main-merge `:main` images.
     - cron: "0 3 * * *"
 
 concurrency:
