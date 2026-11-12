@@ -229,6 +229,19 @@ public sealed class RoomsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
         return room ?? throw new InvalidOperationException("RoomResponse was null");
     }
 
+    [Fact]
+    public async Task Post_UnknownLocation_Returns400WithValidationError()
+    {
+        var client = CreateAuthenticatedClient();
+
+        var response = await client.PostAsJsonAsync(RoomsRoute, new AddRoomRequest(9999, "Garage", null), Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await ReadValidationProblemAsync(response);
+        Assert.True(problem.Errors.ContainsKey("LocationId"),
+                    $"expected LocationId error, got: [{string.Join(",", problem.Errors.Keys)}]");
+    }
+
     private static async Task<ValidationProblemBody> ReadValidationProblemAsync(HttpResponseMessage response)
     {
         var body = await response.Content.ReadAsStringAsync(Ct);

@@ -1,3 +1,4 @@
+using ClutterStock.Api.ExceptionHandlers;
 using ClutterStock.Api.Extensions;
 using ClutterStock.Api.Generated;
 using ClutterStock.Infrastructure.Database;
@@ -51,10 +52,21 @@ builder.Services.AddProblemDetails(options =>
         if (activity is not null)
             ctx.ProblemDetails.Extensions.TryAdd("traceId", activity.Id);
     });
+builder.Services.AddExceptionHandler<PostgresInputExceptionHandler>();
 builder.Services.AddValidation();
 builder.Services.AddOpenApiDocumentation();
 
 var app = builder.Build();
+
+// Every response is JSON (or the Swagger UI): never sniff it as something else, and don't let
+// another site embed it as a no-cors resource. CORS requests from the allowed origins are
+// unaffected by Cross-Origin-Resource-Policy.
+app.Use(static (context, next) =>
+{
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
+    return next(context);
+});
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();

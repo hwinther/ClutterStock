@@ -7,3 +7,5 @@
 #
 # Rule IDs come from the ZAP scan output (numeric, e.g. 10021, 100000).
 # See https://www.zaproxy.org/docs/alerts/ for the catalogue.
+10049	IGNORE	Non-Storable Content: informational, API responses are per-user and must not be cached
+100001	IGNORE	Unexpected Content-Type: only fires on the Swagger UI HTML pages; the API itself returns JSON
