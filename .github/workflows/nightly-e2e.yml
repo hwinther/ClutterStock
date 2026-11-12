@@ -3,7 +3,7 @@ name: "Nightly E2E (Allure)"
 on:
   workflow_dispatch:
   schedule:
-    # 03:00 UTC daily — picks up the prior day's main-merge `:latest` images.
+    # 03:00 UTC daily — picks up the prior day's main-merge `:main` images.
     - cron: "0 3 * * *"
 
 concurrency:
@@ -49,13 +49,15 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: e2e
 
-      - name: Resolve :latest image refs
+      # The moving `main` tag (the last merge), so the app matches the suite checked out from main.
+      # :latest is the highest release: a spec changed since then would test an app that predates it.
+      - name: Resolve :main image refs
         run: |
           set -euo pipefail
           REPO=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
-          echo "API_IMAGE=ghcr.io/${REPO}/api:latest"           >> $GITHUB_ENV
-          echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator:latest" >> $GITHUB_ENV
-          echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend:latest" >> $GITHUB_ENV
+          echo "API_IMAGE=ghcr.io/${REPO}/api:main"           >> $GITHUB_ENV
+          echo "MIGRATOR_IMAGE=ghcr.io/${REPO}/migrator:main" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=ghcr.io/${REPO}/frontend:main" >> $GITHUB_ENV
 
       - name: Pull allure-history image
         continue-on-error: true
@@ -233,7 +235,7 @@ jobs:
             exit 0
           fi
           docker build -t "ghcr.io/${REPO}/allure-report:latest" \
-            -f scripts/allure-report.Dockerfile e2e/
+            -f scripts/allure-report.Dockerfile e2e/allure-report/
           docker push "ghcr.io/${REPO}/allure-report:latest"
 
       # Same success-or-failure gate as Allure — a failed run still produces
@@ -248,7 +250,7 @@ jobs:
             exit 0
           fi
           docker build -t "ghcr.io/${REPO}/monocart-report:latest" \
-            -f scripts/monocart-report.Dockerfile e2e/
+            -f scripts/monocart-report.Dockerfile e2e/monocart-report/
           docker push "ghcr.io/${REPO}/monocart-report:latest"
 
       - name: Push monocart-coverage image
@@ -261,7 +263,7 @@ jobs:
             exit 0
           fi
           docker build -t "ghcr.io/${REPO}/monocart-coverage:latest" \
-            -f scripts/monocart-coverage.Dockerfile e2e/
+            -f scripts/monocart-coverage.Dockerfile e2e/monocart-coverage/
           docker push "ghcr.io/${REPO}/monocart-coverage:latest"
 
       - name: Tear down stack
