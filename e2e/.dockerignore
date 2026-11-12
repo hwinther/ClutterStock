@@ -10,5 +10,4 @@ load-report.json
 .env*
 Dockerfile
 .dockerignore
-images
 otel-out
