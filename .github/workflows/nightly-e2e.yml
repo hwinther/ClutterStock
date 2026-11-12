@@ -81,6 +81,7 @@ jobs:
         run: docker compose -f docker-compose.e2e.yml up -d --wait --wait-timeout 180
 
       - name: Run Playwright
+        id: playwright
         working-directory: e2e
         env:
           CI: "true"
@@ -141,8 +142,12 @@ jobs:
         run: npm ci
         working-directory: scripts/badges
 
-      - name: Generate e2e + Lighthouse badge SVGs
+      # The nightly status badge rides in the same image as the coverage and Lighthouse badges, so
+      # every Pages deploy carries it forward (api-docs-pages rebuilds /badges/ from this image).
+      - name: Generate e2e + Lighthouse + nightly status badge SVGs
         if: ${{ success() || failure() }}
+        env:
+          PLAYWRIGHT_OUTCOME: ${{ steps.playwright.outcome }}
         run: |
           set -euo pipefail
           mkdir -p badges-e2e
@@ -158,13 +163,10 @@ jobs:
           else
             echo "::warning::No lighthouse-home.json — skipping lighthouse badges."
           fi
-          if [ "${#E2E_COV_ARG[@]}" -eq 0 ] && [ "${#LH_ARG[@]}" -eq 0 ]; then
-            echo "Nothing to render. Leaving badges-e2e empty."
-            exit 0
-          fi
           node scripts/badges/generate-badges.mjs \
             "${E2E_COV_ARG[@]}" \
             "${LH_ARG[@]}" \
+            --nightly-status "$PLAYWRIGHT_OUTCOME" \
             --out badges-e2e/
 
       - name: Push badges-e2e image

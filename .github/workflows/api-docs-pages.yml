@@ -563,17 +563,12 @@ jobs:
             echo "::warning::${IMG} not found — the nightly E2E workflow has not seeded it yet. /badges/ will only contain backend + frontend coverage on this deploy."
           fi
 
-      - name: Render coverage + nightly-status SVGs
-        env:
-          # Source workflow name when triggered by workflow_run (empty otherwise).
-          # Used to scope which cached SVG gets overwritten — only the
-          # nightly-e2e workflow_run should refresh nightly-e2e.svg.
-          SOURCE_WORKFLOW: ${{ github.event.workflow_run.name }}
+      - name: Render coverage SVGs
         run: |
           set -euo pipefail
           mkdir -p badges
           # Carry forward nightly-derived SVGs first (e2e coverage, Lighthouse,
-          # last successful nightly status). Backend/frontend overwrites below
+          # nightly status: all rendered by the nightly E2E workflow). Backend/frontend overwrites below
           # are intentional — they're regenerated from this run's coverage.
           if [ -d badges-e2e ]; then
             cp -v badges-e2e/*.svg badges/ 2>/dev/null || true
@@ -592,21 +587,12 @@ jobs:
           if [ -f node-cobertura/cobertura-coverage.xml ]; then
             FRONTEND_ARG=(--frontend-cobertura node-cobertura/cobertura-coverage.xml)
           fi
-          # Only update nightly-e2e.svg when the source of this run is the
-          # nightly workflow itself. ZAP-triggered runs leave the cached
-          # nightly status badge alone.
-          STATUS_ARG=()
-          if [ "${{ github.event_name }}" = "workflow_run" ] && [ "$SOURCE_WORKFLOW" = "Nightly E2E (Allure)" ]; then
-            STATUS_ARG=(--nightly-status "${{ github.event.workflow_run.conclusion }}")
-          fi
-
-          if [ "${#BACKEND_ARG[@]}" -eq 0 ] && [ "${#FRONTEND_ARG[@]}" -eq 0 ] && [ "${#STATUS_ARG[@]}" -eq 0 ]; then
+          if [ "${#BACKEND_ARG[@]}" -eq 0 ] && [ "${#FRONTEND_ARG[@]}" -eq 0 ]; then
             echo "Nothing to (re)generate in this run; relying on cached nightly + zap badges."
           else
             node scripts/badges/generate-badges.mjs \
               "${BACKEND_ARG[@]}" \
               "${FRONTEND_ARG[@]}" \
-              "${STATUS_ARG[@]}" \
               --out badges/
           fi
 
