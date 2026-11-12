@@ -261,6 +261,63 @@ public sealed class ItemsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
         return item ?? throw new InvalidOperationException("ItemResponse was null");
     }
 
+    [Fact]
+    public async Task Post_UnknownRoom_Returns400WithValidationError()
+    {
+        var client = CreateAuthenticatedClient();
+
+        var response = await client.PostAsJsonAsync(ItemsRoute,
+                                                    new AddItemRequest(9999, "Screwdriver", null, null, null),
+                                                    Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await ReadValidationProblemAsync(response);
+        Assert.True(problem.Errors.ContainsKey("RoomId"),
+                    $"expected RoomId error, got: [{string.Join(",", problem.Errors.Keys)}]");
+    }
+
+    [Fact]
+    public async Task Put_UnknownRoom_Returns400WithValidationError()
+    {
+        var roomId = await SeedRoomAsync();
+        var client = CreateAuthenticatedClient();
+        var created = await client.PostAsJsonAsync(ItemsRoute, new AddItemRequest(roomId, "Drill", null, null, null), Ct);
+        var item = await created.Content.ReadFromJsonAsync<ItemResponse>(Ct);
+
+        var response = await client.PutAsJsonAsync($"{ItemsRoute}/{item!.Id}",
+                                                   new UpdateItemRequest(9999, "Drill", null, null, null),
+                                                   Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await ReadValidationProblemAsync(response);
+        Assert.True(problem.Errors.ContainsKey("RoomId"));
+    }
+
+    [Fact]
+    public async Task Post_NulCharacter_Returns400WithValidationError()
+    {
+        var roomId = await SeedRoomAsync();
+        var client = CreateAuthenticatedClient();
+
+        var response = await client.PostAsJsonAsync(ItemsRoute,
+                                                    new AddItemRequest(roomId, "Screw\0driver", null, null, "notes\0"),
+                                                    Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await ReadValidationProblemAsync(response);
+        Assert.True(problem.Errors.ContainsKey("Name"));
+        Assert.True(problem.Errors.ContainsKey("Notes"));
+    }
+
+    [Fact]
+    public async Task Responses_CarryNosniffAndCorp()
+    {
+        var response = await CreateAuthenticatedClient().GetAsync(ItemsRoute, Ct);
+
+        Assert.Equal("nosniff", Assert.Single(response.Headers.GetValues("X-Content-Type-Options")));
+        Assert.Equal("same-origin", Assert.Single(response.Headers.GetValues("Cross-Origin-Resource-Policy")));
+    }
+
     private static async Task<ValidationProblemBody> ReadValidationProblemAsync(HttpResponseMessage response)
     {
         var body = await response.Content.ReadAsStringAsync(Ct);

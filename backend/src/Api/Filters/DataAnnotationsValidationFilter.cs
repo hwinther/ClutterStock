@@ -45,8 +45,12 @@ internal sealed class DataAnnotationsValidationFilter : IEndpointFilter
         return await next(context);
     }
 
+    private const string NulMessage = "Must not contain NUL characters.";
+
     private static void ValidateArgument(object argument, ParameterInfo? parameter, ref Dictionary<string, List<string>>? errors)
     {
+        RejectNulCharacters(argument, parameter, ref errors);
+
         if (IsSimpleType(argument.GetType()))
         {
             if (parameter is null)
@@ -74,6 +78,32 @@ internal sealed class DataAnnotationsValidationFilter : IEndpointFilter
             return;
 
         AddResults(objectResults, fallbackKey: argument.GetType().Name, ref errors);
+    }
+
+    /// <summary>
+    ///     Postgres can't store U+0000 in text, so a string carrying one would fail the save with a
+    ///     500. Checked on string arguments and on the request types' string properties.
+    /// </summary>
+    private static void RejectNulCharacters(object argument, ParameterInfo? parameter, ref Dictionary<string, List<string>>? errors)
+    {
+        if (argument is string text)
+        {
+            if (text.Contains('\0'))
+                AddResults([new ValidationResult(NulMessage)], parameter?.Name ?? string.Empty, ref errors);
+            return;
+        }
+
+        if (IsSimpleType(argument.GetType()))
+            return;
+
+        foreach (var property in argument.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (property.PropertyType == typeof(string)
+                && property.GetIndexParameters().Length == 0
+                && property.GetValue(argument) is string value
+                && value.Contains('\0'))
+                AddResults([new ValidationResult(NulMessage, [property.Name])], property.Name, ref errors);
+        }
     }
 
     private static void AddResults(IEnumerable<ValidationResult> results, string fallbackKey, ref Dictionary<string, List<string>>? errors)
