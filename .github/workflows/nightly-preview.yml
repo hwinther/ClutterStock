@@ -27,7 +27,7 @@ jobs:
       actions: read
       pull-requests: write
       issues: write
-    uses: hwinther/reusable-workflows/.github/workflows/nightly-preview-e2e.yml@8bc9cd6234fab8340fedf0d0f67c0eb11f589cc5 # feat/nightly-preview-e2e
+    uses: hwinther/reusable-workflows/.github/workflows/nightly-preview-e2e.yml@aadc90a4c71886ade7ae0418d9fdca5a94c4197e # v2.34.0
     with:
       app_name: clutterstock
       health_path: /healthz/ready
