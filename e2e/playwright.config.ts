@@ -37,7 +37,14 @@ export default definePlaywrightConfig({
           coverage: {
             name: "ClutterStock E2E coverage",
             origin: baseURL,
-            layout: { root: "frontend", sourceDirs: ["app"] },
+            // The same files as the unit coverage (frontend/vite.config.ts), routes and layouts
+            // included: those are this suite's to cover. Also out: health/debug/CSP-report routes.
+            layout: {
+              root: "frontend",
+              sourceDirs: ["app"],
+              exclude:
+                /^frontend\/app\/(api\/types\.ts$|constants\/|entry\.|root\.tsx$|routes\.ts$|otel\/|test\/|welcome\/|routes\/(healthz|debug\.|csp-report))/,
+            },
           },
         }),
       ]
