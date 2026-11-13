@@ -18,7 +18,8 @@ export function createNonce(): string {
  *   the csp-nonce meta in root.tsx). style-src-attr allows inline style attributes: SSR renders
  *   React's `style` props as attributes, and the components use them widely.
  * - Fonts: same origin and Google Fonts. Everything the browser fetches (OTLP traces, SSE, the API)
- *   is same origin.
+ *   is same origin, except the Google Fonts stylesheet: React Router fetches the root's `links` when it
+ *   preloads a route's assets, so connect-src allows that stylesheet's host too.
  * - Reports go to CSP_REPORT_PATH, via report-to (Chromium) and report-uri (Firefox).
  */
 export function contentSecurityPolicy(nonce: string): string {
@@ -29,7 +30,7 @@ export function contentSecurityPolicy(nonce: string): string {
     "style-src-attr 'unsafe-inline'",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data:",
-    "connect-src 'self'",
+    "connect-src 'self' https://fonts.googleapis.com",
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'self'",
