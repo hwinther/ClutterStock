@@ -16,7 +16,7 @@
   "devDependencies": {
     "@types/node": "26.6.5",
     "@wshno/eslint-config": "0.2.0",
-    "@wshno/playwright-config": "0.6.0",
+    "@wshno/playwright-config": "0.6.1",
     "@wshno/prettier-config": "0.1.1",
     "@wshno/tsconfig": "0.1.1",
     "allure": "3.33.0",
