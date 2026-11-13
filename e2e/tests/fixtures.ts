@@ -1,6 +1,5 @@
 import { expect, mergeTests, test as base } from "@playwright/test";
-import { guardsTest } from "@wshno/playwright-config";
-import { addCoverageReport } from "monocart-reporter";
+import { coverageTest, guardsTest } from "@wshno/playwright-config";
 import fs from "node:fs";
 import { sessionFile } from "./auth-paths";
 import { HomePage } from "./pages/home-page";
@@ -12,7 +11,7 @@ interface Fixtures {
 }
 
 const appTest = base.extend<Fixtures>({
-  page: async ({ page }, use, testInfo) => {
+  page: async ({ page }, use) => {
     if (fs.existsSync(sessionFile)) {
       const stored: Record<string, Record<string, string>> = JSON.parse(
         fs.readFileSync(sessionFile, "utf8"),
@@ -27,21 +26,7 @@ const appTest = base.extend<Fixtures>({
         }
       }, stored);
     }
-    // Browser-side V8 coverage for monocartReporter() (playwright.config.ts), in CI only:
-    // locally the start/stop roundtrip and the per-test attachment add overhead nobody asked
-    // for during `npx playwright test --ui`. Not @wshno/playwright-config's coverageTest, which
-    // records in every Chromium project: the perf project is skipped, since Lighthouse uses the
-    // same V8 coverage interface and concurrent calls fight.
-    const collectCoverage =
-      !!process.env.CI && testInfo.project.name !== "perf";
-    if (collectCoverage) {
-      await page.coverage.startJSCoverage({ resetOnNavigation: false });
-    }
     await use(page);
-    if (collectCoverage) {
-      const coverage = await page.coverage.stopJSCoverage();
-      await addCoverageReport(coverage, testInfo);
-    }
   },
   home: async ({ page }, use) => {
     await use(new HomePage(page));
@@ -49,5 +34,7 @@ const appTest = base.extend<Fixtures>({
 });
 
 // guardsTest (@wshno/playwright-config) fails a spec in which the page breaks its CSP, logs a
-// console error or warning, throws uncaught, or gets a 4xx/5xx or network error.
-export const test = mergeTests(appTest, guardsTest);
+// console error or warning, throws uncaught, or gets a 4xx/5xx or network error. coverageTest records
+// the page's V8 coverage for monocartReporter() in CI (playwright.config.ts); the perf spec turns it
+// off, since Lighthouse uses the same V8 coverage interface.
+export const test = mergeTests(appTest, guardsTest, coverageTest);

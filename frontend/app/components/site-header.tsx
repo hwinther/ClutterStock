@@ -161,7 +161,6 @@ export function SiteHeader() {
                     color: "var(--c-fg-2)",
                     fontWeight: 500,
                   }}
-                  aria-label="Account"
                 >
                   <span style={{
                     display: "flex",
@@ -181,6 +180,9 @@ export function SiteHeader() {
                   <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {displayName}
                   </span>
+                  {/* The accessible name keeps the visible initial and name (axe
+                      label-content-name-mismatch) and says what the button is for. */}
+                  <span className="sr-only">(account)</span>
                 </button>
                 {/* TUI chip — shown only under TUI via .tui-user CSS swap */}
                 <button

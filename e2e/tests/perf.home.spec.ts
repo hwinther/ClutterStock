@@ -3,6 +3,8 @@ import { playAudit } from "playwright-lighthouse";
 import { test } from "./fixtures";
 
 test.describe.configure({ mode: "serial" });
+// Lighthouse audits through the same V8 coverage interface coverageTest records with.
+test.use({ collectCoverage: false });
 
 test("home page lighthouse audit", async ({ home, page, context }, testInfo) => {
   // Establish the authenticated session in the Playwright context first.
