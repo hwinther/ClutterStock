@@ -1,9 +1,11 @@
 import { devices } from "@playwright/test";
 import {
+  allureReporter,
   ciReporters,
   definePlaywrightConfig,
   isCI,
   localReporters,
+  monocartReporter,
 } from "@wshno/playwright-config";
 import dotenv from "dotenv";
 import path from "node:path";
@@ -24,37 +26,20 @@ export default definePlaywrightConfig({
   reporter: isCI
     ? [
         ...ciReporters,
-        ["allure-playwright", { resultsDir: "allure-results" }],
-        [
-          "monocart-reporter",
-          {
-            name: "ClutterStock E2E",
-            outputFile: "./monocart-report/index.html",
-            coverage: {
-              name: "ClutterStock E2E coverage",
-              // Only collect coverage for entries served by the frontend
-              // container. Excludes inline data: URLs, hot-reload websockets,
-              // and the OIDC redirect to auth.wsh.no.
-              entryFilter: (entry: { url: string }) =>
-                entry.url.startsWith(new URL(baseURL).origin),
-              // Map bundled output back to source files via the build's
-              // source maps. Keep only files under app/ — drop node_modules,
-              // build artifacts, and the generated react-router types.
-              sourceFilter: (sourcePath: string) =>
-                /(^|\/)app\//.test(sourcePath) &&
-                !/node_modules\//.test(sourcePath),
-              outputDir: "./monocart-coverage",
-              reports: ["v8", "cobertura", "lcov"],
-              // Inline all V8 assets into the single index.html. Without this
-              // the report fetches sibling JSON/JS over file:// when opened
-              // locally — Chromium blocks that as a unique-origin violation
-              // and the page renders blank. Inlining bumps the HTML to a few
-              // MB but lets you double-click the artifact straight from the
-              // PR Actions download.
-              inline: true,
-            },
+        allureReporter(),
+        // V8 coverage of the frontend's bundles, mapped back through its source maps to
+        // frontend/app/** (the same repo-relative paths as the unit tests' Cobertura), so
+        // quality-e2e and e2e-coverage-summary can merge the two. Only scripts served by the
+        // frontend count: not data: URLs, hot-reload sockets or the OIDC redirect to auth.wsh.no.
+        // Recorded by the page fixture in tests/fixtures.ts.
+        monocartReporter({
+          name: "ClutterStock E2E",
+          coverage: {
+            name: "ClutterStock E2E coverage",
+            origin: baseURL,
+            layout: { root: "frontend", sourceDirs: ["app"] },
           },
-        ],
+        }),
       ]
     : localReporters,
   use: {

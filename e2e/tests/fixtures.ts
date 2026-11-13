@@ -27,10 +27,11 @@ const appTest = base.extend<Fixtures>({
         }
       }, stored);
     }
-    // Browser-side V8 coverage is only collected in CI — locally the start/stop
-    // roundtrip and the per-test attachment add overhead nobody asked for
-    // during `npx playwright test --ui`. Skip the perf project too: Lighthouse
-    // uses the same V8 coverage interface, and concurrent calls fight.
+    // Browser-side V8 coverage for monocartReporter() (playwright.config.ts), in CI only:
+    // locally the start/stop roundtrip and the per-test attachment add overhead nobody asked
+    // for during `npx playwright test --ui`. Not @wshno/playwright-config's coverageTest, which
+    // records in every Chromium project: the perf project is skipped, since Lighthouse uses the
+    // same V8 coverage interface and concurrent calls fight.
     const collectCoverage =
       !!process.env.CI && testInfo.project.name !== "perf";
     if (collectCoverage) {
