@@ -10,7 +10,7 @@ name: Prune GHCR
 #   delete versions only when each package has "Inherit access from source
 #   repository" enabled. If deletion 403s, set repo secret GHCR_PRUNE_TOKEN to
 #   a PAT with `delete:packages` (and `read:packages` if you want auto-discovery
-#   to enumerate private user packages). Passed through via secrets: inherit.
+#   to enumerate private user packages). Passed through explicitly (not secrets: inherit).
 
 on:
   workflow_dispatch:
@@ -75,4 +75,5 @@ jobs:
       # inputs.nuke_package null so this resolves to '' and the smart prune
       # runs as usual.
       nuke_package: ${{ inputs.nuke_package || '' }}
-    secrets: inherit
+    secrets:
+      GHCR_PRUNE_TOKEN: ${{ secrets.GHCR_PRUNE_TOKEN }}
