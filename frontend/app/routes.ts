@@ -15,15 +15,4 @@ export default [
   route('debug/connectivity', 'routes/debug.connectivity.tsx'),
   route('debug/sse-ping', 'routes/debug.sse-ping.tsx'),
   route('sse/items', 'routes/sse.items.tsx'),
-  route('locations', 'routes/locations.tsx', [
-    index('routes/locations.index.tsx'),
-    route('new', 'routes/locations.new.tsx'),
-    route(':id/edit', 'routes/locations.edit.tsx'),
-    route(':id/rooms', 'routes/locations.rooms.index.tsx'),
-    route(':id/rooms/new', 'routes/locations.rooms.new.tsx'),
-    route(':id/rooms/:roomId/edit', 'routes/locations.rooms.edit.tsx'),
-    route(':id/rooms/:roomId/items', 'routes/locations.rooms.items.index.tsx'),
-    route(':id/rooms/:roomId/items/new', 'routes/locations.rooms.items.new.tsx'),
-    route(':id/rooms/:roomId/items/:itemId/edit', 'routes/locations.rooms.items.edit.tsx'),
-  ]),
 ] satisfies RouteConfig

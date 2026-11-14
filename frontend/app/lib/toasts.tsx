@@ -77,31 +77,6 @@ export function useToasts(): ToastContextValue {
   return ctx
 }
 
-/**
- * When a route action returns `{ ok: false, error }` (the in-page validation
- * shape from action-helpers.server), push it as an error toast — once per
- * actionData identity so re-renders don't spam.
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export function useToastFromActionData(actionData: unknown): void {
-  const { push } = useToasts()
-  const lastSeenRef = useRef<unknown>(null)
-  useEffect(() => {
-    if (actionData == null) {
-      lastSeenRef.current = null
-      return
-    }
-    if (actionData === lastSeenRef.current) return
-    lastSeenRef.current = actionData
-    if (typeof actionData === 'object' && 'error' in actionData) {
-      const error = (actionData as { error?: unknown }).error
-      if (typeof error === 'string' && error.length > 0) {
-        push({ kind: 'error', message: error })
-      }
-    }
-  }, [actionData, push])
-}
-
 function ToastItem({ toast }: { readonly toast: Toast }) {
   const { dismiss } = useToasts()
   const ttl = toast.ttlMs ?? DEFAULT_TTL_MS

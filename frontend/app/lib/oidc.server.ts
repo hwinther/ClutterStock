@@ -83,7 +83,7 @@ function redirectUri(request: Request): string {
   return `${origin}/auth/callback`
 }
 
-export async function generateAuthUrl(request: Request, returnTo = '/locations'): Promise<string> {
+export async function generateAuthUrl(request: Request, returnTo = '/'): Promise<string> {
   const { authorization_endpoint } = await getDiscovery()
   const state = randomBytes(16).toString('base64url')
   const codeVerifier = generateVerifier()

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { FlashToasts, ToastProvider, Toaster, useToastFromActionData, useToasts } from './toasts'
+import { FlashToasts, ToastProvider, Toaster, useToasts } from './toasts'
 
 function Harness({ children }: { readonly children: React.ReactNode }) {
   return (
@@ -14,11 +14,6 @@ function Harness({ children }: { readonly children: React.ReactNode }) {
 function PushButton({ message }: { readonly message: string }) {
   const { push } = useToasts()
   return <button onClick={() => push({ kind: 'success', message })}>push</button>
-}
-
-function ActionDataConsumer({ data }: { readonly data: unknown }) {
-  useToastFromActionData(data)
-  return null
 }
 
 describe('ToastProvider + useToasts', () => {
@@ -106,51 +101,5 @@ describe('ToastProvider + useToasts', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
     expect(screen.queryByText('saved')).not.toBeInTheDocument()
-  })
-})
-
-describe('useToastFromActionData', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  it('pushes an error toast when actionData has an error string', () => {
-    const data = { ok: false, error: 'Name is required' }
-    render(
-      <Harness>
-        <ActionDataConsumer data={data} />
-      </Harness>,
-    )
-    expect(screen.getByRole('alert')).toHaveTextContent('Name is required')
-  })
-
-  it('does not re-push when re-rendered with the same actionData identity', () => {
-    const data = { ok: false, error: 'boom' }
-    const { rerender } = render(
-      <Harness>
-        <ActionDataConsumer data={data} />
-      </Harness>,
-    )
-    expect(screen.getAllByRole('alert')).toHaveLength(1)
-
-    rerender(
-      <Harness>
-        <ActionDataConsumer data={data} />
-      </Harness>,
-    )
-    expect(screen.getAllByRole('alert')).toHaveLength(1)
-  })
-
-  it('does nothing for ok results', () => {
-    render(
-      <Harness>
-        <ActionDataConsumer data={{ ok: true, data: {} }} />
-      </Harness>,
-    )
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })
