@@ -1,89 +1,102 @@
-import { useState } from "react";
-import type { ItemResponse, LocationResponse, RoomResponse } from "~/api/client";
+import { useState } from 'react'
+import type { ItemResponse, LocationResponse, RoomResponse } from '~/api/client'
 
 export function Win98Tree({
-  locations, rooms, items, categories,
-  filterRoomId, filterCategory,
-  onSelectRoom, onSelectCategory, onAddRoom,
+  locations,
+  rooms,
+  items,
+  categories,
+  filterRoomId,
+  filterCategory,
+  onSelectRoom,
+  onSelectCategory,
+  onAddRoom,
 }: {
-  locations: LocationResponse[];
-  rooms: RoomResponse[];
-  items: ItemResponse[];
-  categories: string[];
-  filterRoomId: number | null;
-  filterCategory: string | null;
-  onSelectRoom: (id: number) => void;
-  onSelectCategory: (name: string) => void;
-  onAddRoom: (locationId: number) => void;
+  locations: LocationResponse[]
+  rooms: RoomResponse[]
+  items: ItemResponse[]
+  categories: string[]
+  filterRoomId: number | null
+  filterCategory: string | null
+  onSelectRoom: (id: number) => void
+  onSelectCategory: (name: string) => void
+  onAddRoom: (locationId: number) => void
 }) {
-  const [collapsed, setCollapsed] = useState<Set<number>>(() => new Set());
-  const [rootCollapsed, setRootCollapsed] = useState(false);
-  const [categoriesCollapsed, setCategoriesCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState<Set<number>>(() => new Set())
+  const [rootCollapsed, setRootCollapsed] = useState(false)
+  const [categoriesCollapsed, setCategoriesCollapsed] = useState(false)
 
   const toggle = (id: number) => {
-    setCollapsed(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   return (
     <div className="win98-tree">
       <Row
-        chevron={rootCollapsed ? "▶" : "▼"}
-        icon={<img src="/brand/icon.svg" alt="" width={16} height={16} style={{ display: "block" }} />}
-        label={<>clutter<span style={{ color: "#c4502a" }}>:stock</span></>}
+        chevron={rootCollapsed ? '▶' : '▼'}
+        icon={<img src="/brand/icon.svg" alt="" width={16} height={16} style={{ display: 'block' }} />}
+        label={
+          <>
+            clutter<span style={{ color: '#c4502a' }}>:stock</span>
+          </>
+        }
         bold
-        onChevronClick={() => setRootCollapsed(v => !v)}
+        onChevronClick={() => setRootCollapsed((v) => !v)}
       />
 
       {!rootCollapsed && (
         <div className="win98-tree-indent">
-          {locations.map(loc => {
-            const locRooms = rooms.filter(r => r.locationId === loc.id);
-            const isCollapsed = loc.id != null && collapsed.has(loc.id);
-            const chevron = isCollapsed ? "▶" : "▼";
+          {locations.map((loc) => {
+            const locRooms = rooms.filter((r) => r.locationId === loc.id)
+            const isCollapsed = loc.id != null && collapsed.has(loc.id)
+            const chevron = isCollapsed ? '▶' : '▼'
             return (
               <div key={loc.id}>
                 <Row
-                  chevron={locRooms.length > 0 ? chevron : ""}
+                  chevron={locRooms.length > 0 ? chevron : ''}
                   icon="🏠"
-                  label={loc.name ?? "Location"}
+                  label={loc.name ?? 'Location'}
                   onChevronClick={() => loc.id != null && toggle(loc.id)}
                   onIconClick={() => loc.id != null && toggle(loc.id)}
                   trailing={
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); if (loc.id != null) onAddRoom(loc.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (loc.id != null) onAddRoom(loc.id)
+                      }}
                       title="New room"
                       className="win98-tree-add"
-                    >＋</button>
+                    >
+                      ＋
+                    </button>
                   }
                 />
                 {!isCollapsed && (
                   <div className="win98-tree-indent">
-                    {locRooms.map(room => {
-                      const count = items.filter(i => i.roomId === room.id).length;
-                      const selected = filterRoomId === room.id;
+                    {locRooms.map((room) => {
+                      const count = items.filter((i) => i.roomId === room.id).length
+                      const selected = filterRoomId === room.id
                       return (
                         <Row
                           key={room.id}
                           icon="📁"
-                          label={`${room.name ?? "Room"} (${count})`}
+                          label={`${room.name ?? 'Room'} (${count})`}
                           selected={selected}
                           onRowClick={() => room.id != null && onSelectRoom(room.id)}
                         />
-                      );
+                      )
                     })}
-                    {locRooms.length === 0 && (
-                      <div className="win98-tree-empty">No rooms yet</div>
-                    )}
+                    {locRooms.length === 0 && <div className="win98-tree-empty">No rooms yet</div>}
                   </div>
                 )}
               </div>
-            );
+            )
           })}
         </div>
       )}
@@ -91,19 +104,15 @@ export function Win98Tree({
       {categories.length > 0 && (
         <>
           <div className="win98-tree-divider">
-            <button
-              type="button"
-              onClick={() => setCategoriesCollapsed(v => !v)}
-              className="win98-tree-divider-btn"
-            >
-              {categoriesCollapsed ? "▶" : "▼"} Categories
+            <button type="button" onClick={() => setCategoriesCollapsed((v) => !v)} className="win98-tree-divider-btn">
+              {categoriesCollapsed ? '▶' : '▼'} Categories
             </button>
           </div>
           {!categoriesCollapsed && (
             <div className="win98-tree-indent">
-              {categories.map(cat => {
-                const count = items.filter(i => i.category === cat).length;
-                const selected = filterCategory === cat;
+              {categories.map((cat) => {
+                const count = items.filter((i) => i.category === cat).length
+                const selected = filterCategory === cat
                 return (
                   <Row
                     key={cat}
@@ -112,50 +121,70 @@ export function Win98Tree({
                     selected={selected}
                     onRowClick={() => onSelectCategory(cat)}
                   />
-                );
+                )
               })}
             </div>
           )}
         </>
       )}
-
     </div>
-  );
+  )
 }
 
 function Row({
-  chevron, icon, label, selected, bold,
-  onRowClick, onChevronClick, onIconClick, trailing,
+  chevron,
+  icon,
+  label,
+  selected,
+  bold,
+  onRowClick,
+  onChevronClick,
+  onIconClick,
+  trailing,
 }: {
-  chevron?: string;
-  icon: React.ReactNode;
-  label: React.ReactNode;
-  selected?: boolean;
-  bold?: boolean;
-  onRowClick?: () => void;
-  onChevronClick?: () => void;
-  onIconClick?: () => void;
-  trailing?: React.ReactNode;
+  chevron?: string
+  icon: React.ReactNode
+  label: React.ReactNode
+  selected?: boolean
+  bold?: boolean
+  onRowClick?: () => void
+  onChevronClick?: () => void
+  onIconClick?: () => void
+  trailing?: React.ReactNode
 }) {
-  const interactive = !!onRowClick;
+  const interactive = !!onRowClick
   return (
     <div
-      className={`win98-tree-row${selected ? " win98-tree-row--selected" : ""}`}
+      className={`win98-tree-row${selected ? ' win98-tree-row--selected' : ''}`}
       onClick={interactive ? onRowClick : undefined}
-      role={interactive ? "button" : undefined}
+      role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
-      style={{ cursor: interactive ? "pointer" : "default" }}
+      style={{ cursor: interactive ? 'pointer' : 'default' }}
     >
       <span
         className="win98-tree-chevron"
-        onClick={onChevronClick ? (e) => { e.stopPropagation(); onChevronClick(); } : undefined}
-        style={{ cursor: onChevronClick ? "pointer" : "default" }}
+        onClick={
+          onChevronClick
+            ? (e) => {
+                e.stopPropagation()
+                onChevronClick()
+              }
+            : undefined
+        }
+        style={{ cursor: onChevronClick ? 'pointer' : 'default' }}
       >
-        {chevron ?? ""}
+        {chevron ?? ''}
       </span>
       <span
         className="win98-tree-icon"
-        onClick={onIconClick ? (e) => { e.stopPropagation(); onIconClick(); } : undefined}
+        onClick={
+          onIconClick
+            ? (e) => {
+                e.stopPropagation()
+                onIconClick()
+              }
+            : undefined
+        }
       >
         {icon}
       </span>
@@ -164,5 +193,5 @@ function Row({
       </span>
       {trailing && <span className="win98-tree-trailing">{trailing}</span>}
     </div>
-  );
+  )
 }

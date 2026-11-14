@@ -1,124 +1,136 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { Link, useNavigate, useRouteLoaderData } from "react-router";
-import type { SessionUser } from "~/lib/session.server";
-import { UserModal } from "./user-modal";
-import { TuiUserPanel } from "./tui-user-panel";
-import { useTheme } from "~/lib/theme";
-import { useClock } from "~/lib/use-clock";
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { Link, useNavigate, useRouteLoaderData } from 'react-router'
+import type { SessionUser } from '~/lib/session.server'
+import { UserModal } from './user-modal'
+import { TuiUserPanel } from './tui-user-panel'
+import { useTheme } from '~/lib/theme'
+import { useClock } from '~/lib/use-clock'
 
-type ThemeId = "system" | "tui" | "win98" | "cde";
-const THEMES: ThemeId[] = ["system", "tui", "win98", "cde"];
+type ThemeId = 'system' | 'tui' | 'win98' | 'cde'
+const THEMES: ThemeId[] = ['system', 'tui', 'win98', 'cde']
 const THEME_LABELS: Record<ThemeId, string> = {
-  system: "SYS",
-  tui:    "TUI",
-  win98:  "W98",
-  cde:    "CDE",
-};
-const STORAGE_KEY = "cs-theme";
+  system: 'SYS',
+  tui: 'TUI',
+  win98: 'W98',
+  cde: 'CDE',
+}
+const STORAGE_KEY = 'cs-theme'
 
 function applyTheme(t: ThemeId) {
-  if (t === "system") {
-    document.documentElement.removeAttribute("data-theme");
-    localStorage.removeItem(STORAGE_KEY);
+  if (t === 'system') {
+    document.documentElement.removeAttribute('data-theme')
+    localStorage.removeItem(STORAGE_KEY)
   } else {
-    document.documentElement.setAttribute("data-theme", t);
-    localStorage.setItem(STORAGE_KEY, t);
+    document.documentElement.setAttribute('data-theme', t)
+    localStorage.setItem(STORAGE_KEY, t)
   }
 }
 
 export function SiteHeader() {
-  const rootData = useRouteLoaderData("root") as { user: SessionUser | null } | undefined;
-  const user = rootData?.user ?? null;
+  const rootData = useRouteLoaderData('root') as { user: SessionUser | null } | undefined
+  const user = rootData?.user ?? null
 
   // useSyncExternalStore returns false on server, true on client — no effect needed
-  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
+  const [modalOpen, setModalOpen] = useState(false)
   const [theme, setTheme] = useState<ThemeId>(() => {
-    if (typeof window === "undefined") return "system";
+    if (typeof window === 'undefined') return 'system'
     try {
-      const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
-      if (stored && THEMES.includes(stored)) return stored;
-    } catch { /* ignore */ }
-    return "system";
-  });
-  const navigate = useNavigate();
-  const time = useClock();
-  const activeTheme = useTheme();
-  const isTui = activeTheme === "tui";
+      const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null
+      if (stored && THEMES.includes(stored)) return stored
+    } catch {
+      /* ignore */
+    }
+    return 'system'
+  })
+  const navigate = useNavigate()
+  const time = useClock()
+  const activeTheme = useTheme()
+  const isTui = activeTheme === 'tui'
 
   // Re-apply the stored theme on mount in case hydration stripped the
   // data-theme attribute that the pre-paint script set on <html>.
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    applyTheme(theme)
+  }, [theme])
 
   function cycleTheme() {
-    const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length] ?? "system";
-    setTheme(next);
-    applyTheme(next);
+    const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length] ?? 'system'
+    setTheme(next)
+    applyTheme(next)
   }
 
   function handleSignIn() {
-    navigate("/auth/signin");
+    navigate('/auth/signin')
   }
 
   function handleSignOut() {
-    setModalOpen(false);
-    navigate("/auth/signout");
+    setModalOpen(false)
+    navigate('/auth/signout')
   }
 
-  const displayName = user?.name ?? user?.preferred_username;
-  const initial = (displayName ?? "?")[0]?.toUpperCase() ?? "?";
+  const displayName = user?.name ?? user?.preferred_username
+  const initial = (displayName ?? '?')[0]?.toUpperCase() ?? '?'
 
   return (
     <>
-      <header style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 20px",
-        borderBottom: "1px solid var(--c-border)",
-        background: "var(--c-bg-2)",
-        height: 48,
-        flexShrink: 0,
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link
-            to="/"
-            style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
-          >
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 20px',
+          borderBottom: '1px solid var(--c-border)',
+          background: 'var(--c-bg-2)',
+          height: 48,
+          flexShrink: 0,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <img
               className="modern-logo"
               src="/brand/icon.svg"
               alt=""
               width={26}
               height={26}
-              style={{ display: "block", flexShrink: 0 }}
+              style={{ display: 'block', flexShrink: 0 }}
             />
-            <span className="modern-logo" style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: "var(--c-fg)",
-              fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
-              letterSpacing: "-0.02em",
-            }}>
-              clutter<span style={{ color: "#c4502a" }}>:stock</span>
+            <span
+              className="modern-logo"
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: 'var(--c-fg)',
+                fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+                letterSpacing: '-0.02em',
+              }}
+            >
+              clutter<span style={{ color: '#c4502a' }}>:stock</span>
             </span>
-            <span className="tui-brand" style={{ fontSize: 13, color: "var(--c-fg)", fontFamily: "inherit" }}>
-              ╭─[ <strong>clutter<span style={{ color: "#c4502a" }}>:stock</span></strong> ]─
+            <span className="tui-brand" style={{ fontSize: 13, color: 'var(--c-fg)', fontFamily: 'inherit' }}>
+              ╭─[{' '}
+              <strong>
+                clutter<span style={{ color: '#c4502a' }}>:stock</span>
+              </strong>{' '}
+              ]─
             </span>
-            <span className="cde-brand" style={{ fontWeight: 700, fontSize: 12, color: "var(--c-fg)" }}>
-              clutter<span style={{ color: "#c4502a" }}>:stock</span> — Home
+            <span className="cde-brand" style={{ fontWeight: 700, fontSize: 12, color: 'var(--c-fg)' }}>
+              clutter<span style={{ color: '#c4502a' }}>:stock</span> — Home
             </span>
           </Link>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, height: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 32 }}>
           {mounted && (
-            <span className="tui-brand" style={{ fontSize: 11, color: "var(--c-fg-2)", fontFamily: "inherit" }}>
+            <span className="tui-brand" style={{ fontSize: 11, color: 'var(--c-fg-2)', fontFamily: 'inherit' }}>
               {time}
             </span>
           )}
@@ -127,21 +139,21 @@ export function SiteHeader() {
             title={`Theme: ${theme} — click to cycle`}
             className="theme-toggle"
             style={{
-              fontFamily: "ui-monospace, monospace",
+              fontFamily: 'ui-monospace, monospace',
               fontSize: 11,
-              padding: "3px 8px",
-              border: "1px solid var(--c-border)",
-              background: "transparent",
-              color: "var(--c-fg-3)",
-              cursor: "pointer",
-              letterSpacing: "0.04em",
+              padding: '3px 8px',
+              border: '1px solid var(--c-border)',
+              background: 'transparent',
+              color: 'var(--c-fg-3)',
+              cursor: 'pointer',
+              letterSpacing: '0.04em',
             }}
           >
             [{THEME_LABELS[theme]}]<span className="tui-cursor">▌</span>
           </button>
 
-          {mounted && (
-            user ? (
+          {mounted &&
+            (user ? (
               <>
                 {/* Modern avatar pill — hidden under TUI via .modern-user CSS swap */}
                 <button
@@ -149,35 +161,37 @@ export function SiteHeader() {
                   onClick={() => setModalOpen(true)}
                   className="modern-user"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: 7,
-                    padding: "4px 10px 4px 4px",
+                    padding: '4px 10px 4px 4px',
                     borderRadius: 999,
-                    border: "1px solid var(--c-border)",
-                    background: "var(--c-bg-3)",
-                    cursor: "pointer",
+                    border: '1px solid var(--c-border)',
+                    background: 'var(--c-bg-3)',
+                    cursor: 'pointer',
                     fontSize: 12,
-                    color: "var(--c-fg-2)",
+                    color: 'var(--c-fg-2)',
                     fontWeight: 500,
                   }}
                 >
-                  <span style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 22,
-                    height: 22,
-                    borderRadius: 999,
-                    background: "var(--c-accent)",
-                    color: "white",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}>
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 22,
+                      height: 22,
+                      borderRadius: 999,
+                      background: 'var(--c-accent)',
+                      color: 'white',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
                     {initial}
                   </span>
-                  <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {displayName}
                   </span>
                   {/* The accessible name keeps the visible initial and name (axe
@@ -187,7 +201,7 @@ export function SiteHeader() {
                 {/* TUI chip — shown only under TUI via .tui-user CSS swap */}
                 <button
                   type="button"
-                  onClick={() => setModalOpen(o => !o)}
+                  onClick={() => setModalOpen((o) => !o)}
                   className="tui-user tui-user-chip"
                   aria-label="Account"
                 >
@@ -198,23 +212,22 @@ export function SiteHeader() {
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={handleSignIn}
-                className="btn-primary"
-              >
+              <button type="button" onClick={handleSignIn} className="btn-primary">
                 Sign in
               </button>
-            )
-          )}
+            ))}
           <div className="win98-wincontrols">
-            {["_", "□", "✕"].map(c => (
-              <button key={c} className="win98-wincontrol">{c}</button>
+            {['_', '□', '✕'].map((c) => (
+              <button key={c} className="win98-wincontrol">
+                {c}
+              </button>
             ))}
           </div>
           <div className="cde-wincontrols">
-            {["_", "□"].map(c => (
-              <button key={c} className="cde-wincontrol" type="button">{c}</button>
+            {['_', '□'].map((c) => (
+              <button key={c} className="cde-wincontrol" type="button">
+                {c}
+              </button>
             ))}
           </div>
         </div>
@@ -237,5 +250,5 @@ export function SiteHeader() {
         </>
       )}
     </>
-  );
+  )
 }

@@ -558,11 +558,13 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
 
             sb.AppendLine("        {");
             foreach (var p in dataProps)
+            {
                 sb.Append("            ")
                   .Append(p.Name)
                   .Append(" = self.")
                   .Append(p.Name)
                   .AppendLine(",");
+            }
 
             sb.AppendLine("        };");
             sb.AppendLine("    }");
@@ -583,11 +585,13 @@ public sealed class EntityRecordGenerator : IIncrementalGenerator
 
             sb.AppendLine("        {");
             foreach (var p in dataProps)
+            {
                 sb.Append("            ")
                   .Append(p.Name)
                   .Append(" = entity.")
                   .Append(p.Name)
                   .AppendLine(",");
+            }
 
             sb.AppendLine("        };");
             sb.AppendLine("    }");

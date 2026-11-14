@@ -16,7 +16,7 @@ public class GetLocationEndpoint : IEndpoint
 
     public static Delegate Handler => (Func<int, IGetLocationQueryHandler, CancellationToken, Task<Results<Ok<LocationResponse>, NotFound>>>) Handle;
 
-    private static async Task<Results<Ok<LocationResponse>, NotFound>> Handle([FromRoute, Range(1, int.MaxValue)] int id,
+    private static async Task<Results<Ok<LocationResponse>, NotFound>> Handle([FromRoute] [Range(1, int.MaxValue)] int id,
                                                                               IGetLocationQueryHandler handler,
                                                                               CancellationToken cancellationToken)
     {

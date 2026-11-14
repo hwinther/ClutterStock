@@ -57,7 +57,12 @@ public static class ServiceCollectionExtensions
         var uri = new Uri(connection);
         var options = new ConfigurationOptions
         {
-            EndPoints = { { uri.Host, uri.Port > 0 ? uri.Port : 6379 } },
+            EndPoints =
+            {
+                {
+                    uri.Host, uri.Port > 0 ? uri.Port : 6379
+                }
+            },
             Ssl = string.Equals(uri.Scheme, "rediss", StringComparison.OrdinalIgnoreCase)
         };
 

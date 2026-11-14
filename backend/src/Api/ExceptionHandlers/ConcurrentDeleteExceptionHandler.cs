@@ -21,6 +21,7 @@ internal sealed class ConcurrentDeleteExceptionHandler : IExceptionHandler
                               title: "Not found",
                               detail: "It was deleted while this request was being handled.")
                      .ExecuteAsync(httpContext);
+
         return true;
     }
 }

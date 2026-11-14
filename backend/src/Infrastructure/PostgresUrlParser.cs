@@ -1,4 +1,3 @@
-using System.Collections.Specialized;
 using System.Web;
 using Npgsql;
 
@@ -24,7 +23,7 @@ public static class PostgresUrlParser
         var builder = new NpgsqlConnectionStringBuilder
         {
             Host = uri.Host,
-            Port = uri.IsDefaultPort ? 5432 : uri.Port,
+            Port = uri.IsDefaultPort ? 5432 : uri.Port
         };
 
         var database = uri.AbsolutePath.TrimStart('/');
@@ -47,7 +46,7 @@ public static class PostgresUrlParser
 
         if (!string.IsNullOrEmpty(uri.Query))
         {
-            NameValueCollection query = HttpUtility.ParseQueryString(uri.Query);
+            var query = HttpUtility.ParseQueryString(uri.Query);
             foreach (var key in query.AllKeys)
             {
                 if (string.IsNullOrEmpty(key)) continue;

@@ -10,7 +10,9 @@ namespace ClutterStock.Contracts.Items;
 /// <param name="Notes" example="Needs new shade">Optional free-form notes.</param>
 public record AddItemRequest(
     [property: Range(1, int.MaxValue)] int RoomId,
-    [property: Required, StringLength(200, MinimumLength = 1)] string Name,
+    [property: Required]
+    [property: StringLength(200, MinimumLength = 1)]
+    string Name,
     [property: StringLength(2000)] string? Description,
     [property: StringLength(100)] string? Category,
     [property: StringLength(2000)] string? Notes);

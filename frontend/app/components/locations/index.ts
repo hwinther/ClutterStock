@@ -1,3 +1,3 @@
-export { LocationsLayout } from "./locations-layout";
-export { LocationsList } from "./locations-list";
-export { LocationForm } from "./location-form";
+export { LocationsLayout } from './locations-layout'
+export { LocationsList } from './locations-list'
+export { LocationForm } from './location-form'

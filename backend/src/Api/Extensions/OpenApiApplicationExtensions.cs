@@ -6,7 +6,9 @@ internal static class OpenApiApplicationExtensions
 {
     public static WebApplication UseOpenApiDocumentation(this WebApplication app)
     {
-        app.MapOpenApi().AllowAnonymous();
+        app.MapOpenApi()
+           .AllowAnonymous();
+
         app.UseSwagger();
 
         app.UseSwaggerUI(options =>
@@ -15,6 +17,7 @@ internal static class OpenApiApplicationExtensions
             options.OAuthClientId("clutterstock");
             options.OAuthUsePkce();
         });
+
         app.UseReDoc(static options => { options.DocumentTitle = "ClutterStock API v1"; });
 
         return app;

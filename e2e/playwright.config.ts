@@ -1,4 +1,4 @@
-import { devices } from "@playwright/test";
+import { devices } from '@playwright/test'
 import {
   allureReporter,
   ciReporters,
@@ -6,19 +6,19 @@ import {
   isCI,
   localReporters,
   monocartReporter,
-} from "@wshno/playwright-config";
-import dotenv from "dotenv";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { authFile } from "./tests/auth-paths";
+} from '@wshno/playwright-config'
+import dotenv from 'dotenv'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { authFile } from './tests/auth-paths'
 
 dotenv.config({
-  path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".env.test"),
-});
+  path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.env.test'),
+})
 
 // Use localhost (not 127.0.0.1): Vite may bind IPv6-only on Windows. BASE_URL points the suite at a
 // deployed env instead (the nightly preview).
-const baseURL = process.env.BASE_URL ?? "http://localhost:5173";
+const baseURL = process.env.BASE_URL ?? 'http://localhost:5173'
 
 // Shared defaults (testDir ./tests, retries, forbidOnly, the github/html/json CI reporters, trace,
 // screenshot and video on failure) come from @wshno/playwright-config; only what differs is set here.
@@ -33,15 +33,15 @@ export default definePlaywrightConfig({
         // frontend count: not data: URLs, hot-reload sockets or the OIDC redirect to auth.wsh.no.
         // Recorded by the page fixture in tests/fixtures.ts.
         monocartReporter({
-          name: "ClutterStock E2E",
+          name: 'ClutterStock E2E',
           coverage: {
-            name: "ClutterStock E2E coverage",
+            name: 'ClutterStock E2E coverage',
             origin: baseURL,
             // The same files as the unit coverage (frontend/vite.config.ts), routes and layouts
             // included: those are this suite's to cover. Also out: health/debug/CSP-report routes.
             layout: {
-              root: "frontend",
-              sourceDirs: ["app"],
+              root: 'frontend',
+              sourceDirs: ['app'],
               exclude:
                 /^frontend\/app\/(api\/types\.ts$|constants\/|entry\.|root\.tsx$|routes\.ts$|otel\/|test\/|welcome\/|routes\/(healthz|debug\.|csp-report))/,
             },
@@ -56,31 +56,31 @@ export default definePlaywrightConfig({
   // rejects before they reach it).
   grepInvert: process.env.BASE_URL ? /@local-only/ : undefined,
   projects: [
-    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
     {
-      name: "chromium",
+      name: 'chromium',
       // signout destroys the shared Redis session, which would invalidate the
       // sid every parallel test in this project carries. Run it in its own
       // dependent project that fires after chromium finishes. Perf specs run
       // in their own project too because Lighthouse needs --remote-debugging-port.
       testIgnore: [/signout\.spec\.ts/, /perf\..*\.spec\.ts/],
       use: {
-        ...devices["Desktop Chrome"],
+        ...devices['Desktop Chrome'],
         storageState: authFile,
       },
-      dependencies: ["setup"],
+      dependencies: ['setup'],
     },
     {
-      name: "signout",
+      name: 'signout',
       testMatch: /signout\.spec\.ts/,
       use: {
-        ...devices["Desktop Chrome"],
+        ...devices['Desktop Chrome'],
         storageState: authFile,
       },
-      dependencies: ["chromium"],
+      dependencies: ['chromium'],
     },
     {
-      name: "perf",
+      name: 'perf',
       testMatch: /perf\..*\.spec\.ts/,
       // Lighthouse connects to the Playwright Chromium instance via CDP on a
       // fixed debug port. Multiple parallel workers would race on this port,
@@ -88,13 +88,13 @@ export default definePlaywrightConfig({
       // one perf file today. If you add more, audit them serially or assign
       // unique ports per worker.
       use: {
-        ...devices["Desktop Chrome"],
+        ...devices['Desktop Chrome'],
         storageState: authFile,
         launchOptions: {
-          args: ["--remote-debugging-port=9222"],
+          args: ['--remote-debugging-port=9222'],
         },
       },
-      dependencies: ["setup"],
+      dependencies: ['setup'],
     },
   ],
   // webServer: {
@@ -103,4 +103,4 @@ export default definePlaywrightConfig({
   //   reuseExistingServer: !process.env.CI,
   //   timeout: 120_000,
   // },
-});
+})

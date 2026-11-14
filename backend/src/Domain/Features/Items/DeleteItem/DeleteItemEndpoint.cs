@@ -14,7 +14,7 @@ public class DeleteItemEndpoint : IEndpoint
 
     public static Delegate Handler => (Func<int, IDeleteItemCommandHandler, CancellationToken, Task<Results<NoContent, NotFound>>>) Handle;
 
-    private static async Task<Results<NoContent, NotFound>> Handle([FromRoute, Range(1, int.MaxValue)] int id,
+    private static async Task<Results<NoContent, NotFound>> Handle([FromRoute] [Range(1, int.MaxValue)] int id,
                                                                    IDeleteItemCommandHandler handler,
                                                                    CancellationToken cancellationToken)
     {

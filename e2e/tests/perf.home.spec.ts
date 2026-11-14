@@ -1,22 +1,22 @@
-import path from "node:path";
-import { playAudit } from "playwright-lighthouse";
-import { test } from "./fixtures";
+import path from 'node:path'
+import { playAudit } from 'playwright-lighthouse'
+import { test } from './fixtures'
 
-test.describe.configure({ mode: "serial" });
+test.describe.configure({ mode: 'serial' })
 // Lighthouse audits through the same V8 coverage interface coverageTest records with.
-test.use({ collectCoverage: false });
+test.use({ collectCoverage: false })
 
-test("home page lighthouse audit", async ({ home, page, context }, testInfo) => {
+test('home page lighthouse audit', async ({ home, page, context }, testInfo) => {
   // Establish the authenticated session in the Playwright context first.
-  await home.goto();
-  await home.expectAuthenticated();
+  await home.goto()
+  await home.expectAuthenticated()
 
   // Lighthouse opens its own page via CDP — Playwright's storageState is
   // bound to a specific context and doesn't propagate. Forward the active
   // session cookie via Lighthouse extraHeaders so the audit hits the same
   // authenticated routes the rest of the suite does.
-  const cookies = await context.cookies();
-  const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+  const cookies = await context.cookies()
+  const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
 
   await playAudit({
     page,
@@ -30,22 +30,22 @@ test("home page lighthouse audit", async ({ home, page, context }, testInfo) => 
     thresholds: {
       performance: 30,
       accessibility: 70,
-      "best-practices": 60,
+      'best-practices': 60,
       seo: 50,
     },
     reports: {
       formats: { html: true, json: true },
-      name: "lighthouse-home",
+      name: 'lighthouse-home',
       directory: testInfo.outputDir,
     },
-  });
+  })
 
   // Attach the HTML report so monocart-reporter can surface it inline alongside
   // the test row. playwright-lighthouse writes <directory>/<name>.<type> — the
   // `.report.<type>` suffix is the lighthouse CLI convention, which this
   // library deliberately strips (see task.js:getReport).
-  await testInfo.attach("lighthouse-home", {
-    path: path.join(testInfo.outputDir, "lighthouse-home.html"),
-    contentType: "text/html",
-  });
-});
+  await testInfo.attach('lighthouse-home', {
+    path: path.join(testInfo.outputDir, 'lighthouse-home.html'),
+    contentType: 'text/html',
+  })
+})

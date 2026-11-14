@@ -269,6 +269,7 @@ public sealed class EndpointRegistrationGenerator : IIncrementalGenerator
         sb.Append("        var api = app.MapGroup(ApiRoutePrefix.V1)")
           .AppendLine()
           .AppendLine("                     .AddEndpointFilter<global::ClutterStock.Api.Filters.DataAnnotationsValidationFilter>();");
+
         foreach (var type in endpointTypes)
         {
             var fullName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)

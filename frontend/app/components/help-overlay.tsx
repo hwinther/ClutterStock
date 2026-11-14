@@ -1,85 +1,83 @@
-import { useEffect } from "react";
+import { useEffect } from 'react'
 
 const SECTIONS: { title: string; rows: [string, string][] }[] = [
   {
-    title: "Move",
+    title: 'Move',
     rows: [
-      ["j / ↓",      "next item"],
-      ["k / ↑",      "previous item"],
-      ["g g",        "first item"],
-      ["G",          "last item"],
+      ['j / ↓', 'next item'],
+      ['k / ↑', 'previous item'],
+      ['g g', 'first item'],
+      ['G', 'last item'],
     ],
   },
   {
-    title: "Items",
+    title: 'Items',
     rows: [
-      ["Enter",      "open / view"],
-      ["e",          "edit"],
-      ["d",          "delete"],
-      ["o",          "new item"],
+      ['Enter', 'open / view'],
+      ['e', 'edit'],
+      ['d', 'delete'],
+      ['o', 'new item'],
     ],
   },
   {
-    title: "Search",
+    title: 'Search',
     rows: [
-      ["/",          "filter items"],
-      ["Esc",        "close panel / clear filter"],
+      ['/', 'filter items'],
+      ['Esc', 'close panel / clear filter'],
     ],
   },
   {
-    title: "Panes",
+    title: 'Panes',
     rows: [
-      ["Alt+1",      "focus rooms sidebar"],
-      ["Alt+2",      "focus items list"],
-      ["Alt+3",      "focus detail / editor"],
-      ["Tab",        "next focusable"],
+      ['Alt+1', 'focus rooms sidebar'],
+      ['Alt+2', 'focus items list'],
+      ['Alt+3', 'focus detail / editor'],
+      ['Tab', 'next focusable'],
     ],
   },
   {
-    title: "Terminal",
+    title: 'Terminal',
     rows: [
-      [":",          "open terminal (vim ex)"],
-      ["Alt+4",      "toggle terminal"],
-      ["Esc",        "close terminal"],
-      ["clear",      "wipe scrollback"],
+      [':', 'open terminal (vim ex)'],
+      ['Alt+4', 'toggle terminal'],
+      ['Esc', 'close terminal'],
+      ['clear', 'wipe scrollback'],
     ],
   },
   {
-    title: "Account",
+    title: 'Account',
     rows: [
-      ["[user ▌]",   "click chip top-right (TUI)"],
-      ["s",          "sign out (in user panel)"],
-      ["whoami",     "show profile (terminal)"],
-      ["logout",     "sign out (terminal)"],
+      ['[user ▌]', 'click chip top-right (TUI)'],
+      ['s', 'sign out (in user panel)'],
+      ['whoami', 'show profile (terminal)'],
+      ['logout', 'sign out (terminal)'],
     ],
   },
   {
-    title: "Edit form",
+    title: 'Edit form',
     rows: [
-      ["Ctrl+S",     "save"],
-      ["Ctrl+Enter", "save"],
-      ["Esc",        "cancel"],
+      ['Ctrl+S', 'save'],
+      ['Ctrl+Enter', 'save'],
+      ['Esc', 'cancel'],
     ],
   },
   {
-    title: "Other",
-    rows: [
-      ["?",          "this help"],
-    ],
+    title: 'Other',
+    rows: [['?', 'this help']],
   },
-];
+]
 
 export function HelpOverlay({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" || e.key === "?") {
-        e.preventDefault();
-        onClose();
+      if (e.key === 'Escape' || e.key === '?') {
+        e.preventDefault()
+        onClose()
       }
     }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   return (
     <div
@@ -87,18 +85,22 @@ export function HelpOverlay({ onClose }: { onClose: () => void }) {
       aria-modal="true"
       aria-label="Keyboard shortcuts"
       className="cs-help-overlay"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
     >
       <div className="cs-help-panel tui-panel">
         <span className="tui-panel-title">─[ keyboard shortcuts ]─</span>
         <div className="cs-help-grid">
-          {SECTIONS.map(s => (
+          {SECTIONS.map((s) => (
             <section key={s.title}>
               <h3 className="cs-help-heading">── {s.title.toLowerCase()} ──</h3>
               <dl>
                 {s.rows.map(([k, v]) => (
                   <div key={k} className="cs-help-row">
-                    <dt><kbd>{k}</kbd></dt>
+                    <dt>
+                      <kbd>{k}</kbd>
+                    </dt>
                     <dd>{v}</dd>
                   </div>
                 ))}
@@ -113,5 +115,5 @@ export function HelpOverlay({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
-  );
+  )
 }

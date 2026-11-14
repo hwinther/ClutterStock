@@ -20,11 +20,11 @@ public sealed class ItemsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
 
     public ItemsApiTests(ClutterStockApiFactory factory) => _factory = factory;
 
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
     public async ValueTask InitializeAsync() => await _factory.ResetDatabaseAsync();
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-
-    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     private HttpClient CreateAuthenticatedClient()
     {
@@ -43,6 +43,7 @@ public sealed class ItemsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
             Name = "Home",
             CreatedAtUtc = DateTimeOffset.UtcNow
         };
+
         db.Locations.Add(location);
         await db.SaveChangesAsync(Ct);
 
@@ -52,6 +53,7 @@ public sealed class ItemsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
             Name = "Garage",
             CreatedAtUtc = DateTimeOffset.UtcNow
         };
+
         db.Rooms.Add(room);
         await db.SaveChangesAsync(Ct);
 
@@ -245,6 +247,7 @@ public sealed class ItemsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
                     && requestId.ValueKind == JsonValueKind.String
                     && requestId.GetString()!.Length > 0,
                     "expected non-empty requestId extension on ProblemDetails");
+
         Assert.True(root.TryGetProperty("traceId", out var traceId)
                     && traceId.ValueKind == JsonValueKind.String
                     && traceId.GetString()!.Length > 0,
@@ -256,6 +259,7 @@ public sealed class ItemsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
         var response = await client.PostAsJsonAsync(ItemsRoute,
                                                     new AddItemRequest(roomId, name, null, null, null),
                                                     Ct);
+
         response.EnsureSuccessStatusCode();
         var item = await response.Content.ReadFromJsonAsync<ItemResponse>(Ct);
         return item ?? throw new InvalidOperationException("ItemResponse was null");
@@ -312,7 +316,8 @@ public sealed class ItemsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
     [Fact]
     public async Task Responses_CarryNosniffAndCorp()
     {
-        var response = await CreateAuthenticatedClient().GetAsync(ItemsRoute, Ct);
+        var response = await CreateAuthenticatedClient()
+            .GetAsync(ItemsRoute, Ct);
 
         Assert.Equal("nosniff", Assert.Single(response.Headers.GetValues("X-Content-Type-Options")));
         Assert.Equal("same-origin", Assert.Single(response.Headers.GetValues("Cross-Origin-Resource-Policy")));

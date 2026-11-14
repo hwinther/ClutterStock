@@ -8,5 +8,7 @@ namespace ClutterStock.Contracts.Rooms;
 /// <param name="Description" example="Main gathering space">Optional description of the room.</param>
 public record UpdateRoomRequest(
     [property: Range(1, int.MaxValue)] int LocationId,
-    [property: Required, StringLength(200, MinimumLength = 1)] string Name,
+    [property: Required]
+    [property: StringLength(200, MinimumLength = 1)]
+    string Name,
     [property: StringLength(2000)] string? Description);

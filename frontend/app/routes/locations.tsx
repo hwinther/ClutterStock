@@ -1,9 +1,9 @@
-import { Link } from "react-router";
-import type { Route } from "./+types/locations";
-import { LocationsLayout } from "~/components/locations";
-import { ProblemBoundary } from "~/components/problem-boundary";
+import { Link } from 'react-router'
+import type { Route } from './+types/locations'
+import { LocationsLayout } from '~/components/locations'
+import { ProblemBoundary } from '~/components/problem-boundary'
 
-export default LocationsLayout;
+export default LocationsLayout
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   // RR7 swaps the parent's element for this boundary when a nested route throws,
@@ -19,5 +19,5 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       </div>
       <ProblemBoundary error={error} scope="section" />
     </main>
-  );
+  )
 }

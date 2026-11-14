@@ -1,4 +1,4 @@
-import type { Config } from "@react-router/dev/config";
+import type { Config } from '@react-router/dev/config'
 
 export default {
   // Config options...
@@ -12,8 +12,8 @@ export default {
   // request from anywhere else is still refused. Local dev is plain http on both sides and needs
   // no entry.
   allowedActionOrigins: [
-    "clutterstock.wsh.no",
-    "clutterstock.test.wsh.no",
-    "*.preview.wsh.no", // clutterstock-<PR>.preview.wsh.no
+    'clutterstock.wsh.no',
+    'clutterstock.test.wsh.no',
+    '*.preview.wsh.no', // clutterstock-<PR>.preview.wsh.no
   ],
-} satisfies Config;
+} satisfies Config

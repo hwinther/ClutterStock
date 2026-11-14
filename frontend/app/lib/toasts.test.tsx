@@ -1,12 +1,6 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  FlashToasts,
-  ToastProvider,
-  Toaster,
-  useToastFromActionData,
-  useToasts,
-} from "./toasts";
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { FlashToasts, ToastProvider, Toaster, useToastFromActionData, useToasts } from './toasts'
 
 function Harness({ children }: { readonly children: React.ReactNode }) {
   return (
@@ -14,59 +8,57 @@ function Harness({ children }: { readonly children: React.ReactNode }) {
       {children}
       <Toaster />
     </ToastProvider>
-  );
+  )
 }
 
 function PushButton({ message }: { readonly message: string }) {
-  const { push } = useToasts();
-  return (
-    <button onClick={() => push({ kind: "success", message })}>push</button>
-  );
+  const { push } = useToasts()
+  return <button onClick={() => push({ kind: 'success', message })}>push</button>
 }
 
 function ActionDataConsumer({ data }: { readonly data: unknown }) {
-  useToastFromActionData(data);
-  return null;
+  useToastFromActionData(data)
+  return null
 }
 
-describe("ToastProvider + useToasts", () => {
+describe('ToastProvider + useToasts', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-  });
+    vi.useFakeTimers()
+  })
 
   afterEach(() => {
-    vi.useRealTimers();
-  });
+    vi.useRealTimers()
+  })
 
-  it("renders nothing when there are no toasts", () => {
+  it('renders nothing when there are no toasts', () => {
     render(
       <Harness>
         <span>placeholder</span>
       </Harness>,
-    );
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  });
+    )
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 
-  it("FlashToasts drains a server-side flash payload onto the queue", async () => {
+  it('FlashToasts drains a server-side flash payload onto the queue', async () => {
     render(
       <ToastProvider>
-        <FlashToasts flashes={[{ kind: "success", message: "Welcome back" }]} />
+        <FlashToasts flashes={[{ kind: 'success', message: 'Welcome back' }]} />
         <Toaster />
       </ToastProvider>,
-    );
-    expect(screen.getByText("Welcome back")).toBeInTheDocument();
-  });
+    )
+    expect(screen.getByText('Welcome back')).toBeInTheDocument()
+  })
 
-  it("FlashToasts re-pushes when a fresh array identity arrives (post-redirect navigation)", async () => {
-    const first = [{ kind: "success" as const, message: "first" }];
+  it('FlashToasts re-pushes when a fresh array identity arrives (post-redirect navigation)', async () => {
+    const first = [{ kind: 'success' as const, message: 'first' }]
     const { rerender } = render(
       <ToastProvider>
         <FlashToasts flashes={first} />
         <Toaster />
       </ToastProvider>,
-    );
-    expect(screen.getByText("first")).toBeInTheDocument();
+    )
+    expect(screen.getByText('first')).toBeInTheDocument()
 
     // Same identity — no re-push.
     rerender(
@@ -74,91 +66,91 @@ describe("ToastProvider + useToasts", () => {
         <FlashToasts flashes={first} />
         <Toaster />
       </ToastProvider>,
-    );
-    expect(screen.getAllByText("first")).toHaveLength(1);
+    )
+    expect(screen.getAllByText('first')).toHaveLength(1)
 
     // New array (a new loader run after a redirect) — push the new batch.
     rerender(
       <ToastProvider>
-        <FlashToasts flashes={[{ kind: "success", message: "second" }]} />
+        <FlashToasts flashes={[{ kind: 'success', message: 'second' }]} />
         <Toaster />
       </ToastProvider>,
-    );
-    expect(screen.getByText("second")).toBeInTheDocument();
-  });
+    )
+    expect(screen.getByText('second')).toBeInTheDocument()
+  })
 
-  it("auto-dismisses after the default 5 seconds", async () => {
+  it('auto-dismisses after the default 5 seconds', async () => {
     render(
       <ToastProvider>
         <PushButton message="ping" />
         <Toaster />
       </ToastProvider>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "push" }));
-    expect(screen.getByText("ping")).toBeInTheDocument();
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'push' }))
+    expect(screen.getByText('ping')).toBeInTheDocument()
     await act(async () => {
-      vi.advanceTimersByTime(5000);
-    });
-    expect(screen.queryByText("ping")).not.toBeInTheDocument();
-  });
+      vi.advanceTimersByTime(5000)
+    })
+    expect(screen.queryByText('ping')).not.toBeInTheDocument()
+  })
 
-  it("push() renders a new toast that the user can dismiss manually", async () => {
+  it('push() renders a new toast that the user can dismiss manually', async () => {
     render(
       <Harness>
         <PushButton message="saved" />
       </Harness>,
-    );
+    )
 
-    fireEvent.click(screen.getByRole("button", { name: "push" }));
-    expect(screen.getByText("saved")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'push' }))
+    expect(screen.getByText('saved')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
-    expect(screen.queryByText("saved")).not.toBeInTheDocument();
-  });
-});
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+    expect(screen.queryByText('saved')).not.toBeInTheDocument()
+  })
+})
 
-describe("useToastFromActionData", () => {
+describe('useToastFromActionData', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-  });
+    vi.useFakeTimers()
+  })
 
   afterEach(() => {
-    vi.useRealTimers();
-  });
+    vi.useRealTimers()
+  })
 
-  it("pushes an error toast when actionData has an error string", () => {
-    const data = { ok: false, error: "Name is required" };
+  it('pushes an error toast when actionData has an error string', () => {
+    const data = { ok: false, error: 'Name is required' }
     render(
       <Harness>
         <ActionDataConsumer data={data} />
       </Harness>,
-    );
-    expect(screen.getByRole("alert")).toHaveTextContent("Name is required");
-  });
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('Name is required')
+  })
 
-  it("does not re-push when re-rendered with the same actionData identity", () => {
-    const data = { ok: false, error: "boom" };
+  it('does not re-push when re-rendered with the same actionData identity', () => {
+    const data = { ok: false, error: 'boom' }
     const { rerender } = render(
       <Harness>
         <ActionDataConsumer data={data} />
       </Harness>,
-    );
-    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    )
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
 
     rerender(
       <Harness>
         <ActionDataConsumer data={data} />
       </Harness>,
-    );
-    expect(screen.getAllByRole("alert")).toHaveLength(1);
-  });
+    )
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
+  })
 
-  it("does nothing for ok results", () => {
+  it('does nothing for ok results', () => {
     render(
       <Harness>
         <ActionDataConsumer data={{ ok: true, data: {} }} />
       </Harness>,
-    );
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  });
-});
+    )
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+})
