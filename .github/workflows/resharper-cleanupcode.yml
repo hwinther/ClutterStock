@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   cleanupcode:
-    uses: hwinther/reusable-workflows/.github/workflows/format-and-create-pr.yml@6b6810e17143f38ac9dc0f84d504e7ff08b1d2bf # v2.26.0
+    uses: hwinther/reusable-workflows/.github/workflows/format-and-create-pr.yml@afee6e3a1abf87d164c52a58ee88e7a8dabb5775 # v2.39.0
     permissions:
       contents: write
       pull-requests: write
