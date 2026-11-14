@@ -35,7 +35,7 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@6b6810e17143f38ac9dc0f84d504e7ff08b1d2bf # v2.26.0
+    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@afee6e3a1abf87d164c52a58ee88e7a8dabb5775 # v2.39.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -57,7 +57,7 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@6b6810e17143f38ac9dc0f84d504e7ff08b1d2bf # v2.26.0
+    uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@afee6e3a1abf87d164c52a58ee88e7a8dabb5775 # v2.39.0
     with:
       dotnet_version: 10.0.x
       solution_path: backend
@@ -79,7 +79,7 @@ jobs:
       actions: write
       security-events: write
       pull-requests: write
-    uses: hwinther/reusable-workflows/.github/workflows/docker-container.yml@6b6810e17143f38ac9dc0f84d504e7ff08b1d2bf # v2.26.0
+    uses: hwinther/reusable-workflows/.github/workflows/docker-container.yml@afee6e3a1abf87d164c52a58ee88e7a8dabb5775 # v2.39.0
     with:
       container_registry: ghcr.io
       container_image_name_postfix: frontend
@@ -109,7 +109,7 @@ jobs:
       # Signed in this job (a composite action runs in the caller's job), so the identity is this
       # workflow's. A single file at the root: the Flux Kustomization applies everything under its path.
       - name: Render, validate, push and sign
-        uses: hwinther/reusable-workflows/.github/actions/manifests@1fa5882e8aa1048af78492baf016f5a7b310be11 # v2.29.0
+        uses: hwinther/reusable-workflows/.github/actions/manifests@afee6e3a1abf87d164c52a58ee88e7a8dabb5775 # v2.39.0
         with:
           mode: push
           artifact: ghcr.io/hwinther/clutterstock/manifests
