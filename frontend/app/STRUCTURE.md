@@ -1,17 +1,14 @@
-# App structure (aligned with frontend guide)
+# App structure
 
-- **api/** – Generated OpenAPI types (`types.ts`) and shared API client (`client.ts`). Uses `constants/api` for base URL.
-- **assets/** – (Optional) Static assets; currently logos live in `welcome/`.
-- **components/** – Shared UI used across features (e.g. `Breadcrumb`).
-- **constants/** – Centralized config: `api.ts` (API base URL), `routes.ts` (path builders). Use for env-based or route values.
-- **features/** – Feature-based modules (domain-style, familiar from backend):
-  - **locations/** – Locations layout, list, form; exports for routes and layouts.
-  - **rooms/** – Rooms list and form.
-  - **items/** – Items list and form.
-- **layouts/** – Layout wrappers (e.g. locations section layout re-exported from features).
-- **routes/** – React Router route modules (loaders, actions, thin wrappers that use features and api).
-- **types/** – (Optional) App-level types; API types stay in `api/types.ts` (generated).
-- **utils/** – (Optional) Shared utility functions.
-- **hooks/** – (Optional) Shared React hooks.
+- **api/** – Generated OpenAPI types (`types.ts`, by `npm run openapi-typescript`; kept out of Prettier and ESLint) and the shared API client (`client.ts`). Uses `constants/api` for the base URL.
+- **components/** – Shared UI: the site header and footer, the per-theme chrome (TUI widgets, Win98 tree and bars, CDE bars), the terminal, the help overlay and the error boundary (`ProblemBoundary`).
+- **constants/** – Centralized config: `api.ts` (API base URL).
+- **features/** – The home page's panels, per domain:
+  - **items/** – View and edit panels, and the TUI table, detail, edit form and room picker.
+  - **rooms/** – The new-room panel.
+  - **locations/** – The new-location panel.
+- **lib/** – Server modules (`*.server.ts`: OIDC, session, Redis, toasts, CSP reports, security headers) and shared helpers (theme, time, version, toasts).
+- **routes/** – React Router route modules: the home page (`home.tsx`, all themes), auth, SSE, health, debug and CSP-report endpoints.
+- **test/** – Test setup, MSW handlers and helpers (an in-memory Redis, a router with a recording action).
 
-Routes and redirects use `~/constants/routes` instead of hardcoded URLs.
+Unit tests (Vitest) cover components, features, lib and the API client; the e2e suite covers the routes.

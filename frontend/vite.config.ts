@@ -26,9 +26,9 @@ export default defineConfig({
       reporter: ['cobertura', 'lcov', 'html', 'json'],
       // Every source file counts, not only the ones a test imports (Vitest's default), so an untested
       // file shows up as 0 %. Unit tests own the logic (components, features, lib, the API client);
-      // routes and layouts are the e2e suite's, which measures them (e2e/playwright.config.ts leaves
+      // routes are the e2e suite's, which measures them (e2e/playwright.config.ts leaves
       // out the rest of this list too). Also left out: openapi-typescript's generated types,
-      // constants, bootstrapping, OTel setup, the test helpers and the template's welcome page.
+      // constants, bootstrapping, OTel setup and the test helpers.
       include: ['app/**/*.{ts,tsx}'],
       exclude: [
         'app/**/*.{test,spec}.{ts,tsx}',
@@ -40,9 +40,7 @@ export default defineConfig({
         'app/routes.ts',
         'app/otel/**',
         'app/test/**',
-        'app/welcome/**',
         'app/routes/**',
-        'app/layouts/**',
       ],
     },
     reporters: ['verbose', 'github-actions', 'junit', 'json'],

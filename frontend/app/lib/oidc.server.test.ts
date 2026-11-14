@@ -102,7 +102,7 @@ describe('generateAuthUrl', () => {
 
     expect(first.searchParams.get('redirect_uri')).toBe('https://clutterstock.wsh.no/auth/callback')
     const state = first.searchParams.get('state')
-    expect(JSON.parse(fakeRedis.store.get(`oidc:state:${state}`)!.value).returnTo).toBe('/locations')
+    expect(JSON.parse(fakeRedis.store.get(`oidc:state:${state}`)!.value).returnTo).toBe('/')
     expect(discoveryCalls).toBe(1)
   })
 
