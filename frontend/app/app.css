@@ -12,7 +12,7 @@
   --c-bg-3:       #f4f4f5;
   --c-fg:         #0a0a0a;
   --c-fg-2:       #52525b;
-  --c-fg-3:       #a1a1aa;
+  --c-fg-3:       #6b6b74; /* 5.0:1 on --c-bg (WCAG AA); was #a1a1aa, 2.5:1 */
   --c-border:     #e4e4e7;
   --c-border-2:   #ededf0;
   --c-accent:     #5b5bf5;
@@ -30,7 +30,7 @@
     --c-bg-3:       #15151c;
     --c-fg:         #e6e6ea;
     --c-fg-2:       #a1a1aa;
-    --c-fg-3:       #6b6b78;
+    --c-fg-3:       #83838f; /* 5.2:1 on --c-bg (WCAG AA); was #6b6b78, 3.7:1 */
     --c-border:     #22222b;
     --c-border-2:   #1a1a22;
     --c-accent:     #7c7cff;

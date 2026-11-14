@@ -21,7 +21,5 @@ test("home loads and shows authenticated app after sign-in", async ({ home }) =>
 test("home page is accessible", async ({ home }) => {
   await home.goto();
   await expect(home.page.getByText("Total items")).toBeVisible();
-  // color-contrast is off until the theme colours are adjusted (its own round, with before/after
-  // screenshots): .theme-toggle, the .cs-toolbar labels and a few more fall below 4.5:1.
-  await expectAccessible(home.page, { disableRules: ["color-contrast"] });
+  await expectAccessible(home.page);
 });
