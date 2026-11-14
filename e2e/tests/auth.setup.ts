@@ -1,88 +1,82 @@
-import { expect, test as setup } from "@playwright/test";
-import fs from "node:fs";
-import * as OTPAuth from "otpauth";
-import { appUrl } from "./app-url";
-import { authDir, authFile, sessionFile } from "./auth-paths";
+import { expect, test as setup } from '@playwright/test'
+import fs from 'node:fs'
+import * as OTPAuth from 'otpauth'
+import { appUrl } from './app-url'
+import { authDir, authFile, sessionFile } from './auth-paths'
 
 // Reuse cached storage state if it's younger than this. Keep well under the
 // OIDC access-token lifetime so a cached session can't expire mid-test.
-const AUTH_TTL_MS = 20 * 60 * 1000;
+const AUTH_TTL_MS = 20 * 60 * 1000
 
-setup("authenticate", async ({ page }) => {
+setup('authenticate', async ({ page }) => {
   if (fs.existsSync(authFile) && fs.existsSync(sessionFile)) {
-    const ageMs = Date.now() - fs.statSync(authFile).mtimeMs;
-    if (ageMs < AUTH_TTL_MS) return;
+    const ageMs = Date.now() - fs.statSync(authFile).mtimeMs
+    if (ageMs < AUTH_TTL_MS) return
   }
 
-  const username = process.env.E2E_USERNAME;
-  const password = process.env.E2E_PASSWORD;
+  const username = process.env.E2E_USERNAME
+  const password = process.env.E2E_PASSWORD
   if (!username || !password) {
-    throw new Error(
-      "E2E_USERNAME and E2E_PASSWORD env vars must be set to run E2E tests",
-    );
+    throw new Error('E2E_USERNAME and E2E_PASSWORD env vars must be set to run E2E tests')
   }
 
   // Navigate to the app — unauthenticated, will redirect to Authelia
-  await page.goto("/");
-  await page.waitForURL(/auth\.wsh\.no/, { timeout: 15_000 });
+  await page.goto('/')
+  await page.waitForURL(/auth\.wsh\.no/, { timeout: 15_000 })
 
-  await page.getByRole("textbox", { name: /username/i }).fill(username);
-  await page.locator('input[type="password"]').fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole('textbox', { name: /username/i }).fill(username)
+  await page.locator('input[type="password"]').fill(password)
+  await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Wait for the 2FA page
-  await page.waitForURL(/auth\.wsh\.no\/2fa/, { timeout: 10_000 });
+  await page.waitForURL(/auth\.wsh\.no\/2fa/, { timeout: 10_000 })
 
   // Generate token just before filling — avoids a stale code if login was slow
   const totp = new OTPAuth.TOTP({
     secret: process.env.E2E_OTP_SECRET,
     digits: 6,
     period: 30,
-  });
-  const code = totp.generate();
+  })
+  const code = totp.generate()
 
   // Authelia (4.39.24+) renders one input per digit inside #otp-input (Base UI OTPField), plus a
   // hidden input carrying the combined value; getByRole skips that one. The digit inputs have no
   // stable accessible names, so locate them by the wrapper and type the code like a user: the field
   // auto-advances between inputs and submits once all digits are in.
-  const otpInputs = page.locator("#otp-input").getByRole("textbox");
-  await expect(otpInputs).toHaveCount(code.length);
-  await otpInputs.first().click();
-  await page.keyboard.type(code);
+  const otpInputs = page.locator('#otp-input').getByRole('textbox')
+  await expect(otpInputs).toHaveCount(code.length)
+  await otpInputs.first().click()
+  await page.keyboard.type(code)
 
   // After OTP, Authelia redirects to either consent or directly back to the app
-  await page.waitForURL(
-    url => url.pathname.includes("/consent/") || url.hostname === appUrl.hostname,
-    { timeout: 15_000 },
-  );
+  await page.waitForURL((url) => url.pathname.includes('/consent/') || url.hostname === appUrl.hostname, {
+    timeout: 15_000,
+  })
 
   // Authelia shows a consent screen on first login or after scope changes
-  if (page.url().includes("/consent/")) {
-    await page.getByRole("button", { name: "Accept" }).click();
+  if (page.url().includes('/consent/')) {
+    await page.getByRole('button', { name: 'Accept' }).click()
   }
 
   // Wait for the OIDC callback to fully process: the Account button appears once
   // the UserManager has stored the user and the app has re-rendered.
-  await expect(page.getByRole("button", { name: /account/i })).toBeVisible({
+  await expect(page.getByRole('button', { name: /account/i })).toBeVisible({
     timeout: 20_000,
-  });
+  })
 
   // Persist cookies (clutterstock_auth + authelia_session)
-  await page.context().storageState({ path: authFile });
+  await page.context().storageState({ path: authFile })
 
   // Persist sessionStorage (oidc.user:… token) keyed by origin — restored per-test
   // via addInitScript in fixtures.ts since Playwright storageState only captures localStorage.
   const sessionData = await page.evaluate(() => {
-    const data: Record<string, string> = {};
+    const data: Record<string, string> = {}
     for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i)!;
-      data[key] = sessionStorage.getItem(key)!;
+      const key = sessionStorage.key(i)!
+      data[key] = sessionStorage.getItem(key)!
     }
-    return data;
-  });
-  fs.mkdirSync(authDir, { recursive: true });
-  fs.writeFileSync(
-    sessionFile,
-    JSON.stringify({ [appUrl.origin]: sessionData }, null, 2),
-  );
-});
+    return data
+  })
+  fs.mkdirSync(authDir, { recursive: true })
+  fs.writeFileSync(sessionFile, JSON.stringify({ [appUrl.origin]: sessionData }, null, 2))
+})

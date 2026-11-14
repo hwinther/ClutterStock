@@ -1,16 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react'
 
-export function TuiSearchBar({ value, onChange, onClose }: {
-  value: string;
-  onChange: (v: string) => void;
-  onClose: (clear: boolean) => void;
+export function TuiSearchBar({
+  value,
+  onChange,
+  onClose,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onClose: (clear: boolean) => void
 }) {
-  const ref = useRef<HTMLInputElement>(null);
+  const ref = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    ref.current?.focus();
-    ref.current?.select();
-  }, []);
+    ref.current?.focus()
+    ref.current?.select()
+  }, [])
 
   return (
     <div className="cs-search-bar">
@@ -21,14 +25,14 @@ export function TuiSearchBar({ value, onChange, onClose }: {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            e.preventDefault();
-            e.stopPropagation();
-            onClose(true);
-          } else if (e.key === "Enter") {
-            e.preventDefault();
-            e.stopPropagation();
-            onClose(false);
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
+            onClose(true)
+          } else if (e.key === 'Enter') {
+            e.preventDefault()
+            e.stopPropagation()
+            onClose(false)
           }
         }}
         placeholder="filter items… (Esc to clear, Enter to keep)"
@@ -38,5 +42,5 @@ export function TuiSearchBar({ value, onChange, onClose }: {
         className="cs-search-input"
       />
     </div>
-  );
+  )
 }

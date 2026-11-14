@@ -28,7 +28,8 @@ public sealed class RedisItemChangeNotifier(IConnectionMultiplexer redis, ILogge
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             });
 
-            await redis.GetSubscriber().PublishAsync(RedisChannel.Literal(Channel), payload);
+            await redis.GetSubscriber()
+                       .PublishAsync(RedisChannel.Literal(Channel), payload);
         }
         catch (Exception ex)
         {

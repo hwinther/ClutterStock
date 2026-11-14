@@ -1,4 +1,4 @@
-import { startNodeTelemetry } from "@wshno/otel/node";
+import { startNodeTelemetry } from '@wshno/otel/node'
 
 /**
  * Node SDK reads standard OTEL_* env vars at process runtime (not Vite `import.meta`).
@@ -7,5 +7,5 @@ import { startNodeTelemetry } from "@wshno/otel/node";
  * from the in-cluster collector URL the Node exporter uses.
  */
 export function startNodeOpenTelemetry(): void {
-  startNodeTelemetry({ serviceName: "clutterstock-frontend-ssr" });
+  startNodeTelemetry({ serviceName: 'clutterstock-frontend-ssr' })
 }

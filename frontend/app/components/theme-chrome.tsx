@@ -1,33 +1,39 @@
-import { useSyncExternalStore } from "react";
-import type { LocationResponse, RoomResponse } from "~/api/client";
+import { useSyncExternalStore } from 'react'
+import type { LocationResponse, RoomResponse } from '~/api/client'
 
-const noopSubscribe = () => () => {};
-const getClientDate = () => new Date().toLocaleDateString();
-const getServerDate = () => "";
+const noopSubscribe = () => () => {}
+const getClientDate = () => new Date().toLocaleDateString()
+const getServerDate = () => ''
 
 export function CDEMenuBar() {
-  const menus = ["File", "Selected", "View", "Items", "Help"];
+  const menus = ['File', 'Selected', 'View', 'Items', 'Help']
   return (
     <div className="cde-menubar">
-      {menus.map(m => (
-        <span key={m} className="cde-menubar-item">{m}</span>
+      {menus.map((m) => (
+        <span key={m} className="cde-menubar-item">
+          {m}
+        </span>
       ))}
     </div>
-  );
+  )
 }
 
 export function CDEFootRow({ onNewItem }: { onNewItem: () => void }) {
   const slots: [string, (() => void) | null][] = [
-    ["Items", null], ["Rooms", null], ["Stats", null],
-    ["Add",   onNewItem],
-    ["Print", null], ["Trash", null], ["Help", null],
-  ];
+    ['Items', null],
+    ['Rooms', null],
+    ['Stats', null],
+    ['Add', onNewItem],
+    ['Print', null],
+    ['Trash', null],
+    ['Help', null],
+  ]
   return (
     <div className="cde-footrow">
       {slots.map(([label, action], i) => (
         <button
           key={label}
-          className={`cde-footrow-btn${i === 0 ? " cde-footrow-btn--primary" : ""}`}
+          className={`cde-footrow-btn${i === 0 ? ' cde-footrow-btn--primary' : ''}`}
           onClick={action ?? undefined}
           type="button"
         >
@@ -35,29 +41,33 @@ export function CDEFootRow({ onNewItem }: { onNewItem: () => void }) {
         </button>
       ))}
     </div>
-  );
+  )
 }
 
 export function Win98MenuBar() {
-  const menus = ["File", "Edit", "View", "Items", "Tools", "Help"];
+  const menus = ['File', 'Edit', 'View', 'Items', 'Tools', 'Help']
   return (
     <div className="win98-menubar">
-      {menus.map(m => (
+      {menus.map((m) => (
         <span key={m} className="win98-menubar-item">
-          <u>{m[0]}</u>{m.slice(1)}
+          <u>{m[0]}</u>
+          {m.slice(1)}
         </span>
       ))}
     </div>
-  );
+  )
 }
 
-export function Win98AddressBar({ location, room }: {
-  location?: LocationResponse | null;
-  room?: RoomResponse | null;
+export function Win98AddressBar({
+  location,
+  room,
+}: {
+  location?: LocationResponse | null
+  room?: RoomResponse | null
 }) {
-  let path = `C:\\ClutterStock\\All Items`;
-  if (room && location) path = `C:\\ClutterStock\\${location.name}\\${room.name}`;
-  else if (location) path = `C:\\ClutterStock\\${location.name}`;
+  let path = `C:\\ClutterStock\\All Items`
+  if (room && location) path = `C:\\ClutterStock\\${location.name}\\${room.name}`
+  else if (location) path = `C:\\ClutterStock\\${location.name}`
   return (
     <div className="win98-addressbar">
       <span className="win98-addressbar-label">Address</span>
@@ -67,28 +77,28 @@ export function Win98AddressBar({ location, room }: {
       </div>
       <button className="win98-addressbar-go">Go</button>
     </div>
-  );
+  )
 }
 
-export function Win98StatusBar({ count, location, room }: {
-  count: number;
-  location?: LocationResponse | null;
-  room?: RoomResponse | null;
+export function Win98StatusBar({
+  count,
+  location,
+  room,
+}: {
+  count: number
+  location?: LocationResponse | null
+  room?: RoomResponse | null
 }) {
-  const path = room && location
-    ? `${location.name}\\${room.name}`
-    : location?.name ?? "All Items";
+  const path = room && location ? `${location.name}\\${room.name}` : (location?.name ?? 'All Items')
   // toLocaleDateString resolves to the host's locale, which differs between the
   // SSR Node process and the browser — useSyncExternalStore returns the empty
   // server snapshot during SSR and switches to the client value after hydration.
-  const date = useSyncExternalStore(noopSubscribe, getClientDate, getServerDate);
+  const date = useSyncExternalStore(noopSubscribe, getClientDate, getServerDate)
   return (
     <div className="win98-statusbar">
       <div className="win98-statusbar-seg">{count} object(s)</div>
       <div className="win98-statusbar-seg">{path}</div>
-      <div className="win98-statusbar-seg win98-statusbar-seg--narrow">
-        {date}
-      </div>
+      <div className="win98-statusbar-seg win98-statusbar-seg--narrow">{date}</div>
     </div>
-  );
+  )
 }

@@ -9,7 +9,7 @@
  * Resource paths passed to `apiFetch` are relative to this prefix (e.g. `locations`
  * → `/api/v1/locations`), matching the backend minimal API group.
  */
-export const apiPathVersionPrefix = "api/v1";
+export const apiPathVersionPrefix = 'api/v1'
 
 /**
  * Optional origin or base URL **without** trailing slash and **without** the
@@ -17,12 +17,7 @@ export const apiPathVersionPrefix = "api/v1";
  */
 export function getApiBase(): string {
   if (globalThis.window === undefined) {
-    return (
-      process.env.SERVER_API_URL ??
-      process.env.API_URL ??
-      import.meta.env.VITE_API_URL ??
-      ""
-    );
+    return process.env.SERVER_API_URL ?? process.env.API_URL ?? import.meta.env.VITE_API_URL ?? ''
   }
-  return import.meta.env.VITE_API_URL ?? "";
+  return import.meta.env.VITE_API_URL ?? ''
 }

@@ -1,5 +1,5 @@
-import { Link, Outlet } from "react-router";
-import { routes } from "~/constants/routes";
+import { Link, Outlet } from 'react-router'
+import { routes } from '~/constants/routes'
 
 export function LocationsLayout() {
   return (
@@ -12,5 +12,5 @@ export function LocationsLayout() {
       </div>
       <Outlet />
     </main>
-  );
+  )
 }

@@ -27,9 +27,7 @@ public sealed class TestAuthHandler(
 
         var claims = new[]
         {
-            new Claim("sub", DefaultUserId),
-            new Claim(ClaimTypes.NameIdentifier, DefaultUserId),
-            new Claim(ClaimTypes.Name, DefaultUserName)
+            new Claim("sub", DefaultUserId), new Claim(ClaimTypes.NameIdentifier, DefaultUserId), new Claim(ClaimTypes.Name, DefaultUserName)
         };
 
         var identity = new ClaimsIdentity(claims, SchemeName);

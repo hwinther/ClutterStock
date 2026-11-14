@@ -1,6 +1,6 @@
-import { reactRouter } from "@react-router/dev/vite";
-import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vitest/config";
+import { reactRouter } from '@react-router/dev/vite'
+import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   resolve: {
@@ -13,45 +13,42 @@ export default defineConfig({
   build: {
     sourcemap: true,
   },
-  plugins: [
-    tailwindcss(),
-    ...(process.env.VITEST ? [] : [reactRouter()]),
-  ],
+  plugins: [tailwindcss(), ...(process.env.VITEST ? [] : [reactRouter()])],
   test: {
     globals: true,
-    environment: "jsdom",
-    setupFiles: ["./app/test/setup.ts"],
-    include: ["app/**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["coverage/**"],
+    environment: 'jsdom',
+    setupFiles: ['./app/test/setup.ts'],
+    include: ['app/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['coverage/**'],
     coverage: {
       enabled: true,
-      provider: "v8",
-      reporter: ["cobertura", "lcov", "html", "json"],
+      provider: 'v8',
+      reporter: ['cobertura', 'lcov', 'html', 'json'],
       // Every source file counts, not only the ones a test imports (Vitest's default), so an untested
       // file shows up as 0 %. Unit tests own the logic (components, features, lib, the API client);
       // routes and layouts are the e2e suite's, which measures them (e2e/playwright.config.ts leaves
       // out the rest of this list too). Also left out: openapi-typescript's generated types,
       // constants, bootstrapping, OTel setup, the test helpers and the template's welcome page.
-      include: ["app/**/*.{ts,tsx}"],
+      include: ['app/**/*.{ts,tsx}'],
       exclude: [
-        "app/**/*.{test,spec}.{ts,tsx}",
-        "app/**/*.d.ts",
-        "app/api/types.ts",
-        "app/constants/**",
-        "app/entry.*",
-        "app/root.tsx",
-        "app/routes.ts",
-        "app/otel/**",
-        "app/test/**",
-        "app/welcome/**",
-        "app/routes/**",
-        "app/layouts/**",
+        'app/**/*.{test,spec}.{ts,tsx}',
+        'app/**/*.d.ts',
+        'app/api/types.ts',
+        'app/constants/**',
+        'app/entry.*',
+        'app/root.tsx',
+        'app/routes.ts',
+        'app/otel/**',
+        'app/test/**',
+        'app/welcome/**',
+        'app/routes/**',
+        'app/layouts/**',
       ],
     },
-    reporters: ["verbose", "github-actions", "junit", "json"],
+    reporters: ['verbose', 'github-actions', 'junit', 'json'],
     outputFile: {
-      junit: "./coverage/junit-report.xml",
-      json: "./coverage/json-report.json",
+      junit: './coverage/junit-report.xml',
+      json: './coverage/json-report.json',
     },
   },
-});
+})

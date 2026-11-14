@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ClutterStock.Api.ExceptionHandlers;
 using ClutterStock.Api.Extensions;
 using ClutterStock.Api.Generated;
@@ -13,26 +14,30 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenTelemetryObservability(builder.Environment);
 
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins")
+                            .Get<string[]>() ?? [];
+
 builder.Services.AddCors(options =>
-    options.AddDefaultPolicy(policy =>
-    {
-        if (allowedOrigins.Length > 0)
-            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
-    }));
+                             options.AddDefaultPolicy(policy =>
+                             {
+                                 if (allowedOrigins.Length > 0)
+                                     policy.WithOrigins(allowedOrigins)
+                                           .AllowAnyHeader()
+                                           .AllowAnyMethod();
+                             }));
 
 builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = builder.Configuration["Authentication:Authority"];
-        options.Audience = builder.Configuration["Authentication:Audience"];
-    });
+       .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+       .AddJwtBearer(options =>
+       {
+           options.Authority = builder.Configuration["Authentication:Authority"];
+           options.Audience = builder.Configuration["Authentication:Audience"];
+       });
 
 builder.Services.AddAuthorization(options =>
-    options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build());
+                                      options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                                                               .RequireAuthenticatedUser()
+                                                               .Build());
 
 builder.Services.AddInfrastructure(
     builder.Configuration.GetConnectionString("ClutterStock") ?? throw new InvalidOperationException("Missing connection string for ClutterStock in the configuration"),
@@ -44,14 +49,17 @@ builder.Services.AddHealthChecks()
 builder.Services.AddDomainHandlers();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails(options =>
-    options.CustomizeProblemDetails = ctx =>
-    {
-        ctx.ProblemDetails.Instance ??= $"{ctx.HttpContext.Request.Method} {ctx.HttpContext.Request.Path}";
-        ctx.ProblemDetails.Extensions.TryAdd("requestId", ctx.HttpContext.TraceIdentifier);
-        var activity = ctx.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity;
-        if (activity is not null)
-            ctx.ProblemDetails.Extensions.TryAdd("traceId", activity.Id);
-    });
+                                       options.CustomizeProblemDetails = ctx =>
+                                       {
+                                           ctx.ProblemDetails.Instance ??= $"{ctx.HttpContext.Request.Method} {ctx.HttpContext.Request.Path}";
+                                           ctx.ProblemDetails.Extensions.TryAdd("requestId", ctx.HttpContext.TraceIdentifier);
+                                           var activity = ctx.HttpContext.Features.Get<IHttpActivityFeature>()
+                                                             ?.Activity;
+
+                                           if (activity is not null)
+                                               ctx.ProblemDetails.Extensions.TryAdd("traceId", activity.Id);
+                                       });
+
 builder.Services.AddExceptionHandler<PostgresInputExceptionHandler>();
 builder.Services.AddExceptionHandler<ConcurrentDeleteExceptionHandler>();
 builder.Services.AddValidation();
@@ -115,6 +123,6 @@ app.Run();
 namespace ClutterStock.Api
 {
     /// <summary>Exposed so test projects can target <c>WebApplicationFactory&lt;Program&gt;</c>.</summary>
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    public partial class Program;
+    [ExcludeFromCodeCoverage]
+    public class Program;
 }

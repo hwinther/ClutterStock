@@ -24,6 +24,8 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
     private ApplicationContext _context = null!;
     private PostgreSqlDefaultConfiguration _postgres = null!;
 
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
     public async ValueTask InitializeAsync()
     {
         _postgres = new PostgreSqlDefaultConfiguration();
@@ -32,6 +34,7 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
         var options = new DbContextOptionsBuilder<ApplicationContext>()
                       .UseNpgsql(_postgres.PostgreSqlContainer.GetConnectionString())
                       .Options;
+
         _context = new ApplicationContext(options);
         await _context.Database.MigrateAsync(CancellationToken.None);
     }
@@ -41,8 +44,6 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
         await _context.DisposeAsync();
         await _postgres.DisposeAsync();
     }
-
-    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     [Fact]
     public async Task AddItem_PublishesItemCreated()
@@ -64,6 +65,7 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
         var roomId = await SeedRoomAsync();
         var item = await new AddItemCommandHandler(_context, _notifier)
             .HandleAsync(new IAddItemCommandHandler.Command(roomId, "Original", null, null, null), Ct);
+
         _notifier.Published.Clear();
 
         await new UpdateItemCommandHandler(_context, _notifier)
@@ -81,6 +83,7 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
         var roomId = await SeedRoomAsync();
         var item = await new AddItemCommandHandler(_context, _notifier)
             .HandleAsync(new IAddItemCommandHandler.Command(roomId, "Throwaway", null, null, null), Ct);
+
         _notifier.Published.Clear();
 
         var deleted = await new DeleteItemCommandHandler(_context, _notifier)
@@ -105,11 +108,22 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
 
     private async Task<int> SeedRoomAsync()
     {
-        var location = new Location { Name = "Home", CreatedAtUtc = DateTimeOffset.UtcNow };
+        var location = new Location
+        {
+            Name = "Home",
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        };
+
         _context.Locations.Add(location);
         await _context.SaveChangesAsync(Ct);
 
-        var room = new Room { LocationId = location.Id, Name = "Garage", CreatedAtUtc = DateTimeOffset.UtcNow };
+        var room = new Room
+        {
+            LocationId = location.Id,
+            Name = "Garage",
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        };
+
         _context.Rooms.Add(room);
         await _context.SaveChangesAsync(Ct);
 

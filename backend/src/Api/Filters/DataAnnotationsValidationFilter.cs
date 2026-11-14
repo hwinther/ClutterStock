@@ -17,6 +17,7 @@ namespace ClutterStock.Api.Filters;
 /// </remarks>
 internal sealed class DataAnnotationsValidationFilter : IEndpointFilter
 {
+    private const string NulMessage = "Must not contain NUL characters.";
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var parameters = context.HttpContext.GetEndpoint()
@@ -45,8 +46,6 @@ internal sealed class DataAnnotationsValidationFilter : IEndpointFilter
         return await next(context);
     }
 
-    private const string NulMessage = "Must not contain NUL characters.";
-
     private static void ValidateArgument(object argument, ParameterInfo? parameter, ref Dictionary<string, List<string>>? errors)
     {
         RejectNulCharacters(argument, parameter, ref errors);
@@ -56,7 +55,9 @@ internal sealed class DataAnnotationsValidationFilter : IEndpointFilter
             if (parameter is null)
                 return;
 
-            var attributes = parameter.GetCustomAttributes<ValidationAttribute>(inherit: true).ToArray();
+            var attributes = parameter.GetCustomAttributes<ValidationAttribute>(true)
+                                      .ToArray();
+
             if (attributes.Length == 0)
                 return;
 
@@ -65,6 +66,7 @@ internal sealed class DataAnnotationsValidationFilter : IEndpointFilter
             {
                 MemberName = parameter.Name
             };
+
             if (Validator.TryValidateValue(argument, ctx, results, attributes))
                 return;
 
@@ -74,10 +76,13 @@ internal sealed class DataAnnotationsValidationFilter : IEndpointFilter
 
         var objectResults = new List<ValidationResult>();
         var objectContext = new ValidationContext(argument);
-        if (Validator.TryValidateObject(argument, objectContext, objectResults, validateAllProperties: true))
+        if (Validator.TryValidateObject(argument, objectContext, objectResults, true))
             return;
 
-        AddResults(objectResults, fallbackKey: argument.GetType().Name, ref errors);
+        AddResults(objectResults,
+                   argument.GetType()
+                           .Name,
+                   ref errors);
     }
 
     /// <summary>
@@ -90,16 +95,19 @@ internal sealed class DataAnnotationsValidationFilter : IEndpointFilter
         {
             if (text.Contains('\0'))
                 AddResults([new ValidationResult(NulMessage)], parameter?.Name ?? string.Empty, ref errors);
+
             return;
         }
 
         if (IsSimpleType(argument.GetType()))
             return;
 
-        foreach (var property in argument.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        foreach (var property in argument.GetType()
+                                         .GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             if (property.PropertyType == typeof(string)
-                && property.GetIndexParameters().Length == 0
+                && property.GetIndexParameters()
+                           .Length == 0
                 && property.GetValue(argument) is string value
                 && value.Contains('\0'))
                 AddResults([new ValidationResult(NulMessage, [property.Name])], property.Name, ref errors);
@@ -117,6 +125,7 @@ internal sealed class DataAnnotationsValidationFilter : IEndpointFilter
                 errors ??= new Dictionary<string, List<string>>();
                 if (!errors.TryGetValue(member, out var list))
                     errors[member] = list = [];
+
                 list.Add(message);
             }
         }

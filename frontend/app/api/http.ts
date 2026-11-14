@@ -1,28 +1,26 @@
-import { getValidToken } from "~/lib/oidc.server";
-import { apiPathVersionPrefix, getApiBase } from "~/constants/api";
+import { getValidToken } from '~/lib/oidc.server'
+import { apiPathVersionPrefix, getApiBase } from '~/constants/api'
 
 export type ApiLogEvent =
-  | { kind: "request"; method: string; url: string }
-  | { kind: "response"; method: string; url: string; status: number; durationMs: number }
-  | { kind: "error"; method: string; url: string; error: unknown };
+  | { kind: 'request'; method: string; url: string }
+  | { kind: 'response'; method: string; url: string; status: number; durationMs: number }
+  | { kind: 'error'; method: string; url: string; error: unknown }
 
-let logListener: ((e: ApiLogEvent) => void) | undefined;
+let logListener: ((e: ApiLogEvent) => void) | undefined
 
-export function setApiLogListener(
-  listener: ((e: ApiLogEvent) => void) | undefined,
-): void {
-  logListener = listener;
+export function setApiLogListener(listener: ((e: ApiLogEvent) => void) | undefined): void {
+  logListener = listener
 }
 
 function resolveUrl(path: string): string {
-  const base = getApiBase().replace(/\/$/, "");
+  const base = getApiBase().replace(/\/$/, '')
   // Paths beginning with "/api/" are treated as already-prefixed (the typed
   // wrapper supplies them straight from the openapi `paths` keys). Other
   // paths are prefixed with the version segment for legacy callers.
-  const versionedPath = path.startsWith("/api/")
-    ? path.replace(/^\//, "")
-    : `${apiPathVersionPrefix}/${path.replace(/^\//, "")}`;
-  return base ? `${base}/${versionedPath}` : `/${versionedPath}`;
+  const versionedPath = path.startsWith('/api/')
+    ? path.replace(/^\//, '')
+    : `${apiPathVersionPrefix}/${path.replace(/^\//, '')}`
+  return base ? `${base}/${versionedPath}` : `/${versionedPath}`
 }
 
 /**
@@ -30,43 +28,38 @@ function resolveUrl(path: string): string {
  * Pass `ssrRequest` from every loader/action so the session cookie can be
  * resolved to a Bearer token server-side.  Browser-direct .NET calls are gone.
  */
-export async function apiFetch(
-  path: string,
-  init: RequestInit = {},
-  ssrRequest?: Request,
-): Promise<Response> {
-  const url = resolveUrl(path);
-  const method = (init.method ?? "GET").toUpperCase();
+export async function apiFetch(path: string, init: RequestInit = {}, ssrRequest?: Request): Promise<Response> {
+  const url = resolveUrl(path)
+  const method = (init.method ?? 'GET').toUpperCase()
 
-  const headers = new Headers(init.headers);
+  const headers = new Headers(init.headers)
 
   if (ssrRequest) {
-    const token = await getValidToken(ssrRequest);
-    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const token = await getValidToken(ssrRequest)
+    if (token) headers.set('Authorization', `Bearer ${token}`)
   }
 
-  logListener?.({ kind: "request", method, url });
-  if (import.meta.env.DEV) console.debug(`[api] ${method} ${url}`);
+  logListener?.({ kind: 'request', method, url })
+  if (import.meta.env.DEV) console.debug(`[api] ${method} ${url}`)
 
-  const t0 = Date.now();
+  const t0 = Date.now()
 
   try {
-    const response = await fetch(url, { ...init, headers });
-    const durationMs = Date.now() - t0;
-    logListener?.({ kind: "response", method, url, status: response.status, durationMs });
-    if (import.meta.env.DEV)
-      console.debug(`[api] ${method} ${url} → ${response.status} (${durationMs}ms)`);
+    const response = await fetch(url, { ...init, headers })
+    const durationMs = Date.now() - t0
+    logListener?.({ kind: 'response', method, url, status: response.status, durationMs })
+    if (import.meta.env.DEV) console.debug(`[api] ${method} ${url} → ${response.status} (${durationMs}ms)`)
 
     if (response.status === 401) {
       // Session expired and refresh failed — redirect to sign-in from server
-      throw new Response(null, { status: 302, headers: { Location: "/auth/signin" } });
+      throw new Response(null, { status: 302, headers: { Location: '/auth/signin' } })
     }
 
-    return response;
+    return response
   } catch (error) {
-    if (error instanceof Response) throw error; // propagate redirects
-    logListener?.({ kind: "error", method, url, error });
-    console.error(`[api] ${method} ${url} failed`, error);
-    throw error;
+    if (error instanceof Response) throw error // propagate redirects
+    logListener?.({ kind: 'error', method, url, error })
+    console.error(`[api] ${method} ${url} failed`, error)
+    throw error
   }
 }

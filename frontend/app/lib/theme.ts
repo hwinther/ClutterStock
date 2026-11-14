@@ -1,20 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react'
 
-export type ThemeId = "system" | "tui" | "win98" | "cde";
+export type ThemeId = 'system' | 'tui' | 'win98' | 'cde'
 
 export function useTheme(): ThemeId {
-  const [theme, setTheme] = useState<ThemeId>("system");
+  const [theme, setTheme] = useState<ThemeId>('system')
 
   useEffect(() => {
-    const read = () =>
-      setTheme((document.documentElement.getAttribute("data-theme") as ThemeId) || "system");
+    const read = () => setTheme((document.documentElement.getAttribute('data-theme') as ThemeId) || 'system')
 
-    read();
+    read()
 
-    const obs = new MutationObserver(read);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => obs.disconnect();
-  }, []);
+    const obs = new MutationObserver(read)
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => obs.disconnect()
+  }, [])
 
-  return theme;
+  return theme
 }

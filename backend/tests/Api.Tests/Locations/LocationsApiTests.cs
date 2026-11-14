@@ -17,11 +17,11 @@ public sealed class LocationsApiTests : IClassFixture<ClutterStockApiFactory>, I
 
     public LocationsApiTests(ClutterStockApiFactory factory) => _factory = factory;
 
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
     public async ValueTask InitializeAsync() => await _factory.ResetDatabaseAsync();
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-
-    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     private HttpClient CreateAuthenticatedClient()
     {
@@ -186,6 +186,7 @@ public sealed class LocationsApiTests : IClassFixture<ClutterStockApiFactory>, I
         var response = await client.PostAsJsonAsync(LocationsRoute,
                                                     new AddLocationRequest(name, null),
                                                     Ct);
+
         response.EnsureSuccessStatusCode();
         var location = await response.Content.ReadFromJsonAsync<LocationResponse>(Ct);
         return location ?? throw new InvalidOperationException("LocationResponse was null");

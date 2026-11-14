@@ -20,11 +20,11 @@ public sealed class RoomsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
 
     public RoomsApiTests(ClutterStockApiFactory factory) => _factory = factory;
 
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
     public async ValueTask InitializeAsync() => await _factory.ResetDatabaseAsync();
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-
-    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     private HttpClient CreateAuthenticatedClient()
     {
@@ -43,6 +43,7 @@ public sealed class RoomsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
             Name = "Home",
             CreatedAtUtc = DateTimeOffset.UtcNow
         };
+
         db.Locations.Add(location);
         await db.SaveChangesAsync(Ct);
 
@@ -224,6 +225,7 @@ public sealed class RoomsApiTests : IClassFixture<ClutterStockApiFactory>, IAsyn
         var response = await client.PostAsJsonAsync(RoomsRoute,
                                                     new AddRoomRequest(locationId, name, null),
                                                     Ct);
+
         response.EnsureSuccessStatusCode();
         var room = await response.Content.ReadFromJsonAsync<RoomResponse>(Ct);
         return room ?? throw new InvalidOperationException("RoomResponse was null");

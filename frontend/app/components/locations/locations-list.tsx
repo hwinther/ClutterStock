@@ -1,16 +1,16 @@
-import { Form, Link } from "react-router";
-import type { LocationResponse } from "~/api/client";
+import { Form, Link } from 'react-router'
+import type { LocationResponse } from '~/api/client'
 
 export function LocationsList({ locations }: { locations: LocationResponse[] }) {
   if (locations.length === 0) {
     return (
       <div className="card-empty">
         <p className="text-muted">No locations yet.</p>
-        <Link to="/locations/new" className="link-text" style={{ display: "inline-block", marginTop: 12 }}>
+        <Link to="/locations/new" className="link-text" style={{ display: 'inline-block', marginTop: 12 }}>
           Add your first location →
         </Link>
       </div>
-    );
+    )
   }
 
   return (
@@ -19,31 +19,37 @@ export function LocationsList({ locations }: { locations: LocationResponse[] }) 
         <tr>
           <th>Name</th>
           <th>Description</th>
-          <th style={{ width: 1, whiteSpace: "nowrap" }}></th>
+          <th style={{ width: 1, whiteSpace: 'nowrap' }}></th>
         </tr>
       </thead>
       <tbody>
         {locations.map((loc) => (
           <tr key={loc.id}>
             <td>
-              <span style={{ fontWeight: 500 }}>{loc.name ?? "Unnamed"}</span>
+              <span style={{ fontWeight: 500 }}>{loc.name ?? 'Unnamed'}</span>
             </td>
-            <td style={{ color: "var(--c-fg-3)", fontSize: 12 }}>
-              {loc.description || "—"}
-            </td>
+            <td style={{ color: 'var(--c-fg-3)', fontSize: 12 }}>{loc.description || '—'}</td>
             <td>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <Link to={`/locations/${loc.id}/rooms`} className="link-chip">Rooms</Link>
-                <Link to={`/locations/${loc.id}/edit`} className="link-chip">Edit</Link>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Link to={`/locations/${loc.id}/rooms`} className="link-chip">
+                  Rooms
+                </Link>
+                <Link to={`/locations/${loc.id}/edit`} className="link-chip">
+                  Edit
+                </Link>
                 <Form
                   method="post"
                   onSubmit={(e) => {
-                    if (!confirm("Delete this location and all its rooms and items?")) e.preventDefault();
+                    if (!confirm('Delete this location and all its rooms and items?')) e.preventDefault()
                   }}
                 >
                   <input type="hidden" name="_action" value="delete" />
                   <input type="hidden" name="id" value={loc.id} />
-                  <button type="submit" className="link-chip" style={{ color: "var(--c-danger)", borderColor: "transparent" }}>
+                  <button
+                    type="submit"
+                    className="link-chip"
+                    style={{ color: 'var(--c-danger)', borderColor: 'transparent' }}
+                  >
                     Delete
                   </button>
                 </Form>
@@ -53,5 +59,5 @@ export function LocationsList({ locations }: { locations: LocationResponse[] }) 
         ))}
       </tbody>
     </table>
-  );
+  )
 }

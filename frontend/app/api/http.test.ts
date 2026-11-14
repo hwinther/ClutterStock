@@ -1,142 +1,136 @@
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
 // Mock server-only module so jsdom tests can import http.ts
-vi.mock("~/lib/oidc.server", () => ({
+vi.mock('~/lib/oidc.server', () => ({
   getValidToken: vi.fn().mockResolvedValue(null),
-}));
+}))
 
 const { getApiBaseMock } = vi.hoisted(() => ({
-  getApiBaseMock: vi.fn(() => ""),
-}));
+  getApiBaseMock: vi.fn(() => ''),
+}))
 
-vi.mock("~/constants/api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("~/constants/api")>();
+vi.mock('~/constants/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('~/constants/api')>()
   return {
     ...actual,
     getApiBase: () => getApiBaseMock(),
-  };
-});
+  }
+})
 
-import { apiFetch, setApiLogListener } from "./http";
-import { getValidToken } from "~/lib/oidc.server";
+import { apiFetch, setApiLogListener } from './http'
+import { getValidToken } from '~/lib/oidc.server'
 
-describe("apiFetch", () => {
-  let fetchMock: Mock;
+describe('apiFetch', () => {
+  let fetchMock: Mock
 
   function lastFetchInit(): RequestInit {
-    const call = fetchMock.mock.calls.at(-1);
-    const init = call?.[1];
-    expect(init).toBeDefined();
-    return init as RequestInit;
+    const call = fetchMock.mock.calls.at(-1)
+    const init = call?.[1]
+    expect(init).toBeDefined()
+    return init as RequestInit
   }
 
   beforeEach(() => {
-    getApiBaseMock.mockReset();
-    getApiBaseMock.mockImplementation(() => "");
-    setApiLogListener(undefined);
-    fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
-    vi.mocked(getValidToken).mockResolvedValue(null);
-  });
+    getApiBaseMock.mockReset()
+    getApiBaseMock.mockImplementation(() => '')
+    setApiLogListener(undefined)
+    fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    vi.mocked(getValidToken).mockResolvedValue(null)
+  })
 
   afterEach(() => {
-    setApiLogListener(undefined);
-    vi.unstubAllGlobals();
-  });
+    setApiLogListener(undefined)
+    vi.unstubAllGlobals()
+  })
 
-  it("resolves URL with no base as root-relative path", async () => {
-    getApiBaseMock.mockReturnValue("");
-    await apiFetch("locations");
+  it('resolves URL with no base as root-relative path', async () => {
+    getApiBaseMock.mockReturnValue('')
+    await apiFetch('locations')
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/locations",
+      '/api/v1/locations',
       expect.objectContaining({ headers: expect.any(Headers) }),
-    );
-  });
+    )
+  })
 
-  it("strips leading slash on path when base is set", async () => {
-    getApiBaseMock.mockReturnValue("https://api.example.com");
-    await apiFetch("/foo/bar");
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.example.com/api/v1/foo/bar",
-      expect.anything(),
-    );
-  });
+  it('strips leading slash on path when base is set', async () => {
+    getApiBaseMock.mockReturnValue('https://api.example.com')
+    await apiFetch('/foo/bar')
+    expect(fetchMock).toHaveBeenCalledWith('https://api.example.com/api/v1/foo/bar', expect.anything())
+  })
 
-  it("trims trailing slash from base", async () => {
-    getApiBaseMock.mockReturnValue("https://api.example.com/");
-    await apiFetch("x");
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.example.com/api/v1/x",
-      expect.anything(),
-    );
-  });
+  it('trims trailing slash from base', async () => {
+    getApiBaseMock.mockReturnValue('https://api.example.com/')
+    await apiFetch('x')
+    expect(fetchMock).toHaveBeenCalledWith('https://api.example.com/api/v1/x', expect.anything())
+  })
 
-  it("defaults method to GET", async () => {
-    await apiFetch("/a");
-    expect(lastFetchInit().method).toBeUndefined();
-  });
+  it('defaults method to GET', async () => {
+    await apiFetch('/a')
+    expect(lastFetchInit().method).toBeUndefined()
+  })
 
-  it("sets Authorization header from session token when ssrRequest provided", async () => {
-    vi.mocked(getValidToken).mockResolvedValue("tok-abc");
-    const req = new Request("http://localhost/");
-    await apiFetch("/a", {}, req);
-    const h = new Headers(lastFetchInit().headers);
-    expect(h.get("Authorization")).toBe("Bearer tok-abc");
-  });
+  it('sets Authorization header from session token when ssrRequest provided', async () => {
+    vi.mocked(getValidToken).mockResolvedValue('tok-abc')
+    const req = new Request('http://localhost/')
+    await apiFetch('/a', {}, req)
+    const h = new Headers(lastFetchInit().headers)
+    expect(h.get('Authorization')).toBe('Bearer tok-abc')
+  })
 
-  it("omits Authorization header when getValidToken returns null", async () => {
-    vi.mocked(getValidToken).mockResolvedValue(null);
-    const req = new Request("http://localhost/");
-    await apiFetch("/a", {}, req);
-    const h = new Headers(lastFetchInit().headers);
-    expect(h.get("Authorization")).toBeNull();
-  });
+  it('omits Authorization header when getValidToken returns null', async () => {
+    vi.mocked(getValidToken).mockResolvedValue(null)
+    const req = new Request('http://localhost/')
+    await apiFetch('/a', {}, req)
+    const h = new Headers(lastFetchInit().headers)
+    expect(h.get('Authorization')).toBeNull()
+  })
 
-  it("omits Authorization header when no ssrRequest provided", async () => {
-    vi.mocked(getValidToken).mockResolvedValue("tok-xyz");
-    await apiFetch("/a");
-    const h = new Headers(lastFetchInit().headers);
-    expect(h.get("Authorization")).toBeNull();
-  });
+  it('omits Authorization header when no ssrRequest provided', async () => {
+    vi.mocked(getValidToken).mockResolvedValue('tok-xyz')
+    await apiFetch('/a')
+    const h = new Headers(lastFetchInit().headers)
+    expect(h.get('Authorization')).toBeNull()
+  })
 
-  it("emits request then response log events on success", async () => {
-    const kinds: string[] = [];
+  it('emits request then response log events on success', async () => {
+    const kinds: string[] = []
     setApiLogListener((e) => {
-      kinds.push(e.kind);
-    });
-    fetchMock.mockResolvedValue(new Response(null, { status: 201 }));
+      kinds.push(e.kind)
+    })
+    fetchMock.mockResolvedValue(new Response(null, { status: 201 }))
 
-    await apiFetch("/z", { method: "post" });
+    await apiFetch('/z', { method: 'post' })
 
-    expect(kinds).toEqual(["request", "response"]);
-  });
+    expect(kinds).toEqual(['request', 'response'])
+  })
 
-  it("response log event includes HTTP status", async () => {
-    let status: number | undefined;
+  it('response log event includes HTTP status', async () => {
+    let status: number | undefined
     setApiLogListener((e) => {
-      if (e.kind === "response") status = e.status;
-    });
-    fetchMock.mockResolvedValue(new Response(null, { status: 418 }));
-    await apiFetch("/tea");
-    expect(status).toBe(418);
-  });
+      if (e.kind === 'response') status = e.status
+    })
+    fetchMock.mockResolvedValue(new Response(null, { status: 418 }))
+    await apiFetch('/tea')
+    expect(status).toBe(418)
+  })
 
-  it("emits request then error log event when fetch throws", async () => {
-    const err = new Error("network");
-    fetchMock.mockRejectedValue(err);
-    const kinds: string[] = [];
-    let loggedError: unknown;
+  it('emits request then error log event when fetch throws', async () => {
+    const err = new Error('network')
+    fetchMock.mockRejectedValue(err)
+    const kinds: string[] = []
+    let loggedError: unknown
     setApiLogListener((e) => {
-      kinds.push(e.kind);
-      if (e.kind === "error") loggedError = e.error;
-    });
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      kinds.push(e.kind)
+      if (e.kind === 'error') loggedError = e.error
+    })
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    await expect(apiFetch("/fail")).rejects.toThrow("network");
+    await expect(apiFetch('/fail')).rejects.toThrow('network')
 
-    expect(kinds).toEqual(["request", "error"]);
-    expect(loggedError).toBe(err);
+    expect(kinds).toEqual(['request', 'error'])
+    expect(loggedError).toBe(err)
 
-    consoleSpy.mockRestore();
-  });
-});
+    consoleSpy.mockRestore()
+  })
+})

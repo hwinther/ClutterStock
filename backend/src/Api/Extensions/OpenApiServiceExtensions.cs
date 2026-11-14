@@ -37,30 +37,33 @@ internal static class OpenApiServiceExtensions
             options.OperationFilter<GlobalResponsesOperationFilter>();
             options.SwaggerGeneratorOptions.XmlCommentEndOfLine = "\n";
 
-            options.AddSecurityDefinition("oidc", new OpenApiSecurityScheme
-            {
-                Type = SecuritySchemeType.OAuth2,
-                Flows = new OpenApiOAuthFlows
-                {
-                    AuthorizationCode = new OpenApiOAuthFlow
-                    {
-                        AuthorizationUrl = new Uri("https://auth.wsh.no/api/oidc/authorization"),
-                        TokenUrl = new Uri("https://auth.wsh.no/api/oidc/token"),
-                        Scopes = new Dictionary<string, string>
-                        {
-                            ["openid"] = "OpenID",
-                            ["profile"] = "Profile",
-                            ["email"] = "Email",
-                            ["groups"] = "Groups",
-                            ["offline_access"] = "Offline access",
-                        }
-                    }
-                }
-            });
+            options.AddSecurityDefinition("oidc",
+                                          new OpenApiSecurityScheme
+                                          {
+                                              Type = SecuritySchemeType.OAuth2,
+                                              Flows = new OpenApiOAuthFlows
+                                              {
+                                                  AuthorizationCode = new OpenApiOAuthFlow
+                                                  {
+                                                      AuthorizationUrl = new Uri("https://auth.wsh.no/api/oidc/authorization"),
+                                                      TokenUrl = new Uri("https://auth.wsh.no/api/oidc/token"),
+                                                      Scopes = new Dictionary<string, string>
+                                                      {
+                                                          ["openid"] = "OpenID",
+                                                          ["profile"] = "Profile",
+                                                          ["email"] = "Email",
+                                                          ["groups"] = "Groups",
+                                                          ["offline_access"] = "Offline access"
+                                                      }
+                                                  }
+                                              }
+                                          });
 
             options.AddSecurityRequirement(static doc => new OpenApiSecurityRequirement
             {
-                { new OpenApiSecuritySchemeReference("oidc", doc), [] }
+                {
+                    new OpenApiSecuritySchemeReference("oidc", doc), []
+                }
             });
         });
 

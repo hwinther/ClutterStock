@@ -1,26 +1,26 @@
-import { redirect } from "react-router";
-import type { Route } from "./+types/locations.index";
-import { routes } from "~/constants/routes";
-import { deleteLocation, getLocations } from "~/api/client";
-import { LocationsList } from "~/features/locations";
+import { redirect } from 'react-router'
+import type { Route } from './+types/locations.index'
+import { routes } from '~/constants/routes'
+import { deleteLocation, getLocations } from '~/api/client'
+import { LocationsList } from '~/features/locations'
 
 export function loader({ request }: Route.LoaderArgs) {
-  return getLocations(request);
+  return getLocations(request)
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-  if (formData.get("_action") !== "delete") return null;
-  const id = Number(formData.get("id"));
-  if (Number.isNaN(id)) return null;
-  await deleteLocation(id, request);
-  return redirect(routes.locations.list());
+  const formData = await request.formData()
+  if (formData.get('_action') !== 'delete') return null
+  const id = Number(formData.get('id'))
+  if (Number.isNaN(id)) return null
+  await deleteLocation(id, request)
+  return redirect(routes.locations.list())
 }
 
 export function meta(_args: Route.MetaArgs) {
-  return [{ title: "Locations | ClutterStock" }];
+  return [{ title: 'Locations | ClutterStock' }]
 }
 
 export default function LocationsIndex({ loaderData }: Route.ComponentProps) {
-  return <LocationsList locations={loaderData} />;
+  return <LocationsList locations={loaderData} />
 }

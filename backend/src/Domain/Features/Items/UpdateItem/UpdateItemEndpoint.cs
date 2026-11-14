@@ -14,7 +14,7 @@ public class UpdateItemEndpoint : IEndpoint
 
     public static Delegate Handler => (Func<int, UpdateItemRequest, IUpdateItemCommandHandler, CancellationToken, Task<Results<Ok<ItemResponse>, NotFound>>>) Handle;
 
-    private static async Task<Results<Ok<ItemResponse>, NotFound>> Handle([FromRoute, Range(1, int.MaxValue)] int id,
+    private static async Task<Results<Ok<ItemResponse>, NotFound>> Handle([FromRoute] [Range(1, int.MaxValue)] int id,
                                                                           [FromBody] UpdateItemRequest request,
                                                                           IUpdateItemCommandHandler handler,
                                                                           CancellationToken cancellationToken)

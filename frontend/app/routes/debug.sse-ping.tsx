@@ -1,5 +1,5 @@
-import type { Route } from "./+types/debug.sse-ping";
-import { isDebugConfigAllowed } from "~/lib/debug-config";
+import type { Route } from './+types/debug.sse-ping'
+import { isDebugConfigAllowed } from '~/lib/debug-config'
 
 /**
  * Minimal Server-Sent Events probe used by the connectivity debug page.
@@ -12,59 +12,55 @@ import { isDebugConfigAllowed } from "~/lib/debug-config";
  * Gated identically to {@link isDebugConfigAllowed} — 404 in production unless
  * `ENABLE_DEBUG_CONFIG=true`.
  */
-const TICK_COUNT = 5;
-const TICK_INTERVAL_MS = 250;
+const TICK_COUNT = 5
+const TICK_INTERVAL_MS = 250
 
 export function loader(_args: Route.LoaderArgs) {
   if (!isDebugConfigAllowed()) {
-    throw new Response(null, { status: 404 });
+    throw new Response(null, { status: 404 })
   }
 
-  const encoder = new TextEncoder();
-  let timer: ReturnType<typeof setInterval> | undefined;
+  const encoder = new TextEncoder()
+  let timer: ReturnType<typeof setInterval> | undefined
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      let seq = 0;
+      let seq = 0
 
       const send = (event: string, data: unknown) => {
-        controller.enqueue(
-          encoder.encode(
-            `id: ${seq}\nevent: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
-          ),
-        );
-      };
+        controller.enqueue(encoder.encode(`id: ${seq}\nevent: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
+      }
 
       // Emit one immediately so time-to-first-event reflects real latency,
       // not the tick interval.
-      send("tick", { seq, ts: Date.now() });
-      seq += 1;
+      send('tick', { seq, ts: Date.now() })
+      seq += 1
 
       timer = setInterval(() => {
         if (seq >= TICK_COUNT) {
-          send("done", { total: seq, ts: Date.now() });
-          clearInterval(timer);
-          controller.close();
-          return;
+          send('done', { total: seq, ts: Date.now() })
+          clearInterval(timer)
+          controller.close()
+          return
         }
-        send("tick", { seq, ts: Date.now() });
-        seq += 1;
-      }, TICK_INTERVAL_MS);
+        send('tick', { seq, ts: Date.now() })
+        seq += 1
+      }, TICK_INTERVAL_MS)
     },
     cancel() {
-      if (timer) clearInterval(timer);
+      if (timer) clearInterval(timer)
     },
-  });
+  })
 
   return new Response(stream, {
     status: 200,
     headers: {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
       // Hint to nginx/ingress not to buffer the stream.
-      "X-Accel-Buffering": "no",
+      'X-Accel-Buffering': 'no',
     },
-  });
+  })
 }
 
 // NOTE: no default export — this is a React Router *resource route*. Exporting a

@@ -1,20 +1,20 @@
-import { PassThrough } from "node:stream";
+import { PassThrough } from 'node:stream'
 
-import type { EntryContext, RouterContextProvider } from "react-router";
-import { createReadableStreamFromReadable } from "@react-router/node";
-import { ServerRouter } from "react-router";
-import { isbot } from "isbot";
-import type { RenderToPipeableStreamOptions } from "react-dom/server";
-import { renderToPipeableStream } from "react-dom/server";
+import type { EntryContext, RouterContextProvider } from 'react-router'
+import { createReadableStreamFromReadable } from '@react-router/node'
+import { ServerRouter } from 'react-router'
+import { isbot } from 'isbot'
+import type { RenderToPipeableStreamOptions } from 'react-dom/server'
+import { renderToPipeableStream } from 'react-dom/server'
 
-import { NonceContext } from "~/lib/nonce";
-import { applyDocumentCsp, applySecurityHeaders, createNonce } from "~/lib/security-headers.server";
-import { startNodeOpenTelemetry } from "~/otel/server";
-import { withSsrRequestSpan } from "~/otel/ssr-request";
+import { NonceContext } from '~/lib/nonce'
+import { applyDocumentCsp, applySecurityHeaders, createNonce } from '~/lib/security-headers.server'
+import { startNodeOpenTelemetry } from '~/otel/server'
+import { withSsrRequestSpan } from '~/otel/ssr-request'
 
-startNodeOpenTelemetry();
+startNodeOpenTelemetry()
 
-export const streamTimeout = 5_000;
+export const streamTimeout = 5_000
 
 export default function handleRequest(
   request: Request,
@@ -24,23 +24,19 @@ export default function handleRequest(
   // React Router 8 enables middleware by default, so the load context is a RouterContextProvider.
   loadContext: RouterContextProvider,
 ) {
-  applySecurityHeaders(responseHeaders);
+  applySecurityHeaders(responseHeaders)
 
   // https://httpwg.org/specs/rfc9110.html#HEAD
-  if (request.method.toUpperCase() === "HEAD") {
+  if (request.method.toUpperCase() === 'HEAD') {
     return new Response(null, {
       status: responseStatusCode,
       headers: responseHeaders,
-    });
+    })
   }
 
-  return withSsrRequestSpan(request, () => renderHtmlResponse(
-    request,
-    responseStatusCode,
-    responseHeaders,
-    routerContext,
-    loadContext,
-  ));
+  return withSsrRequestSpan(request, () =>
+    renderHtmlResponse(request, responseStatusCode, responseHeaders, routerContext, loadContext),
+  )
 }
 
 async function renderHtmlResponse(
@@ -51,26 +47,21 @@ async function renderHtmlResponse(
   _loadContext: RouterContextProvider,
 ): Promise<Response> {
   return new Promise((resolve, reject) => {
-    let shellRendered = false;
-    const userAgent = request.headers.get("user-agent");
+    let shellRendered = false
+    const userAgent = request.headers.get('user-agent')
     // One nonce per document: on the CSP header, React Router's scripts (via <ServerRouter nonce>),
     // React's streaming scripts (renderToPipeableStream), and the app's own (NonceContext).
-    const nonce = createNonce();
-    applyDocumentCsp(responseHeaders, nonce);
+    const nonce = createNonce()
+    applyDocumentCsp(responseHeaders, nonce)
 
     // Ensure requests from bots and SPA Mode renders wait for all content to load before responding
     // https://react.dev/reference/react-dom/server/renderToPipeableStream#waiting-for-all-content-to-load-for-crawlers-and-static-generation
     const readyOption: keyof RenderToPipeableStreamOptions =
-      (userAgent && isbot(userAgent)) || routerContext.isSpaMode
-        ? "onAllReady"
-        : "onShellReady";
+      (userAgent && isbot(userAgent)) || routerContext.isSpaMode ? 'onAllReady' : 'onShellReady'
 
     // Abort the rendering stream after the `streamTimeout` so it has time to
     // flush down the rejected boundaries
-    let timeoutId: ReturnType<typeof setTimeout> | undefined = setTimeout(
-      () => abort(),
-      streamTimeout + 1000,
-    );
+    let timeoutId: ReturnType<typeof setTimeout> | undefined = setTimeout(() => abort(), streamTimeout + 1000)
 
     const { pipe, abort } = renderToPipeableStream(
       <NonceContext value={nonce}>
@@ -79,47 +70,47 @@ async function renderHtmlResponse(
       {
         nonce,
         [readyOption]() {
-          shellRendered = true;
+          shellRendered = true
           const body = new PassThrough({
             final(callback) {
               // Clear the timeout to prevent retaining the closure and memory leak
-              clearTimeout(timeoutId);
-              timeoutId = undefined;
-              callback();
+              clearTimeout(timeoutId)
+              timeoutId = undefined
+              callback()
             },
-          });
-          const stream = createReadableStreamFromReadable(body);
+          })
+          const stream = createReadableStreamFromReadable(body)
 
-          responseHeaders.set("Content-Type", "text/html");
+          responseHeaders.set('Content-Type', 'text/html')
 
-          pipe(body);
+          pipe(body)
 
           resolve(
             new Response(stream, {
               headers: responseHeaders,
               status: responseStatusCode,
             }),
-          );
+          )
         },
         onShellError(error: unknown) {
-          reject(error);
+          reject(error)
         },
         onError(error: unknown) {
-          responseStatusCode = 500;
+          responseStatusCode = 500
           // Log streaming rendering errors from inside the shell.  Don't log
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
           if (shellRendered) {
-            console.error(error);
+            console.error(error)
           }
         },
       },
-    );
-  });
+    )
+  })
 }
 
 /** Data requests (client navigations, fetchers) get the same headers; the CSP is for documents. */
 export function handleDataRequest(response: Response): Response {
-  applySecurityHeaders(response.headers);
-  return response;
+  applySecurityHeaders(response.headers)
+  return response
 }

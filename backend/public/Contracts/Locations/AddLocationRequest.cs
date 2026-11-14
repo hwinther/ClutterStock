@@ -6,5 +6,7 @@ namespace ClutterStock.Contracts.Locations;
 /// <param name="Name" example="Home">Display name of the location (e.g. home, office).</param>
 /// <param name="Description" example="Main residence">Optional description of the location.</param>
 public record AddLocationRequest(
-    [property: Required, StringLength(200, MinimumLength = 1)] string Name,
+    [property: Required]
+    [property: StringLength(200, MinimumLength = 1)]
+    string Name,
     [property: StringLength(2000)] string? Description);

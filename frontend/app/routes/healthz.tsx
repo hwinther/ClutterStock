@@ -1,5 +1,5 @@
-import { Outlet } from "react-router";
+import { Outlet } from 'react-router'
 
 export default function HealthzLayout() {
-  return <Outlet />;
+  return <Outlet />
 }

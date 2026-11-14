@@ -18,7 +18,7 @@ internal static class OpenTelemetryServiceExtensions
 
         // AddService overrides the OTEL_SERVICE_NAME resource detector, so honor the variable here
         // (deploy and compose set it to clutterstock-api); the assembly name is only a fallback.
-        var serviceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") is { Length: > 0 } configuredName
+        var serviceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") is {Length: > 0} configuredName
             ? configuredName
             : environment.ApplicationName;
 
@@ -32,6 +32,7 @@ internal static class OpenTelemetryServiceExtensions
                                                    options.RecordException = true;
                                                    options.Filter = static ctx =>
                                                        !ctx.Request.Path.StartsWithSegments("/healthz");
+
                                                    options.EnrichWithHttpResponse = static (activity, response) =>
                                                    {
                                                        var user = response.HttpContext.User;
@@ -40,6 +41,7 @@ internal static class OpenTelemetryServiceExtensions
 
                                                        var userId = user.FindFirstValue("sub")
                                                                     ?? user.FindFirstValue(ClaimTypes.NameIdentifier);
+
                                                        if (!string.IsNullOrEmpty(userId))
                                                            activity.SetTag("enduser.id", userId);
                                                    };

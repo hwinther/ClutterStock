@@ -2,6 +2,7 @@ using System.Data;
 using System.Data.Common;
 using ClutterStock.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace ClutterStock.Api.Tests.Database;
 
@@ -34,7 +35,7 @@ public class ApplicationContextTests : IAsyncLifetime, IAsyncDisposable
     [Fact]
     public void ConnectionState_ReturnsOpen()
     {
-        using DbConnection connection = new Npgsql.NpgsqlConnection(_postgreSqlContainer.PostgreSqlContainer.GetConnectionString());
+        using DbConnection connection = new NpgsqlConnection(_postgreSqlContainer.PostgreSqlContainer.GetConnectionString());
         connection.Open();
         Assert.Equal(ConnectionState.Open, connection.State);
     }

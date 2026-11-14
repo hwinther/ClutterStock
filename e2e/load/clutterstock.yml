@@ -16,7 +16,7 @@
 #     per-user metrics will show a single hot user — intentional for v1.
 
 config:
-  target: "http://localhost:5173"
+  target: 'http://localhost:5173'
   engines:
     playwright:
       launchOptions:
@@ -33,9 +33,9 @@ config:
       duration: 30
       arrivalRate: 5
       rampTo: 1
-  processor: "./scenarios/home.ts"
+  processor: './scenarios/home.ts'
 
 scenarios:
-  - name: "home + search"
+  - name: 'home + search'
     engine: playwright
-    testFunction: "homeFlow"
+    testFunction: 'homeFlow'

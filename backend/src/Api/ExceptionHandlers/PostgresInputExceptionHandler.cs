@@ -28,7 +28,7 @@ internal sealed class PostgresInputExceptionHandler : IExceptionHandler
         if (postgres is null)
             return false;
 
-        IResult? result = postgres.SqlState switch
+        var result = postgres.SqlState switch
         {
             PostgresErrorCodes.ForeignKeyViolation => ForeignKeyViolation(postgres),
             PostgresErrorCodes.CharacterNotInRepertoire or PostgresErrorCodes.UntranslatableCharacter =>
@@ -64,7 +64,7 @@ internal sealed class PostgresInputExceptionHandler : IExceptionHandler
     private static IResult ForeignKeyViolation(PostgresException postgres)
     {
         var parts = postgres.ConstraintName?.Split('_');
-        if (parts is not { Length: 4 } || parts[0] != "FK")
+        if (parts is not {Length: 4} || parts[0] != "FK")
             return Results.Problem(statusCode: StatusCodes.Status400BadRequest,
                                    title: "Invalid reference",
                                    detail: "The request references something that doesn't exist.");

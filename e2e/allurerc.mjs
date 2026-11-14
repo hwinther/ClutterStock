@@ -3,5 +3,5 @@
 // store outside the report dir so we can ship it as its own GHCR image without dragging the rest.
 // Other settings (output, name, plugins) use Allure 3 defaults — the awesome plugin is bundled.
 export default {
-  historyPath: "./allure-history.jsonl",
-};
+  historyPath: './allure-history.jsonl',
+}
