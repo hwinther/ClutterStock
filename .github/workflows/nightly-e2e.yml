@@ -136,40 +136,17 @@ jobs:
             echo "No lighthouse-home.json found in test-results — skipping."
           fi
 
-      # Render e2e coverage + Lighthouse SVG badges. They ship out via the
-      # badges-e2e GHCR image, where api-docs-pages.yml picks them up on the
-      # workflow_run trigger to embed under /badges/ on the Pages site.
-      - name: Install badge generator deps
-        if: ${{ success() || failure() }}
-        run: npm ci
-        working-directory: scripts/badges
-
-      # The nightly status badge rides in the same image as the coverage and Lighthouse badges, so
-      # every Pages deploy carries it forward (api-docs-pages rebuilds /badges/ from this image).
+      # Render e2e coverage, Lighthouse and nightly status badges (reusable badges action; a
+      # missing report just skips its badge). They ship in the badges-e2e GHCR image, where
+      # api-docs-pages.yml picks them up on the workflow_run trigger for /badges/ on Pages.
       - name: Generate e2e + Lighthouse + nightly status badge SVGs
         if: ${{ success() || failure() }}
-        env:
-          PLAYWRIGHT_OUTCOME: ${{ steps.playwright.outcome }}
-        run: |
-          set -euo pipefail
-          mkdir -p badges-e2e
-          E2E_COV_ARG=()
-          if [ -f e2e/monocart-coverage/cobertura-coverage.xml ]; then
-            E2E_COV_ARG=(--e2e-cobertura e2e/monocart-coverage/cobertura-coverage.xml)
-          else
-            echo "::warning::No monocart cobertura-coverage.xml — skipping e2e coverage badge."
-          fi
-          LH_ARG=()
-          if [ -f e2e/monocart-report/lighthouse-home.json ]; then
-            LH_ARG=(--lighthouse-json e2e/monocart-report/lighthouse-home.json)
-          else
-            echo "::warning::No lighthouse-home.json — skipping lighthouse badges."
-          fi
-          node scripts/badges/generate-badges.mjs \
-            "${E2E_COV_ARG[@]}" \
-            "${LH_ARG[@]}" \
-            --nightly-status "$PLAYWRIGHT_OUTCOME" \
-            --out badges-e2e/
+        uses: hwinther/reusable-workflows/.github/actions/badges@d323062b90d0cb8e76889bc1762db348d90d5d08 # v2.41.3
+        with:
+          e2e_cobertura: e2e/monocart-coverage/cobertura-coverage.xml
+          lighthouse_json: e2e/monocart-report/lighthouse-home.json
+          nightly_status: ${{ steps.playwright.outcome }}
+          out: badges-e2e
 
       - name: Push badges-e2e image
         if: ${{ success() || failure() }}

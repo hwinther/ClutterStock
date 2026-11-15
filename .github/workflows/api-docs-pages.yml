@@ -51,7 +51,6 @@ on:
       - ".github/workflows/api-docs-pages.yml"
       - ".github/actions/schemaspy-report/**"
       - ".github/scripts/render_project_docs.py"
-      - "scripts/badges/**"
       - "scripts/badges-e2e.Dockerfile"
       - "scripts/zap-report.Dockerfile"
       - ".zap/**"
@@ -511,10 +510,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install badge generator deps
-        run: npm ci
-        working-directory: scripts/badges
-
       - name: Download dotnet coverage summary
         if: needs.dotnet-test-and-coverage.result == 'success'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -595,44 +590,28 @@ jobs:
             echo "::warning::${IMG} not found — the nightly E2E workflow has not seeded it yet. /badges/ will only contain backend + frontend coverage on this deploy."
           fi
 
-      - name: Render coverage SVGs
+      # Backend/frontend line coverage from this run's reports, the rest from the quality summary
+      # of the main E2E run (reusable badges action; docs/badges.md in reusable-workflows).
+      - name: Render badges
+        uses: hwinther/reusable-workflows/.github/actions/badges@d323062b90d0cb8e76889bc1762db348d90d5d08 # v2.41.3
+        with:
+          quality_summary: quality-summary/summary.json
+          backend_summary_json: dotnet-summary/Summary.json
+          frontend_cobertura: node-cobertura/cobertura-coverage.xml
+          out: badges
+
+      # Rendered elsewhere and carried in their images: e2e coverage, Lighthouse and the nightly
+      # status (nightly E2E), the ZAP findings (ZAP scan). Copied last, so the nightly e2e
+      # coverage wins over the summary's e2e coverage of the main push run.
+      - name: Add nightly and ZAP badges
         run: |
           set -euo pipefail
-          mkdir -p badges
-          # Carry forward nightly-derived SVGs first (e2e coverage, Lighthouse,
-          # nightly status: all rendered by the nightly E2E workflow). Backend/frontend overwrites below
-          # are intentional — they're regenerated from this run's coverage.
           if [ -d badges-e2e ]; then
             cp -v badges-e2e/*.svg badges/ 2>/dev/null || true
           fi
-          # Carry forward the ZAP findings badge — rendered inline by the zap
-          # workflow, shipped via the zap-report image, surfaced here.
           if [ -f zap-report/security-zap.svg ]; then
             cp -v zap-report/security-zap.svg badges/
           fi
-
-          BACKEND_ARG=()
-          if [ -f dotnet-summary/Summary.json ]; then
-            BACKEND_ARG=(--backend-summary-json dotnet-summary/Summary.json)
-          fi
-          FRONTEND_ARG=()
-          if [ -f node-cobertura/cobertura-coverage.xml ]; then
-            FRONTEND_ARG=(--frontend-cobertura node-cobertura/cobertura-coverage.xml)
-          fi
-          QUALITY_ARG=()
-          if [ -f quality-summary/summary.json ]; then
-            QUALITY_ARG=(--quality-summary-json quality-summary/summary.json)
-          fi
-          if [ "${#BACKEND_ARG[@]}" -eq 0 ] && [ "${#FRONTEND_ARG[@]}" -eq 0 ] && [ "${#QUALITY_ARG[@]}" -eq 0 ]; then
-            echo "Nothing to (re)generate in this run; relying on cached nightly + zap badges."
-          else
-            node scripts/badges/generate-badges.mjs \
-              "${BACKEND_ARG[@]}" \
-              "${FRONTEND_ARG[@]}" \
-              "${QUALITY_ARG[@]}" \
-              --out badges/
-          fi
-
           ls -la badges/
 
       - name: Upload badges artifact
