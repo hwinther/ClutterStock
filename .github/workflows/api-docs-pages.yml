@@ -44,9 +44,9 @@ on:
       - "v*"
     branches:
       - main
+    # backend/** and frontend/** come in through the E2E workflow_run below instead, so the
+    # badges read the quality summary of the same commit.
     paths:
-      - "backend/**"
-      - "frontend/**"
       - "docs/**"
       - ".github/workflows/api-docs-pages.yml"
       - ".github/actions/schemaspy-report/**"
@@ -56,11 +56,13 @@ on:
       - "scripts/zap-report.Dockerfile"
       - ".zap/**"
       - "README.md"
-  # Refresh signal-sourced artifacts (nightly-e2e badges, ZAP report) whenever
-  # the source workflow finishes. The conclusion gate inside each job prevents
-  # redeploying Pages from a failed source run.
+  # Refresh signal-sourced artifacts (nightly-e2e badges, ZAP report, the quality summary of a
+  # main push) whenever the source workflow finishes. The conclusion gate inside each job
+  # prevents redeploying Pages from a failed source run, except a failed E2E push run: its
+  # quality summary is what turns the test badges red. E2E counts only for pushes to main, never
+  # for pull requests (a fork's branch can also be called main).
   workflow_run:
-    workflows: ["Nightly E2E (Allure)", "OWASP ZAP Scan"]
+    workflows: ["E2E", "Nightly E2E (Allure)", "OWASP ZAP Scan"]
     types: [completed]
     branches: [main]
 
@@ -86,7 +88,7 @@ jobs:
     if: |
       (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
       (github.event_name == 'workflow_dispatch' && inputs.include_api_redoc) ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
     permissions:
       contents: read
       actions: write
@@ -127,7 +129,7 @@ jobs:
     if: |
       (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
       (github.event_name == 'workflow_dispatch' && inputs.include_database_docs) ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
     permissions:
       contents: read
       actions: write
@@ -189,7 +191,7 @@ jobs:
     if: |
       (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
       (github.event_name == 'workflow_dispatch' && inputs.include_project_docs) ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
     permissions:
       contents: read
       actions: write
@@ -213,7 +215,7 @@ jobs:
     if: |
       (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
       (github.event_name == 'workflow_dispatch' && inputs.include_dotnet_coverage) ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
     permissions:
       contents: read
       actions: write
@@ -270,7 +272,7 @@ jobs:
     if: |
       (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
       (github.event_name == 'workflow_dispatch' && inputs.include_node_coverage) ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
     permissions:
       contents: read
       actions: write
@@ -319,7 +321,7 @@ jobs:
     if: |
       (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
       (github.event_name == 'workflow_dispatch' && inputs.include_e2e_allure) ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
     permissions:
       contents: read
       packages: read
@@ -365,7 +367,7 @@ jobs:
     if: |
       (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
       (github.event_name == 'workflow_dispatch' && inputs.include_e2e_monocart) ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
     permissions:
       contents: read
       packages: read
@@ -434,7 +436,7 @@ jobs:
     if: |
       (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
       (github.event_name == 'workflow_dispatch' && inputs.include_zap_report) ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
     permissions:
       contents: read
       packages: read
@@ -485,7 +487,7 @@ jobs:
       (
         (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
         (github.event_name == 'workflow_dispatch' && inputs.include_badges) ||
-        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+        (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
       ) &&
       (needs.dotnet-test-and-coverage.result == 'success' || needs.dotnet-test-and-coverage.result == 'skipped') &&
       (needs.node-test-and-coverage.result == 'success' || needs.node-test-and-coverage.result == 'skipped') &&
@@ -533,6 +535,36 @@ jobs:
         with:
           name: github-pages-zap-report
           path: zap-report
+
+      # Test counts, warnings, image vulnerabilities, branch and unit+e2e coverage come from the
+      # quality summary of a main push (reusable quality-artifact.yml, uploaded by the E2E
+      # workflow). From the triggering run when E2E started us, otherwise from the newest
+      # finished E2E push run on main.
+      - name: Download quality summary
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TRIGGER_NAME: ${{ github.event.workflow_run.name }}
+          TRIGGER_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          if [ "$TRIGGER_NAME" = "E2E" ]; then
+            run_id="$TRIGGER_ID"
+          else
+            run_id=$(gh run list -R "$REPO" -w E2E -b main -e push -s completed -L 20 \
+              --json databaseId,conclusion \
+              --jq '[.[] | select(.conclusion == "success" or .conclusion == "failure")][0].databaseId // empty')
+          fi
+          if [ -z "$run_id" ]; then
+            echo "::warning::No finished E2E push run on main; skipping the quality summary badges."
+            exit 0
+          fi
+          if gh run download "$run_id" -R "$REPO" -n quality-summary -D quality-summary; then
+            echo "Quality summary from run ${run_id}."
+          else
+            echo "::warning::Run ${run_id} has no quality-summary artifact; skipping the quality summary badges."
+          fi
 
       - name: Log in to GHCR
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
@@ -587,12 +619,17 @@ jobs:
           if [ -f node-cobertura/cobertura-coverage.xml ]; then
             FRONTEND_ARG=(--frontend-cobertura node-cobertura/cobertura-coverage.xml)
           fi
-          if [ "${#BACKEND_ARG[@]}" -eq 0 ] && [ "${#FRONTEND_ARG[@]}" -eq 0 ]; then
+          QUALITY_ARG=()
+          if [ -f quality-summary/summary.json ]; then
+            QUALITY_ARG=(--quality-summary-json quality-summary/summary.json)
+          fi
+          if [ "${#BACKEND_ARG[@]}" -eq 0 ] && [ "${#FRONTEND_ARG[@]}" -eq 0 ] && [ "${#QUALITY_ARG[@]}" -eq 0 ]; then
             echo "Nothing to (re)generate in this run; relying on cached nightly + zap badges."
           else
             node scripts/badges/generate-badges.mjs \
               "${BACKEND_ARG[@]}" \
               "${FRONTEND_ARG[@]}" \
+              "${QUALITY_ARG[@]}" \
               --out badges/
           fi
 
@@ -623,7 +660,7 @@ jobs:
       (
         (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')) ||
         github.event_name == 'workflow_dispatch' ||
-        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+        (github.event_name == 'workflow_run' && ((github.event.workflow_run.name == 'E2E' && github.event.workflow_run.event == 'push' && contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)) || (github.event.workflow_run.name != 'E2E' && github.event.workflow_run.conclusion == 'success')))
       ) &&
       (needs.build-api-docs.result == 'success' || needs.build-api-docs.result == 'skipped') &&
       (needs.dotnet-database-docs.result == 'success' || needs.dotnet-database-docs.result == 'skipped') &&
@@ -791,4 +828,5 @@ jobs:
           echo "  - Lighthouse perf: ${base}/badges/lighthouse-performance.svg" >> "$GITHUB_STEP_SUMMARY"
           echo "  - Nightly E2E (cached): ${base}/badges/nightly-e2e.svg" >> "$GITHUB_STEP_SUMMARY"
           echo "  - ZAP findings: ${base}/badges/security-zap.svg" >> "$GITHUB_STEP_SUMMARY"
+          echo "  - Tests, warnings, vulnerabilities: ${base}/badges/tests-unit.svg, tests-e2e.svg, warnings.svg, vulnerabilities.svg" >> "$GITHUB_STEP_SUMMARY"
           echo "- OWASP ZAP report: ${base}/security/" >> "$GITHUB_STEP_SUMMARY"

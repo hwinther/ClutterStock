@@ -22,6 +22,7 @@ const FLAGS = [
   "lighthouse-json",
   "nightly-status",
   "zap-json",
+  "quality-summary-json",
   "out",
 ];
 
@@ -218,6 +219,104 @@ function zapMessage({ high, med, low }) {
   return `${high}H ${med}M ${low}L`;
 }
 
+// --- quality summary ---------------------------------------------------------
+
+// summary.json from the reusable-workflows quality artifact (schemaVersion 1):
+// test counts, line/branch coverage, warnings and Grype vulnerabilities of one
+// main-branch run. Components are named after their quality-* artifact; the
+// two unit stacks get the same names as the coverage badges above.
+const COMPONENT_NAMES = { dotnet: "backend", node: "frontend" };
+
+async function readQualitySummary(file) {
+  const json = JSON.parse(await readFile(file, "utf8"));
+  if (json?.schemaVersion !== 1) {
+    throw new Error(`${file}: unsupported schemaVersion ${json?.schemaVersion}`);
+  }
+  return json;
+}
+
+function testsBadge(label, t) {
+  const failed = t.failed ?? 0;
+  const message = failed > 0 ? `${failed} failed, ${t.passed} passed` : `${t.passed} passed`;
+  let color = "brightgreen";
+  if (failed > 0) color = "red";
+  else if (t.passed === 0) color = "lightgrey";
+  return makeBadge({ label, message, color, style: "flat" });
+}
+
+function warningsColor(n) {
+  if (n === 0) return "brightgreen";
+  if (n < 10) return "yellow";
+  return "orange";
+}
+
+function vulnerabilitiesColor({ critical = 0, high = 0, medium = 0 }) {
+  if (critical > 0) return "red";
+  if (high > 0) return "orange";
+  if (medium > 0) return "yellow";
+  return "brightgreen";
+}
+
+function vulnerabilitiesMessage({ critical = 0, high = 0, medium = 0, low = 0 }) {
+  if (critical + high + medium + low === 0) return "clean";
+  return `${critical}C ${high}H ${medium}M ${low}L`;
+}
+
+async function emitQualitySummary(outDir, summary, generated) {
+  const tests = summary?.totals?.tests ?? {};
+  for (const kind of ["unit", "e2e"]) {
+    if (tests[kind]) {
+      await writeSvg(outDir, `tests-${kind}`, testsBadge(`${kind} tests`, tests[kind]));
+      generated[`tests-${kind}`] = tests[kind];
+    }
+  }
+
+  if (typeof summary?.totals?.warnings === "number") {
+    const n = summary.totals.warnings;
+    await writeSvg(
+      outDir,
+      "warnings",
+      makeBadge({ label: "warnings", message: String(n), color: warningsColor(n), style: "flat" }),
+    );
+    generated.warnings = n;
+  }
+
+  const vulns = summary?.totals?.vulnerabilities?.bySeverity;
+  if (vulns) {
+    await writeSvg(
+      outDir,
+      "vulnerabilities",
+      makeBadge({
+        label: "image vulnerabilities",
+        message: vulnerabilitiesMessage(vulns),
+        color: vulnerabilitiesColor(vulns),
+        style: "flat",
+      }),
+    );
+    generated.vulnerabilities = vulns;
+  }
+
+  for (const [name, component] of Object.entries(summary?.components ?? {})) {
+    if (component?.kind !== "unit") continue;
+    const pct = component?.coverage?.branches?.percent;
+    if (typeof pct !== "number") continue;
+    const label = COMPONENT_NAMES[name] ?? name;
+    await writeSvg(
+      outDir,
+      `coverage-${label}-branches`,
+      svgCoverage(`${label} branch coverage`, pct),
+    );
+    generated[`coverage-${label}-branches`] = pct;
+  }
+
+  // Unit + e2e lines merged per file (frontend only today).
+  const combined = summary?.totals?.coverage?.combined?.lines?.percent;
+  if (typeof combined === "number") {
+    await writeSvg(outDir, "coverage-combined", svgCoverage("unit+e2e coverage", combined));
+    generated["coverage-combined"] = combined;
+  }
+}
+
 // --- emit -------------------------------------------------------------------
 
 function svgCoverage(label, pct) {
@@ -306,6 +405,11 @@ async function main() {
       }),
     );
     generated["security-zap"] = f;
+  }
+
+  if (args["quality-summary-json"]) {
+    const summary = await readQualitySummary(args["quality-summary-json"]);
+    await emitQualitySummary(outDir, summary, generated);
   }
 
   process.stdout.write(JSON.stringify({ outDir, generated }, null, 2) + "\n");
