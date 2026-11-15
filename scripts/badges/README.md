@@ -21,6 +21,8 @@ private wiki, or extracted from a `FROM scratch` OCI image on an air-gapped host
 | `--e2e-cobertura <file>` | monocart V8 `cobertura-coverage.xml` | Single-file path |
 | `--lighthouse-json <file>` | Lighthouse JSON report | Reads `categories.{performance,accessibility,best-practices,seo}.score` |
 | `--nightly-status <status>` | Free-form string | One of `success`, `failure`, `cancelled`; anything else is rendered grey |
+| `--zap-json <file>` | OWASP ZAP JSON report | Counts alerts by risk |
+| `--quality-summary-json <file>` | `summary.json` of the reusable-workflows quality artifact (`quality-summary` workflow artifact) | Test counts, warnings, Grype vulnerabilities, branch and unit+e2e coverage of one main-branch run |
 | `--out <dir>` | Target directory | Default `./badges` |
 
 Missing inputs are silently skipped — the same invocation can run in workflows
@@ -38,6 +40,15 @@ Stable filenames written to `--out`:
 - `lighthouse-best-practices.svg`
 - `lighthouse-seo.svg`
 - `nightly-e2e.svg`
+- `security-zap.svg`
+
+From `--quality-summary-json`:
+
+- `tests-unit.svg`, `tests-e2e.svg`: passed count, red with the failed count when any failed
+- `warnings.svg`: restore, build, test, typecheck and lint warnings together (0 brightgreen, under 10 yellow, otherwise orange)
+- `vulnerabilities.svg`: Grype matches across the scanned images as `<critical>C <high>H <medium>M <low>L` (red on any critical, orange on any high, yellow on any medium)
+- `coverage-backend-branches.svg`, `coverage-frontend-branches.svg`: branch coverage of the `dotnet` and `node` components (other unit components use their own name)
+- `coverage-combined.svg`: unit and e2e line coverage merged per file
 
 A JSON summary of what was produced is printed to stdout for CI logs.
 
