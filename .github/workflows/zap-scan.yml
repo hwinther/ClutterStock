@@ -135,16 +135,10 @@ jobs:
 
       - name: Generate ZAP findings badge
         if: ${{ success() || failure() }}
-        run: |
-          set -euo pipefail
-          if [ ! -f zap-report/report_json.json ]; then
-            echo "No report_json.json — skipping badge generation."
-            exit 0
-          fi
-          npm ci --prefix scripts/badges
-          node scripts/badges/generate-badges.mjs \
-            --zap-json zap-report/report_json.json \
-            --out zap-report/
+        uses: hwinther/reusable-workflows/.github/actions/badges@d323062b90d0cb8e76889bc1762db348d90d5d08 # v2.41.3
+        with:
+          zap_json: zap-report/report_json.json
+          out: zap-report
 
       - name: Push zap-report image
         if: ${{ success() || failure() }}

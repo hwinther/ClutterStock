@@ -28,7 +28,7 @@ This README is also the home page of the [GitHub Pages site](https://hwinther.gi
 | E2E test results (Playwright, nightly) | [Allure report `/e2e-allure/`](https://hwinther.github.io/ClutterStock/e2e-allure/), [monocart dashboard `/e2e-report/`](https://hwinther.github.io/ClutterStock/e2e-report/) with the latest [Lighthouse audit](https://hwinther.github.io/ClutterStock/e2e-report/lighthouse-home.html) |
 | E2E browser coverage (V8) | [`/coverage-e2e/`](https://hwinther.github.io/ClutterStock/coverage-e2e/) |
 | Security scan (OWASP ZAP, API) | [`/security/`](https://hwinther.github.io/ClutterStock/security/) |
-| Status badges | [`/badges/`](https://hwinther.github.io/ClutterStock/badges/), also shipped as `ghcr.io/hwinther/clutterstock/badges-e2e:latest` for air-gapped consumers (renderer in [`scripts/badges/`](https://github.com/hwinther/ClutterStock/tree/main/scripts/badges)) |
+| Status badges | [`/badges/`](https://hwinther.github.io/ClutterStock/badges/), also shipped as `ghcr.io/hwinther/clutterstock/badges-e2e:latest` for air-gapped consumers (rendered by the [reusable `badges` action](https://github.com/hwinther/reusable-workflows/blob/main/docs/badges.md)) |
 
 ## Repository layout
 
@@ -38,4 +38,4 @@ This README is also the home page of the [GitHub Pages site](https://hwinther.gi
 | [`frontend/`](https://github.com/hwinther/ClutterStock/tree/main/frontend) | React Router SSR app |
 | [`e2e/`](https://github.com/hwinther/ClutterStock/tree/main/e2e) | Playwright end-to-end and load tests |
 | [`deploy/`](https://github.com/hwinther/ClutterStock/tree/main/deploy) | Kubernetes manifests (see its README for the substitutions) |
-| [`scripts/`](https://github.com/hwinther/ClutterStock/tree/main/scripts) | Local e2e stack (`e2e-up.sh`), the badge renderer and the Dockerfiles of the report images |
+| [`scripts/`](https://github.com/hwinther/ClutterStock/tree/main/scripts) | Local e2e stack (`e2e-up.sh`) and the Dockerfiles of the report images |
