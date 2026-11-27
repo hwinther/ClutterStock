@@ -61,7 +61,6 @@ builder.Services.AddProblemDetails(options =>
                                        });
 
 builder.Services.AddExceptionHandler<PostgresInputExceptionHandler>();
-builder.Services.AddExceptionHandler<ConcurrentDeleteExceptionHandler>();
 builder.Services.AddValidation();
 builder.Services.AddOpenApiDocumentation();
 

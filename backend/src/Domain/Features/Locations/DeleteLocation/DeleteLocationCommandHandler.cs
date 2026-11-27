@@ -5,21 +5,29 @@ namespace ClutterStock.Domain.Features.Locations.DeleteLocation;
 
 public interface IDeleteLocationCommandHandler : ICommandHandler
 {
-    Task<bool> HandleAsync(Command command, CancellationToken cancellationToken = default);
+    Task<DeleteOutcome> HandleAsync(Command command, CancellationToken cancellationToken = default);
 
     record Command(int Id);
 }
 
 public class DeleteLocationCommandHandler(IAppDbContext context) : IDeleteLocationCommandHandler
 {
-    public async Task<bool> HandleAsync(IDeleteLocationCommandHandler.Command command, CancellationToken cancellationToken = default)
+    public async Task<DeleteOutcome> HandleAsync(IDeleteLocationCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
         var location = await context.Locations.FirstOrDefaultAsync(l => l.Id == command.Id, cancellationToken);
         if (location is null)
-            return false;
+            return new EntityNotFound(command.Id);
 
         context.Locations.Remove(location);
-        await context.SaveChangesAsync(cancellationToken);
-        return true;
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new EntityNotFound(command.Id);
+        }
+
+        return new Deleted(command.Id);
     }
 }

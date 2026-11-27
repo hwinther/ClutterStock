@@ -1,26 +1,23 @@
-using ClutterStock.Contracts.Items;
 using ClutterStock.Domain.Abstractions;
-using ClutterStock.Domain.Extensions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
+using ClutterStock.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClutterStock.Domain.Features.Items.UpdateItem;
 
 public interface IUpdateItemCommandHandler : ICommandHandler
 {
-    Task<Results<Ok<ItemResponse>, NotFound>> HandleAsync(Command command, CancellationToken cancellationToken = default);
+    Task<UpdateOutcome<Item>> HandleAsync(Command command, CancellationToken cancellationToken = default);
 
     record Command(int Id, int RoomId, string Name, string? Description, string? Category, string? Notes);
 }
 
 public class UpdateItemCommandHandler(IAppDbContext context, IItemChangeNotifier notifier) : IUpdateItemCommandHandler
 {
-    public async Task<Results<Ok<ItemResponse>, NotFound>> HandleAsync(IUpdateItemCommandHandler.Command command, CancellationToken cancellationToken = default)
+    public async Task<UpdateOutcome<Item>> HandleAsync(IUpdateItemCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
         var item = await context.Items.FirstOrDefaultAsync(i => i.Id == command.Id, cancellationToken);
         if (item is null)
-            return TypedResults.NotFound();
+            return new EntityNotFound(command.Id);
 
         item.RoomId = command.RoomId;
         item.Name = command.Name;
@@ -29,8 +26,20 @@ public class UpdateItemCommandHandler(IAppDbContext context, IItemChangeNotifier
         item.Notes = command.Notes;
         item.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
-        await context.SaveChangesAsync(cancellationToken);
-        await notifier.PublishAsync(new ItemChange("item.updated", item.Id, item.RoomId), cancellationToken);
-        return TypedResults.Ok(item.ToResponse());
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new EntityNotFound(command.Id);
+        }
+        catch (MissingReferenceException missing)
+        {
+            return new MissingReference(missing.Property, missing.Principal);
+        }
+
+        await notifier.PublishAsync(new ItemUpdated(item.Id, item.RoomId), cancellationToken);
+        return item;
     }
 }

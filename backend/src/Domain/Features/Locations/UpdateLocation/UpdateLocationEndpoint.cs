@@ -1,6 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using ClutterStock.Contracts.Locations;
 using ClutterStock.Domain.Abstractions;
+using ClutterStock.Domain.Extensions;
+using ClutterStock.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +23,11 @@ public class UpdateLocationEndpoint : IEndpoint
                                                                               CancellationToken cancellationToken)
     {
         var command = new IUpdateLocationCommandHandler.Command(id, request.Name, request.Description);
-        return await handler.HandleAsync(command, cancellationToken);
+        var outcome = await handler.HandleAsync(command, cancellationToken);
+        return outcome switch
+        {
+            Location location => TypedResults.Ok(location.ToResponse()),
+            EntityNotFound => TypedResults.NotFound()
+        };
     }
 }

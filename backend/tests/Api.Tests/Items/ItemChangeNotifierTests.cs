@@ -51,10 +51,10 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
         var roomId = await SeedRoomAsync();
         var handler = new AddItemCommandHandler(_context, _notifier);
 
-        var item = await handler.HandleAsync(new IAddItemCommandHandler.Command(roomId, "Drill", null, null, null), Ct);
+        var item = Assert.IsType<Item>((await handler.HandleAsync(new IAddItemCommandHandler.Command(roomId, "Drill", null, null, null), Ct)).Value);
 
         var change = Assert.Single(_notifier.Published);
-        Assert.Equal("item.created", change.Type);
+        Assert.IsType<ItemCreated>(change);
         Assert.Equal(item.Id, change.Id);
         Assert.Equal(roomId, change.RoomId);
     }
@@ -63,8 +63,9 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
     public async Task UpdateItem_PublishesItemUpdated()
     {
         var roomId = await SeedRoomAsync();
-        var item = await new AddItemCommandHandler(_context, _notifier)
+        var added = await new AddItemCommandHandler(_context, _notifier)
             .HandleAsync(new IAddItemCommandHandler.Command(roomId, "Original", null, null, null), Ct);
+        var item = Assert.IsType<Item>(added.Value);
 
         _notifier.Published.Clear();
 
@@ -72,7 +73,7 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
             .HandleAsync(new IUpdateItemCommandHandler.Command(item.Id, roomId, "Renamed", null, null, null), Ct);
 
         var change = Assert.Single(_notifier.Published);
-        Assert.Equal("item.updated", change.Type);
+        Assert.IsType<ItemUpdated>(change);
         Assert.Equal(item.Id, change.Id);
         Assert.Equal(roomId, change.RoomId);
     }
@@ -81,17 +82,18 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
     public async Task DeleteItem_PublishesItemDeleted()
     {
         var roomId = await SeedRoomAsync();
-        var item = await new AddItemCommandHandler(_context, _notifier)
+        var added = await new AddItemCommandHandler(_context, _notifier)
             .HandleAsync(new IAddItemCommandHandler.Command(roomId, "Throwaway", null, null, null), Ct);
+        var item = Assert.IsType<Item>(added.Value);
 
         _notifier.Published.Clear();
 
         var deleted = await new DeleteItemCommandHandler(_context, _notifier)
             .HandleAsync(new IDeleteItemCommandHandler.Command(item.Id), Ct);
 
-        Assert.True(deleted);
+        Assert.True(deleted is Deleted);
         var change = Assert.Single(_notifier.Published);
-        Assert.Equal("item.deleted", change.Type);
+        Assert.IsType<ItemDeleted>(change);
         Assert.Equal(item.Id, change.Id);
         Assert.Equal(roomId, change.RoomId);
     }
@@ -102,7 +104,7 @@ public sealed class ItemChangeNotifierTests : IAsyncLifetime, IAsyncDisposable
         var deleted = await new DeleteItemCommandHandler(_context, _notifier)
             .HandleAsync(new IDeleteItemCommandHandler.Command(9999), Ct);
 
-        Assert.False(deleted);
+        Assert.True(deleted is EntityNotFound);
         Assert.Empty(_notifier.Published);
     }
 

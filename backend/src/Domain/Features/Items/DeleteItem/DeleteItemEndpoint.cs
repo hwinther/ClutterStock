@@ -18,7 +18,11 @@ public class DeleteItemEndpoint : IEndpoint
                                                                    IDeleteItemCommandHandler handler,
                                                                    CancellationToken cancellationToken)
     {
-        var deleted = await handler.HandleAsync(new IDeleteItemCommandHandler.Command(id), cancellationToken);
-        return deleted ? TypedResults.NoContent() : TypedResults.NotFound();
+        var outcome = await handler.HandleAsync(new IDeleteItemCommandHandler.Command(id), cancellationToken);
+        return outcome switch
+        {
+            Deleted => TypedResults.NoContent(),
+            EntityNotFound => TypedResults.NotFound()
+        };
     }
 }
