@@ -27,7 +27,7 @@ public class AddItemCommandHandler(IAppDbContext context, IItemChangeNotifier no
 
         context.Items.Add(item);
         await context.SaveChangesAsync(cancellationToken);
-        await notifier.PublishAsync(new ItemChange("item.created", item.Id, item.RoomId), cancellationToken);
+        await notifier.PublishAsync(new ItemCreated(item.Id, item.RoomId), cancellationToken);
         return item;
     }
 }

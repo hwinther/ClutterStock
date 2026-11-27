@@ -12,8 +12,21 @@ public interface IItemChangeNotifier
     Task PublishAsync(ItemChange change, CancellationToken cancellationToken = default);
 }
 
-/// <summary>A change to an item, broadcast to subscribers.</summary>
-/// <param name="Type">Change kind, e.g. <c>item.created</c>, <c>item.updated</c>, <c>item.deleted</c>.</param>
+/// <summary>
+///     A change to an item, broadcast to subscribers. <c>closed</c>: only this assembly can derive
+///     from it, so a switch over the three cases below is exhaustive without a default arm, and a
+///     new kind of change fails the build until every switch (e.g. the wire name in the Redis
+///     notifier) handles it.
+/// </summary>
 /// <param name="Id">The affected item id.</param>
 /// <param name="RoomId">The room the item belongs to (allows clients to scope refreshes).</param>
-public readonly record struct ItemChange(string Type, int Id, int RoomId);
+public closed record ItemChange(int Id, int RoomId);
+
+/// <summary>An item was created.</summary>
+public sealed record ItemCreated(int Id, int RoomId) : ItemChange(Id, RoomId);
+
+/// <summary>An item was updated.</summary>
+public sealed record ItemUpdated(int Id, int RoomId) : ItemChange(Id, RoomId);
+
+/// <summary>An item was deleted.</summary>
+public sealed record ItemDeleted(int Id, int RoomId) : ItemChange(Id, RoomId);

@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using ClutterStock.Contracts.Locations;
 using ClutterStock.Domain.Abstractions;
 using ClutterStock.Domain.Extensions;
+using ClutterStock.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +21,11 @@ public class GetLocationEndpoint : IEndpoint
                                                                               IGetLocationQueryHandler handler,
                                                                               CancellationToken cancellationToken)
     {
-        var location = await handler.HandleAsync(new IGetLocationQueryHandler.Query(id), cancellationToken);
-        return location is null ? TypedResults.NotFound() : TypedResults.Ok(location.ToResponse());
+        var outcome = await handler.HandleAsync(new IGetLocationQueryHandler.Query(id), cancellationToken);
+        return outcome switch
+        {
+            Location location => TypedResults.Ok(location.ToResponse()),
+            EntityNotFound => TypedResults.NotFound()
+        };
     }
 }

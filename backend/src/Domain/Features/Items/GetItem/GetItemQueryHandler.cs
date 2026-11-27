@@ -6,16 +6,20 @@ namespace ClutterStock.Domain.Features.Items.GetItem;
 
 public interface IGetItemQueryHandler : IQueryHandler
 {
-    Task<Item?> HandleAsync(Query query, CancellationToken cancellationToken = default);
+    Task<Found<Item>> HandleAsync(Query query, CancellationToken cancellationToken = default);
 
     record Query(int Id);
 }
 
 public class GetItemQueryHandler(IAppDbContext context) : IGetItemQueryHandler
 {
-    public async Task<Item?> HandleAsync(IGetItemQueryHandler.Query query, CancellationToken cancellationToken = default)
+    public async Task<Found<Item>> HandleAsync(IGetItemQueryHandler.Query query, CancellationToken cancellationToken = default)
     {
-        return await context.Items
+        var item = await context.Items
                             .FirstOrDefaultAsync(i => i.Id == query.Id, cancellationToken);
+        if (item is null)
+            return new EntityNotFound(query.Id);
+
+        return item;
     }
 }

@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using ClutterStock.Contracts.Rooms;
 using ClutterStock.Domain.Abstractions;
 using ClutterStock.Domain.Extensions;
+using ClutterStock.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +21,11 @@ public class GetRoomEndpoint : IEndpoint
                                                                           IGetRoomQueryHandler handler,
                                                                           CancellationToken cancellationToken)
     {
-        var room = await handler.HandleAsync(new IGetRoomQueryHandler.Query(id), cancellationToken);
-        return room is null ? TypedResults.NotFound() : TypedResults.Ok(room.ToResponse());
+        var outcome = await handler.HandleAsync(new IGetRoomQueryHandler.Query(id), cancellationToken);
+        return outcome switch
+        {
+            Room room => TypedResults.Ok(room.ToResponse()),
+            EntityNotFound => TypedResults.NotFound()
+        };
     }
 }

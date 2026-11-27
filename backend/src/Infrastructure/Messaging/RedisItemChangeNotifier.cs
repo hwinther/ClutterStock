@@ -22,7 +22,7 @@ public sealed class RedisItemChangeNotifier(IConnectionMultiplexer redis, ILogge
         {
             var payload = JsonSerializer.Serialize(new
             {
-                type = change.Type,
+                type = WireType(change),
                 id = change.Id,
                 roomId = change.RoomId,
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
@@ -33,7 +33,18 @@ public sealed class RedisItemChangeNotifier(IConnectionMultiplexer redis, ILogge
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to publish {ChangeType} for item {ItemId}", change.Type, change.Id);
+            logger.LogWarning(ex, "Failed to publish {ChangeType} for item {ItemId}", WireType(change), change.Id);
         }
     }
+
+    /// <summary>
+    ///     The <c>type</c> the frontend subscriber expects. <see cref="ItemChange" /> is closed, so
+    ///     this switch needs no default arm, and a new change kind fails the build here.
+    /// </summary>
+    internal static string WireType(ItemChange change) => change switch
+    {
+        ItemCreated => "item.created",
+        ItemUpdated => "item.updated",
+        ItemDeleted => "item.deleted"
+    };
 }

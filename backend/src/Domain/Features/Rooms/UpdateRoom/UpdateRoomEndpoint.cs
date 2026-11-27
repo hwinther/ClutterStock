@@ -1,6 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using ClutterStock.Contracts.Rooms;
 using ClutterStock.Domain.Abstractions;
+using ClutterStock.Domain.Extensions;
+using ClutterStock.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +23,11 @@ public class UpdateRoomEndpoint : IEndpoint
                                                                           CancellationToken cancellationToken)
     {
         var command = new IUpdateRoomCommandHandler.Command(id, request.LocationId, request.Name, request.Description);
-        return await handler.HandleAsync(command, cancellationToken);
+        var outcome = await handler.HandleAsync(command, cancellationToken);
+        return outcome switch
+        {
+            Room room => TypedResults.Ok(room.ToResponse()),
+            EntityNotFound => TypedResults.NotFound()
+        };
     }
 }

@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using ClutterStock.Contracts.Items;
 using ClutterStock.Domain.Abstractions;
 using ClutterStock.Domain.Extensions;
+using ClutterStock.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +21,11 @@ public class GetItemEndpoint : IEndpoint
                                                                           IGetItemQueryHandler handler,
                                                                           CancellationToken cancellationToken)
     {
-        var item = await handler.HandleAsync(new IGetItemQueryHandler.Query(id), cancellationToken);
-        return item is null ? TypedResults.NotFound() : TypedResults.Ok(item.ToResponse());
+        var outcome = await handler.HandleAsync(new IGetItemQueryHandler.Query(id), cancellationToken);
+        return outcome switch
+        {
+            Item item => TypedResults.Ok(item.ToResponse()),
+            EntityNotFound => TypedResults.NotFound()
+        };
     }
 }
