@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ClutterStock is a home inventory management system — a full-stack web app for tracking items organized by location and room. The backend is ASP.NET Core 10 (Minimal APIs + EF Core + PostgreSQL) and the frontend is React 19 with React Router 7 (SSR enabled), TypeScript, and TailwindCSS 4.
+ClutterStock is a home inventory management system — a full-stack web app for tracking items organized by location and room. The backend is ASP.NET Core 11 (Minimal APIs + EF Core + PostgreSQL) and the frontend is React 19 with React Router 7 (SSR enabled), TypeScript, and TailwindCSS 4.
 
 ## Build & Development Commands
 

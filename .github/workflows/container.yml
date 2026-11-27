@@ -37,7 +37,7 @@ jobs:
       pull-requests: write
     uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@afee6e3a1abf87d164c52a58ee88e7a8dabb5775 # v2.39.0
     with:
-      dotnet_version: 10.0.x
+      dotnet_version: 11.0.x
       solution_path: backend
       solution_file: ClutterStock.slnx
       project_file: src/Api/Api.csproj
@@ -59,7 +59,7 @@ jobs:
       pull-requests: write
     uses: hwinther/reusable-workflows/.github/workflows/dotnet-container.yml@afee6e3a1abf87d164c52a58ee88e7a8dabb5775 # v2.39.0
     with:
-      dotnet_version: 10.0.x
+      dotnet_version: 11.0.x
       solution_path: backend
       solution_file: ClutterStock.slnx
       project_file: src/Migrator/Migrator.csproj

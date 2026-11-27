@@ -27,6 +27,6 @@ jobs:
       node_changes_regex: "frontend/.*|backend/src/Api/openapi.json"
       node_extra_command: "npm run openapi-typescript"
       dotnet_enabled: true
-      dotnet_version: "10.0.x"
+      dotnet_version: "11.0.x"
       dotnet_working_directory: "backend"
       dotnet_solution_file: "ClutterStock.slnx"
