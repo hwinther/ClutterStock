@@ -1,4 +1,4 @@
-# ClutterStock API (ASP.NET Core 10 Minimal API + EF Core on PostgreSQL), with the migrator as an
+# ClutterStock API (ASP.NET Core 11 Minimal API + EF Core on PostgreSQL), with the migrator as an
 # initContainer: the API can't start until the schema is current. MigrateAsync is a no-op when there
 # is nothing to apply, and EF Core takes a migrations lock, so restarts and extra replicas are safe.
 # Each release's migrations must work with the previous release's code (expand/contract), because a
