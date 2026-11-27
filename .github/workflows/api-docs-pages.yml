@@ -70,7 +70,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DOTNET_VERSION: "10.0.x"
+  DOTNET_VERSION: "11.0.x"
   DOTNET_WORKING_DIRECTORY: "backend"
   DOTNET_SOLUTION_FILE: "ClutterStock.slnx"
   API_PROJECT: "src/Api/Api.csproj"

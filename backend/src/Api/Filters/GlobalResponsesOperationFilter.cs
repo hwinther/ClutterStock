@@ -19,9 +19,9 @@ internal sealed class GlobalResponsesOperationFilter : IOperationFilter
                          new OpenApiResponse
                          {
                              Description = "Bad Request",
-                             Content = new Dictionary<string, OpenApiMediaType>
+                             Content = new Dictionary<string, IOpenApiMediaType>
                              {
-                                 ["application/problem+json"] = new()
+                                 ["application/problem+json"] = new OpenApiMediaType
                                  {
                                      Schema = validationSchema
                                  }
@@ -38,9 +38,9 @@ internal sealed class GlobalResponsesOperationFilter : IOperationFilter
                              new OpenApiResponse
                              {
                                  Description = "Unauthorized",
-                                 Content = new Dictionary<string, OpenApiMediaType>
+                                 Content = new Dictionary<string, IOpenApiMediaType>
                                  {
-                                     ["application/problem+json"] = new()
+                                     ["application/problem+json"] = new OpenApiMediaType
                                      {
                                          Schema = problemSchema
                                      }
@@ -51,9 +51,9 @@ internal sealed class GlobalResponsesOperationFilter : IOperationFilter
                              new OpenApiResponse
                              {
                                  Description = "Forbidden",
-                                 Content = new Dictionary<string, OpenApiMediaType>
+                                 Content = new Dictionary<string, IOpenApiMediaType>
                                  {
-                                     ["application/problem+json"] = new()
+                                     ["application/problem+json"] = new OpenApiMediaType
                                      {
                                          Schema = problemSchema
                                      }
@@ -65,9 +65,9 @@ internal sealed class GlobalResponsesOperationFilter : IOperationFilter
                          new OpenApiResponse
                          {
                              Description = "Server Error",
-                             Content = new Dictionary<string, OpenApiMediaType>
+                             Content = new Dictionary<string, IOpenApiMediaType>
                              {
-                                 ["application/problem+json"] = new()
+                                 ["application/problem+json"] = new OpenApiMediaType
                                  {
                                      Schema = problemSchema
                                  }

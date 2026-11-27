@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DOTNET_VERSION: "10.0.x"
+  DOTNET_VERSION: "11.0.x"
   BACKEND_SOLUTION_PATH: "backend"
   BACKEND_SOLUTION_FILE: "ClutterStock.slnx"
   CONTRACTS_PROJECT: "public/Contracts/Contracts.csproj"

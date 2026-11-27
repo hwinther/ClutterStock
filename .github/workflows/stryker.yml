@@ -21,7 +21,7 @@ jobs:
       # Does not seem to work with MTP as of dotnet-stryker 4.14.0 - the process never completes
       run_dotnet_stryker: false
       run_node_stryker: true
-      dotnet_version: 10.0.x
+      dotnet_version: 11.0.x
       solution_path: backend
       solution_name: ClutterStock.slnx
       node_version: 26.x
