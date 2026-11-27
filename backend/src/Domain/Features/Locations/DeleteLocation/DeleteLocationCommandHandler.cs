@@ -19,7 +19,15 @@ public class DeleteLocationCommandHandler(IAppDbContext context) : IDeleteLocati
             return new EntityNotFound(command.Id);
 
         context.Locations.Remove(location);
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new EntityNotFound(command.Id);
+        }
+
         return new Deleted(command.Id);
     }
 }

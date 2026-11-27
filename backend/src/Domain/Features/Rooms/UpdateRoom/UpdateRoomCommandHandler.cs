@@ -6,14 +6,14 @@ namespace ClutterStock.Domain.Features.Rooms.UpdateRoom;
 
 public interface IUpdateRoomCommandHandler : ICommandHandler
 {
-    Task<Found<Room>> HandleAsync(Command command, CancellationToken cancellationToken = default);
+    Task<UpdateOutcome<Room>> HandleAsync(Command command, CancellationToken cancellationToken = default);
 
     record Command(int Id, int LocationId, string Name, string? Description);
 }
 
 public class UpdateRoomCommandHandler(IAppDbContext context) : IUpdateRoomCommandHandler
 {
-    public async Task<Found<Room>> HandleAsync(IUpdateRoomCommandHandler.Command command, CancellationToken cancellationToken = default)
+    public async Task<UpdateOutcome<Room>> HandleAsync(IUpdateRoomCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
         var room = await context.Rooms.FirstOrDefaultAsync(r => r.Id == command.Id, cancellationToken);
         if (room is null)
@@ -24,7 +24,19 @@ public class UpdateRoomCommandHandler(IAppDbContext context) : IUpdateRoomComman
         room.Description = command.Description;
         room.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new EntityNotFound(command.Id);
+        }
+        catch (MissingReferenceException missing)
+        {
+            return new MissingReference(missing.Property, missing.Principal);
+        }
+
         return room;
     }
 }

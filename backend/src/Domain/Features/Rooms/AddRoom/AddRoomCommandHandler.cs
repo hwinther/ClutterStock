@@ -5,14 +5,14 @@ namespace ClutterStock.Domain.Features.Rooms.AddRoom;
 
 public interface IAddRoomCommandHandler : ICommandHandler
 {
-    Task<Room> HandleAsync(Command command, CancellationToken cancellationToken = default);
+    Task<AddOutcome<Room>> HandleAsync(Command command, CancellationToken cancellationToken = default);
 
     record Command(int LocationId, string Name, string? Description);
 }
 
 public class AddRoomCommandHandler(IAppDbContext context) : IAddRoomCommandHandler
 {
-    public async Task<Room> HandleAsync(IAddRoomCommandHandler.Command command, CancellationToken cancellationToken = default)
+    public async Task<AddOutcome<Room>> HandleAsync(IAddRoomCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var room = new Room
@@ -24,7 +24,15 @@ public class AddRoomCommandHandler(IAppDbContext context) : IAddRoomCommandHandl
         };
 
         context.Rooms.Add(room);
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (MissingReferenceException missing)
+        {
+            return new MissingReference(missing.Property, missing.Principal);
+        }
+
         return room;
     }
 }

@@ -5,14 +5,14 @@ namespace ClutterStock.Domain.Features.Items.AddItem;
 
 public interface IAddItemCommandHandler : ICommandHandler
 {
-    Task<Item> HandleAsync(Command command, CancellationToken cancellationToken = default);
+    Task<AddOutcome<Item>> HandleAsync(Command command, CancellationToken cancellationToken = default);
 
     record Command(int RoomId, string Name, string? Description, string? Category, string? Notes);
 }
 
 public class AddItemCommandHandler(IAppDbContext context, IItemChangeNotifier notifier) : IAddItemCommandHandler
 {
-    public async Task<Item> HandleAsync(IAddItemCommandHandler.Command command, CancellationToken cancellationToken = default)
+    public async Task<AddOutcome<Item>> HandleAsync(IAddItemCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var item = new Item
@@ -26,7 +26,15 @@ public class AddItemCommandHandler(IAppDbContext context, IItemChangeNotifier no
         };
 
         context.Items.Add(item);
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (MissingReferenceException missing)
+        {
+            return new MissingReference(missing.Property, missing.Principal);
+        }
+
         await notifier.PublishAsync(new ItemCreated(item.Id, item.RoomId), cancellationToken);
         return item;
     }

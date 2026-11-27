@@ -23,7 +23,15 @@ public class UpdateLocationCommandHandler(IAppDbContext context) : IUpdateLocati
         location.Description = command.Description;
         location.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new EntityNotFound(command.Id);
+        }
+
         return location;
     }
 }

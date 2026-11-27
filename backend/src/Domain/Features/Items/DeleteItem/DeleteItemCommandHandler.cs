@@ -20,7 +20,15 @@ public class DeleteItemCommandHandler(IAppDbContext context, IItemChangeNotifier
 
         var roomId = item.RoomId;
         context.Items.Remove(item);
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new EntityNotFound(command.Id);
+        }
+
         await notifier.PublishAsync(new ItemDeleted(command.Id, roomId), cancellationToken);
         return new Deleted(command.Id);
     }

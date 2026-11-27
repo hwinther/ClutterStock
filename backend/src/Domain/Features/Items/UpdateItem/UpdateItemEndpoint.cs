@@ -15,19 +15,20 @@ public class UpdateItemEndpoint : IEndpoint
 {
     public static string Route => "/items/{id}";
 
-    public static Delegate Handler => (Func<int, UpdateItemRequest, IUpdateItemCommandHandler, CancellationToken, Task<Results<Ok<ItemResponse>, NotFound>>>) Handle;
+    public static Delegate Handler => (Func<int, UpdateItemRequest, IUpdateItemCommandHandler, CancellationToken, Task<Results<Ok<ItemResponse>, NotFound, ValidationProblem>>>) Handle;
 
-    private static async Task<Results<Ok<ItemResponse>, NotFound>> Handle([FromRoute] [Range(1, int.MaxValue)] int id,
-                                                                          [FromBody] UpdateItemRequest request,
-                                                                          IUpdateItemCommandHandler handler,
-                                                                          CancellationToken cancellationToken)
+    private static async Task<Results<Ok<ItemResponse>, NotFound, ValidationProblem>> Handle([FromRoute] [Range(1, int.MaxValue)] int id,
+                                                                                             [FromBody] UpdateItemRequest request,
+                                                                                             IUpdateItemCommandHandler handler,
+                                                                                             CancellationToken cancellationToken)
     {
         var command = new IUpdateItemCommandHandler.Command(id, request.RoomId, request.Name, request.Description, request.Category, request.Notes);
         var outcome = await handler.HandleAsync(command, cancellationToken);
         return outcome switch
         {
             Item item => TypedResults.Ok(item.ToResponse()),
-            EntityNotFound => TypedResults.NotFound()
+            EntityNotFound => TypedResults.NotFound(),
+            MissingReference missing => missing.ToValidationProblem()
         };
     }
 }

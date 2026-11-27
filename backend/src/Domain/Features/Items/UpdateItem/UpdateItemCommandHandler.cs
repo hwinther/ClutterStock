@@ -6,14 +6,14 @@ namespace ClutterStock.Domain.Features.Items.UpdateItem;
 
 public interface IUpdateItemCommandHandler : ICommandHandler
 {
-    Task<Found<Item>> HandleAsync(Command command, CancellationToken cancellationToken = default);
+    Task<UpdateOutcome<Item>> HandleAsync(Command command, CancellationToken cancellationToken = default);
 
     record Command(int Id, int RoomId, string Name, string? Description, string? Category, string? Notes);
 }
 
 public class UpdateItemCommandHandler(IAppDbContext context, IItemChangeNotifier notifier) : IUpdateItemCommandHandler
 {
-    public async Task<Found<Item>> HandleAsync(IUpdateItemCommandHandler.Command command, CancellationToken cancellationToken = default)
+    public async Task<UpdateOutcome<Item>> HandleAsync(IUpdateItemCommandHandler.Command command, CancellationToken cancellationToken = default)
     {
         var item = await context.Items.FirstOrDefaultAsync(i => i.Id == command.Id, cancellationToken);
         if (item is null)
@@ -26,7 +26,19 @@ public class UpdateItemCommandHandler(IAppDbContext context, IItemChangeNotifier
         item.Notes = command.Notes;
         item.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new EntityNotFound(command.Id);
+        }
+        catch (MissingReferenceException missing)
+        {
+            return new MissingReference(missing.Property, missing.Principal);
+        }
+
         await notifier.PublishAsync(new ItemUpdated(item.Id, item.RoomId), cancellationToken);
         return item;
     }

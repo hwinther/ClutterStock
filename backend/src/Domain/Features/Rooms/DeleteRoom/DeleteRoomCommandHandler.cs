@@ -19,7 +19,15 @@ public class DeleteRoomCommandHandler(IAppDbContext context) : IDeleteRoomComman
             return new EntityNotFound(command.Id);
 
         context.Rooms.Remove(room);
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new EntityNotFound(command.Id);
+        }
+
         return new Deleted(command.Id);
     }
 }
