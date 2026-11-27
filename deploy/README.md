@@ -39,6 +39,13 @@ Name a migration that drops or renames something (the contract step) with `Contr
 timestamp, e.g. `dotnet ef migrations add ContractDropLegacyColumns`. A rollback across one would
 run old code on a schema it can't use, so `promote.yml` refuses it unless forced.
 
+The migrator can also move a database to one migration, up or down, with
+`--target <migration>` (the name, e.g. `AddItemTags`, or the full id). That runs the `Down()` of
+every later migration, so it is a manual step for a test database or an emergency, never part of a
+deploy: run the migrator image once with the same connection environment as the initContainer and
+the argument `--target <migration>`, then roll the API back to a release that matches. It refuses
+`0` (revert everything), which would drop the whole schema.
+
 ## Promotion
 
 Test runs the newest release by itself. Production pins an exact release in hwinther/proxmox and

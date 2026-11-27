@@ -25,6 +25,13 @@
       "ClutterStock.Contracts": {
         "type": "Project"
       },
+      "domain.abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Entities": "[1.0.0, )",
+          "Microsoft.EntityFrameworkCore": "[11.0.0, )"
+        }
+      },
       "entities": {
         "type": "Project"
       }

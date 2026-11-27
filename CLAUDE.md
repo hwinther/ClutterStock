@@ -55,9 +55,10 @@ The backend uses a **CQRS-like feature pattern** with Minimal APIs:
 **Key projects:**
 - `Api/` — entry point, startup, middleware
 - `Domain/` — business logic, feature handlers
+- `Domain.Abstractions/` — the contracts Infrastructure implements (`IAppDbContext`, `IItemChangeNotifier`/`ItemChange`, `MissingReferenceException`); no ASP.NET Core dependency, so Infrastructure and the Migrator run on the plain .NET runtime. Don't make Infrastructure reference `Domain`
 - `Infrastructure/` — EF Core `ApplicationContext`, migrations, entity configurations
 - `Entities/` — domain entity definitions
-- `Migrator/` — standalone CLI for applying migrations
+- `Migrator/` — standalone CLI for applying migrations (`runtime` chiseled image); `--target <migration>` migrates up or down to one migration as a manual step (see `deploy/README.md`)
 
 **Database:** PostgreSQL (via Npgsql/EF Core). Connection string configured via `ConnectionStrings:ClutterStock` in app settings or environment. Migrations live in `Infrastructure/Database/Migrations/`. Fluent API config in `Infrastructure/Database/Configurations/`.
 
