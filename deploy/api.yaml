@@ -28,7 +28,7 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1654          # the dotnet aspnet image's `app` user ($APP_UID)
+        runAsUser: 1654          # the dotnet images' `app` user ($APP_UID)
         fsGroup: 1654
         fsGroupChangePolicy: OnRootMismatch
       initContainers:

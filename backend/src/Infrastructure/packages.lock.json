@@ -88,13 +88,9 @@
         "resolved": "10.0.13",
         "contentHash": "ZlcywyQ7FJmgOV2nctdfOEPGS0kRK8T2CdOoPr6F4HPYpmjSo6GQfj3yTyOzNO6B+2U84/JKSPkJJMWqLmVsMw=="
       },
-      "ClutterStock.Contracts": {
-        "type": "Project"
-      },
-      "domain": {
+      "domain.abstractions": {
         "type": "Project",
         "dependencies": {
-          "ClutterStock.Contracts": "[0.1.0, )",
           "Entities": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[11.0.0, )"
         }

@@ -764,6 +764,14 @@
         "type": "Project",
         "dependencies": {
           "ClutterStock.Contracts": "[0.1.0, )",
+          "Domain.Abstractions": "[1.0.0, )",
+          "Entities": "[1.0.0, )",
+          "Microsoft.EntityFrameworkCore": "[11.0.0, )"
+        }
+      },
+      "domain.abstractions": {
+        "type": "Project",
+        "dependencies": {
           "Entities": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[11.0.0, )"
         }
@@ -780,7 +788,7 @@
       "infrastructure": {
         "type": "Project",
         "dependencies": {
-          "Domain": "[1.0.0, )",
+          "Domain.Abstractions": "[1.0.0, )",
           "Entities": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[11.0.0, )",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "[11.0.0, )",
