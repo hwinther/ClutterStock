@@ -1,0 +1,24 @@
+name: PR report
+
+# One PR comment for the builds, tests, coverage and e2e of a PR's head commit: each job adds a
+# section (an artifact), and this collects them from every run of the commit. It stays quiet until
+# a workflow adds sections (pr_report_enabled). See docs/pr-report.md in hwinther/reusable-workflows.
+# workflow_run reads this file from the default branch, so changes here apply once merged.
+
+on:
+  # zizmor: ignore[dangerous-triggers] -- no checkout and no code from the PR runs; their report
+  # artifacts are only parsed with jq and shown as markdown (see pr-report.yml in reusable-workflows).
+  workflow_run:
+    workflows: [CI, E2E]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  report:
+    if: github.event.workflow_run.event == 'pull_request'
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: hwinther/reusable-workflows/.github/workflows/pr-report.yml@f9e558d8a40da50094bdf76c7b15d56c0b9ecce0 # v2.46.0
