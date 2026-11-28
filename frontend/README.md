@@ -111,3 +111,5 @@ Expose OTLP HTTP (often port **4318**) to:
 ---
 
 Built with ❤️ using React Router.
+
+<!-- Test change for the PR report: do not merge. -->
